@@ -13,13 +13,59 @@ import reactor.core.publisher.Flux;
 import java.util.List;
 
 /**
- * 会话用例：App 的一次请求 = 这里的一个方法。
- *
- * 这一层只有「流程」没有「规则」：
- * - 规则（会话能干什么、状态怎么变）在领域服务与聚合里；
- * - 流程（先关旧会话、等槽位释放、轮询就绪、拼 SSE）在这里。
- *
- * 它对外只认 DTO，对内只认领域类型，两边都不认识 HTTP —— 所以 Controller 薄得像张纸。
+ * 会话用例（App 的一次请求 = 这里的一个方法）
+ * <p>
+ * 功能：把 HTTP 入参翻译成领域服务调用，再把领域结果翻回 api 模块的 DTO；
+ * 「等多久 / 轮询几次 / 流怎么拼」这些编排决策也落在这一层。
+ * 这一层只有「流程」没有「规则」—— 规则（会话能干什么、状态怎么变）在领域服务与聚合里。
+ * <pre>
+ *   create()      建会话：先关旧会话 -> 等槽位释放 -> 建新会话 -> 轮询就绪
+ *   get()         查会话状态（顺手向上游纠偏一次），App 靠它轮询 QUEUED -> READY
+ *   iceServers()  取 WebRTC 的 ICE 服务器配置
+ *   offer()       SDP 交换：offer 换 answer
+ *   speak()       文本驱动数字人说话（走 LLM 生成轨）
+ *   say()         脚本轨：让数字人原样念出这段文字，不经过 LLM
+ *   opening()     开场：让数字人说出本场景的开场白（幂等，只真正下发一次）
+ *   voice()       语音上行（裸 PCM / s16le 单声道），返回识别文本
+ *   interrupt()   打断当前这句
+ *   close()       关会话并释放上游资源
+ *   turns()       取本场会话的历史回合
+ *   events()      SSE 事件流：流头状态 + 上游事件 + 本地事件 + 15 秒心跳
+ * </pre>
+ * 体系架构（它两侧的边界）：
+ * <pre>
+ *   SessionController  @RequestMapping("/api/v1/sessions")，只做转发
+ *        |
+ *        | 对外只认 api 模块 DTO：CreateConversationSessionRequestDTO /
+ *        | SpeakRequestDTO / SayRequestDTO / SessionResponseDTO / ServerEventDTO
+ *        v
+ *   IConversationCase（本接口：只声明会话动作，不含编排实现）
+ *        |
+ *        | 对内只认领域类型：StartConversationCommandEntity / SpeakCommandEntity /
+ *        | SayCommandEntity / ConversationSessionAggregate / ConversationTurnAggregate
+ *        v
+ *   IConversationService（领域服务：会话状态机唯一入口，不 sleep、不轮询）
+ * </pre>
+ * 案例：
+ * <pre>
+ *   输入: POST /api/v1/sessions
+ *         CreateConversationSessionRequestDTO{deviceId="dev-001", avatarId=null,
+ *         model=null, voice=null, scenarioId="interview"}
+ *   处理: create(request) -> 关掉 dev-001 的旧会话 -> 建新会话 ->
+ *         轮询最多 appConfig.readyWaitMs()（配置里 15000ms）等它就绪
+ *   输出: SessionResponseDTO{sessionId="s-3f2a9c8b1d4e6f70", status="READY",
+ *         voice="en-US-JennyNeural", startedAt=1735468800000}
+ *         （请求里没给 avatarId / model，聚合里存的就是 null，而 SessionResponseDTO 标了
+ *          NON_NULL，所以这两个键在响应里不出现；形象与模型的配置兜底只作用于上游调用那一步）
+ *   超时: 上游仍在排队时 status 返回 "QUEUED"（不抛异常），由 App 继续轮询或听 SSE
+ * </pre>
+ * 设计要点：
+ * <ul>
+ *   <li>接口只暴露 DTO：SessionController 因此薄得像张纸，领域类型不会泄漏到 HTTP 边界之外。</li>
+ *   <li>「等」留在实现类里（sleep / 轮询），领域服务保持纯同步、可单测、不阻塞线程。</li>
+ *   <li>opening() 刻意做成幂等并返回 spoken / reason 而不是报错：
+ *       客户端超时重试和用户连点都会打到它，而重复开场会让数字人把第一句话说两遍，代价不可撤销。</li>
+ * </ul>
  */
 public interface IConversationCase {
 

@@ -8,16 +8,16 @@ import cn.adinall.ai.api.dto.ServerEventDTO;
 import cn.adinall.ai.api.dto.SessionResponseDTO;
 import cn.adinall.ai.api.dto.SpeakRequestDTO;
 import cn.adinall.ai.api.dto.TurnResponseDTO;
-import cn.adinall.ai.domain.business.conversation.model.aggregate.ConversationSessionAggregate;
-import cn.adinall.ai.domain.business.conversation.model.entity.SayCommandEntity;
-import cn.adinall.ai.domain.business.conversation.model.entity.SpeakCommandEntity;
-import cn.adinall.ai.domain.business.conversation.model.entity.StartConversationCommandEntity;
-import cn.adinall.ai.domain.business.conversation.model.valobj.EventTypeEnum;
-import cn.adinall.ai.domain.business.conversation.model.valobj.SessionStatusEnum;
-import cn.adinall.ai.domain.business.conversation.service.IConversationService;
-import cn.adinall.ai.domain.business.shared.adapter.port.IAppConfigPort;
-import cn.adinall.ai.domain.business.conversation.model.valobj.ScenarioVO;
-import cn.adinall.ai.domain.business.conversation.adapter.repository.IScenarioRepository;
+import cn.adinall.ai.domain.conversation.model.aggregate.ConversationSessionAggregate;
+import cn.adinall.ai.domain.conversation.model.entity.SayCommandEntity;
+import cn.adinall.ai.domain.conversation.model.entity.SpeakCommandEntity;
+import cn.adinall.ai.domain.conversation.model.entity.StartConversationCommandEntity;
+import cn.adinall.ai.domain.conversation.model.valobj.EventTypeEnum;
+import cn.adinall.ai.domain.conversation.model.valobj.SessionStatusEnum;
+import cn.adinall.ai.domain.conversation.service.IConversationService;
+import cn.adinall.ai.domain.shared.adapter.port.IAppConfigPort;
+import cn.adinall.ai.domain.conversation.model.valobj.ScenarioVO;
+import cn.adinall.ai.domain.conversation.adapter.repository.IScenarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -28,10 +28,81 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 会话用例实现：把「一次 App 请求」拆成领域动作 + 等待 + 拼装。
- *
- * 这一层存在的理由就是「等」：等上游释放 GPU 槽、等新会话就绪，都是编排决策而不是业务规则，
- * 所以它们在这里 sleep，而不是在领域服务里。领域服务因此保持纯同步、可单测、不阻塞。
+ * 会话用例实现（把「一次 App 请求」拆成领域动作 + 等待 + 拼装）
+ * <p>
+ * 功能：实现 IConversationCase 的全部会话动作，并决定「等多久 / 轮询几次 / 事件流怎么拼」。
+ * 领域动作一律委托给 IConversationService，本类只多管两件本地常量：轮询间隔与心跳间隔。
+ * <pre>
+ *   create()       关旧会话 -> 睡 slotReleaseSettleMs -> 建会话 -> awaitReady -> toResponse
+ *   awaitReady()   仅 isQueued() 为 true 时启动：每 400ms refreshStatus 一次，最多 readyWaitMs
+ *   get()          requireSession -> refreshStatus -> ConversationAssembler.toResponse
+ *   iceServers()   委托领域服务后由 ConversationAssembler 逐个转换
+ *   turns()        conversationService.listTurns() -> ConversationAssembler.toTurnResponses
+ *   offer() / speak() / say() / voice() / interrupt() / close()  逐个委托领域服务
+ *   opening()      读场景开场白 -> markOpeningSpoken() 幂等跃迁 -> say 下发
+ *   events()       Flux.concat(head, Flux.merge(body, local, heartbeat))  四路合并成 SSE
+ *   sleepQuietly() 睡 ms 毫秒；被中断时只恢复中断标记，不向上抛
+ * </pre>
+ * 运行过程（create() 建会话）：
+ * <pre>
+ *   SessionController.create(request)
+ *        |
+ *        v
+ *   ConversationCaseImpl.create(request)
+ *        |
+ *        | (1) deviceId = request.deviceId().trim()
+ *        |        |
+ *        |        v
+ *        |   conversationService.closeSessionsOfDevice(deviceId)
+ *        |        |
+ *        |        +--> 返回 true（真关了旧会话）--> sleepQuietly(slotReleaseSettleMs)
+ *        |        +--> 返回 false（槽位本来就空）--> 不等待，直接往下
+ *        |
+ *        | (2) scenarioRepository.findById(request.scenarioId()) --> ScenarioVO
+ *        |        |
+ *        |        +--> request.voice() 非空 --> 用 App 指定音色
+ *        |        +--> request.voice() 为空 --> 用 scenario.voice()
+ *        |
+ *        | (3) conversationService.createSession(
+ *        |         new StartConversationCommandEntity(deviceId, request.avatarId(), request.model(),
+ *        |              voice, scenario.id(), scenario.systemPromptHint()))
+ *        |        |
+ *        |        v
+ *        |     awaitReady(session)：仍是 QUEUED 就每 400ms refreshStatus 一次
+ *        |        |
+ *        |        +--> 状态变了（如 READY）--> 立刻返回
+ *        |        +--> 超过 readyWaitMs 仍是 QUEUED --> 不算失败，照样往下
+ *        v
+ *   ConversationAssembler.toResponse(session) --> SessionResponseDTO
+ * </pre>
+ * 案例：
+ * <pre>
+ *   输入: CreateConversationSessionRequestDTO{deviceId="dev-001", avatarId=null,
+ *         model=null, voice=null, scenarioId="interview"}
+ *        场景: ScenarioVO{id="interview", voice="en-US-JennyNeural",
+ *              openingLine="Hello! I'm Alex, and I'll be your interviewer today. ...",
+ *              systemPromptHint="You are Alex, an interviewer ..."}
+ *   处理: 关掉 dev-001 的旧会话（返回 true）-> 睡 slotReleaseSettleMs（配置 800ms）->
+ *         createSession(voice="en-US-JennyNeural") -> awaitReady 一次就拿到 READY
+ *   输出: SessionResponseDTO{sessionId="s-3f2a9c8b1d4e6f70", status="READY",
+ *         voice="en-US-JennyNeural", startedAt=1735468800000}
+ *         （请求里没给 avatarId / model，聚合里存的就是 null，而 SessionResponseDTO 标了
+ *          JsonInclude(NON_NULL)，所以这两个键在响应 JSON 里不出现；endedAt / errorMessage /
+ *          iceServers 同为 null 也不出现。形象与模型的配置兜底只作用于上游调用，不回写聚合）
+ *   上游排队未就绪时: status="QUEUED"，方法照常返回（不抛异常）
+ * </pre>
+ * 设计要点：
+ * <ul>
+ *   <li>「等」集中在 sleepQuietly 和 awaitReady：中断只恢复中断标记而不抛出，
+ *       所以线程被中断不会把一次建会话打成 500；超时也走正常路径返回 QUEUED，交给 App 继续轮询。</li>
+ *   <li>用 closeSessionsOfDevice 的返回值决定要不要等：没关掉任何会话时上游槽位本来就是空的，
+ *       无条件 sleep 会让每次建会话白等一个 slotReleaseSettleMs。</li>
+ *   <li>opening() 把 markOpeningSpoken() 排在 say() 之前：并发请求只有一个能通过这次原子跃迁。
+ *       代价是「跃迁成功但下发失败」会丢掉这次开场，但比让用户听见两遍更可接受。</li>
+ *   <li>事件流四路合并的顺序有讲究：Flux.concat(head, ...) 保证状态先到客户端；
+ *       心跳（HEARTBEAT_INTERVAL，15 秒）既顶住 Servlet 容器的 async 超时，也让 App 判断链路还活着；
+ *       本地事件（stt.final / interrupted）不再过领域服务的 applyDriverEvent，否则同一句话会被重复落库。</li>
+ * </ul>
  */
 @Service
 public class ConversationCaseImpl implements IConversationCase {
@@ -259,7 +330,7 @@ public class ConversationCaseImpl implements IConversationCase {
 
     /**
      * 睡一会儿且不抛中断异常。
-     * 流程：ms <= 0 直接返回 -> 否则 sleep；被中断时只恢复中断标记，不向上抛。
+     * 流程：ms 小于等于 0 直接返回 -> 否则 sleep；被中断时只恢复中断标记，不向上抛。
      * 用途是等上游释放 GPU 槽位这种「等一等更好」的场景，不该因为线程被中断就把请求打成 500。
      */
     private static void sleepQuietly(long ms) {

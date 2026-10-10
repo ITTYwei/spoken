@@ -6,19 +6,63 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * OpenTalking 接入配置。
- *
+ * OpenTalking 接入配置（@ConfigurationProperties(prefix = "spoken-ai.provider.opentalking")）
+ * <p>
+ * 功能：把 yml 里「跟 OpenTalking 这个具体后端怎么说话」的参数绑成 Bean，供网关与适配器读取。
  * <pre>
- * spoken-ai:
- *   provider:
- *     avatar: opentalking          # 选哪个 IAvatarDriverPort 实现
- *     opentalking:
- *       base-url: http://127.0.0.1:8001
- *       default-model: flashhead   # 演示用 1.3B，实时；flashtalk 是 14B，画质好但单块约 100s
- *       default-avatar-id: anchor
+ *   baseUrl              统一 API 地址，默认 http://127.0.0.1:8001
+ *   defaultModel         建会话不指定模型时的默认值，默认 flashhead
+ *   defaultAvatarId      建会话不指定形象时的默认值，默认 anchor
+ *   readyTimeoutMs       等 worker 就绪的重试总时长，默认 180000
+ *   offerRetryIntervalMs offer 撞 404/409 后的重试间隔，默认 1000
+ *   dropStun             是否把 stun/stuns 从 ICE 列表里摘掉（TURN 保留），默认 false
+ *   voiceTimeoutMs       语音上行等 STT 结果的最长时间，默认 60000
+ *   connectTimeoutMs     HTTP 建连超时，默认 5000
+ *   requestTimeoutMs     单次 HTTP 请求超时，默认 30000
+ *   fallbackAvatarIds    /avatars 拉不到时的兜底形象，默认 [anchor]
+ *   exposeModels         只暴露给 App 的模型，默认 [flashhead, flashtalk]，留空表示全部暴露
  * </pre>
- *
- * 这些值全是「跟某个具体后端怎么说话」的细节，所以它属于基础设施层，不属于领域。
+ * 配置样例与消费方（谁读哪个字段）：
+ * <pre>
+ *   spoken-ai:
+ *     provider:
+ *       avatar: opentalking          # 选哪个 IAvatarDriverPort 实现
+ *       opentalking:
+ *         base-url: http://127.0.0.1:8001
+ *         default-model: flashhead   # 演示用 1.3B，实时；flashtalk 是 14B，画质好但单块约 100s
+ *         default-avatar-id: anchor
+ *        |
+ *        v
+ *   AvatarDriverConfiguration: @EnableConfigurationProperties(OpenTalkingProperties.class)
+ *        |
+ *        +--> new OpenTalkingGateway(props)
+ *        |        baseUrl / connectTimeoutMs / requestTimeoutMs / voiceTimeoutMs
+ *        |
+ *        +--> new OpenTalkingAvatarDriver(gateway, props)
+ *                 defaultAvatarId / defaultModel / readyTimeoutMs / offerRetryIntervalMs
+ *                 dropStun / fallbackAvatarIds / exposeModels
+ * </pre>
+ * 案例：
+ * <pre>
+ *   输入(yml): spoken-ai.provider.opentalking.default-model=flashtalk
+ *             spoken-ai.provider.opentalking.drop-stun=true
+ *   处理: Spring 松绑定调用 setDefaultModel("flashtalk") / setDropStun(true)
+ *   输出: createSession 未指定模型时用 flashtalk（estimatedChunkMs=110000）；
+ *         iceServers() 返回的列表里不再有 stun: / stuns: 条目
+ *   缺省: 一项都不配时 baseUrl="http://127.0.0.1:8001"、defaultModel="flashhead"、
+ *         defaultAvatarId="anchor"、readyTimeoutMs=180000、exposeModels=["flashhead","flashtalk"]
+ * </pre>
+ * 设计要点：
+ * <ul>
+ *   <li>这些值全是「跟某个具体后端怎么说话」的细节（URL、超时、上游模型名），
+ *       所以它属于基础设施层，不属于领域 —— 领域只通过 IAvatarDriverPort 提能力要求。</li>
+ *   <li>默认值就是可直接跑起来的本机后端：不写任何配置也能连 127.0.0.1:8001，
+ *       本地开发不必先准备配置文件。</li>
+ *   <li>dropStun 默认 false 是保守选择：局域网直连部署置 true 能让非 trickle 的手机
+ *       少等一轮 STUN 候选收集（实测约 7 秒），但需要穿透 NAT / 走 TURN 的部署必须保持 false。</li>
+ *   <li>exposeModels 是「给 App 看什么」的白名单，不是「上游有什么」：
+ *       留空（null 或空列表）才表示全暴露，写错模型 id 的表现是 App 模型列表里少一项。</li>
+ * </ul>
  */
 @ConfigurationProperties(prefix = "spoken-ai.provider.opentalking")
 public class OpenTalkingProperties {
@@ -65,7 +109,7 @@ public class OpenTalkingProperties {
      */
     private long voiceTimeoutMs = 60_000L;
 
-    /** 建立连接的超时（毫秒），同时用于 HTTP 与 WebSocket。 */
+    /** 建立连接的超时（毫秒），用于 HTTP 建连。 */
     private int connectTimeoutMs = 5_000;
 
     /** 单次 HTTP 请求的超时（毫秒）。 */

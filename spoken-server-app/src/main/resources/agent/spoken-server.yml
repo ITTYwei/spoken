@@ -1,0 +1,43 @@
+# =====================================================================
+# spoken-server 模型配置
+# ---------------------------------------------------------------------
+# 平台      : 云腾AI
+# 模型      : tt-5.6-luna（展示名：TT-5.6 luna）
+# 家族      : TT
+# 类型      : 聊天模型
+# 兼容协议  : OpenAI Chat Completions / OpenAI Responses
+# 能力标签  : 多轮对话 · 多模态 · 长上下文 · 联网搜索
+# 简介      : TT-5.6 luna 是新一代旗舰模型，全面提升对话流畅度、多模态理解与代码能力，
+#             适合高质量多轮对话与专业场景。
+#
+# BASE_URL  : https://api.lk888.ai
+# 鉴权      : Authorization: Bearer $API_KEY
+# 模型清单  : GET https://api.lk888.ai/v1/models
+# 可用端点  :
+#   - 对话补全  : POST https://api.lk888.ai/v1/chat/completions
+#   - Responses : POST https://api.lk888.ai/v1/responses
+#   - 向量      : v1/embeddings
+# =====================================================================
+
+ai:
+  agent:
+    config:
+      tables:
+        spokenServer:
+          app-name: spoken-server
+          agent:
+            agent-id: 100003
+            agent-name: 口语教练 SpokenCoach
+            agent-desc: 你的专属口语训练教练，陪你练对话、纠发音、润表达，让开口说外语不再尴尬。
+          module:
+            # 模型接入端点（OpenAI 兼容协议）
+            ai-api:
+              base-url: https://api.lk888.ai
+              # 云腾AI 的 API Key，鉴权：Authorization: Bearer $API_KEY
+              # 建议通过环境变量 LK888_API_KEY 注入，避免把密钥提交进仓库
+              api-key: ${LK888_API_KEY:}
+              completions-path: v1/chat/completions
+              embeddings-path: v1/embeddings
+            # 对话模型
+            chat-model:
+              model: tt-5.6-luna

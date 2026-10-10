@@ -27,10 +27,74 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * App 只认这一组接口；换数字人后端不影响它们。
- *
- * Controller 里没有一行业务逻辑，也不该有：它只做「HTTP 形状 <-> 用例调用」的翻译，
+ * 会话 HTTP 入口（数字人对话链路的全部接口，路由前缀 /api/v1/sessions）
+ * <p>
+ * 功能：App 只认这一组接口；换数字人后端不影响它们。
+ * Controller 里没有一行业务逻辑，也不该有：它只做「HTTP 形状 &lt;-&gt; 用例调用」的翻译，
  * 这样同一套用例将来可以被别的入口（定时任务、消息、gRPC）复用。
+ * <pre>
+ *   POST   /api/v1/sessions                      建会话（body 见 CreateConversationSessionRequestDTO）
+ *   GET    /api/v1/sessions/{sessionId}          查会话状态（App 轮询 QUEUED -> READY）
+ *   GET    /api/v1/sessions/ice-config           WebRTC 的 ICE 服务器配置
+ *   POST   /api/v1/sessions/{sessionId}/offer    SDP 交换：offer 换 answer
+ *   GET    /api/v1/sessions/{sessionId}/events   SSE 事件流（字幕 / 状态 / 心跳 / 错误）
+ *   POST   /api/v1/sessions/{sessionId}/speak    文本驱动（当成用户说的话，过 LLM）
+ *   POST   /api/v1/sessions/{sessionId}/say      脚本轨直念（不经过 LLM）
+ *   POST   /api/v1/sessions/{sessionId}/opening  说本场景开场白（幂等）
+ *   POST   /api/v1/sessions/{sessionId}/voice    语音上行（application/octet-stream）
+ *   POST   /api/v1/sessions/{sessionId}/interrupt 打断当前这句
+ *   DELETE /api/v1/sessions/{sessionId}          关会话并释放上游资源
+ *   GET    /api/v1/sessions/{sessionId}/turns    本场历史回合
+ * </pre>
+ * 运行过程（建会话 -> 拿 ICE -> 换 SDP -> 听事件）：
+ * <pre>
+ *   App
+ *        |
+ *        | (1) POST /api/v1/sessions  {"deviceId":"dev-001","scenarioId":"free"}
+ *        |        v
+ *        |     conversationCase.create(request) --> SessionResponseDTO{status="READY"|"QUEUED"}
+ *        |
+ *        | (2) GET /api/v1/sessions/ice-config
+ *        |        v
+ *        |     Map.of("iceServers", conversationCase.iceServers())
+ *        |
+ *        | (3) POST /api/v1/sessions/{id}/offer   body={"sdp":"v=0...","type":"offer"}
+ *        |        v
+ *        |     new SdpAnswerResponseDTO(conversationCase.offer(id, sdp), "answer")
+ *        |
+ *        | (4) GET /api/v1/sessions/{id}/events   (Accept: text/event-stream)
+ *        |        v
+ *        |     Flux&lt;ServerEventDTO&gt;：session.ready / stt.final / assistant.delta / heartbeat ...
+ *        |
+ *        | (5) POST /api/v1/sessions/{id}/opening  --> OpeningResponseDTO
+ *        v
+ *   JSON / SSE 直接作为响应体返回（本类不包 Response 外壳）
+ * </pre>
+ * 案例：
+ * <pre>
+ *   输入: POST /api/v1/sessions {"deviceId":"dev-001","scenarioId":"free"}
+ *   处理: 关旧会话 -> 建新会话 -> 等就绪（最多 15 秒）-> 返回对外形状
+ *   输出: 200 {"sessionId":"s-001","status":"READY","voice":"en-US-AriaNeural",
+ *          "startedAt":1767225600000}
+ *         注意：请求里没给 avatarId / model，响应里也不会有这两个键 ——
+ *         默认值只在下游调上游时兜底，对外形状是 @JsonInclude(NON_NULL) 且不回填
+ *         POST /{id}/speak 或 /say: 200 {"status":"accepted"}
+ *         DELETE /{id}:            200 {"status":"closed"}
+ *         POST /{id}/voice:        200 {"text":"Hello"}（返回识别文本）
+ *         会话不存在: 404 {"code":"session_not_found","message":"会话不存在或已结束: s-001","ts":...}
+ * </pre>
+ * 设计要点：
+ * <ul>
+ *   <li>不写 try/catch：异常直接冒到 GlobalExceptionHandler，由它按 code 映射 HTTP 状态；
+ *       这样「什么错对应什么状态码」只有一处，Controller 只管翻译形状。</li>
+ *   <li>/voice 用 application/octet-stream 且 body 可空：空 body 是正常用法（表示「我说完了」，
+ *       取服务端那份过了 AEC3 的上行缓冲），所以 @RequestBody(required = false)。</li>
+ *   <li>/ice-config 外面包了一层 {"iceServers": [...]}：这是历史契约形状，App 按它解析，
+ *       不要「顺手」改成裸数组。</li>
+ *   <li>speak / say / interrupt / close 统一返回 {"status":"..."} 或 {"text":"..."}：
+ *       下发是异步的，接口只确认受理，真正的进度从 /events 读。</li>
+ *   <li>依赖只有一个 IConversationCase，且用构造器注入：Controller 薄到可以脱离 Spring 直接测。</li>
+ * </ul>
  */
 @RestController
 @RequestMapping("/api/v1/sessions")

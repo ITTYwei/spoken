@@ -16,12 +16,72 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 全局异常处理：把业务异常翻成 HTTP。
- *
- * 全链路只有一种业务异常（AppException），所以这里做的是「按 code 映射状态码」这一件事，
+ * 全局异常处理（@RestControllerAdvice）：把异常统一翻成 HTTP 状态码与固定形状的错误体
+ * <p>
+ * 功能：全链路只有一种业务异常（AppException），所以这里做的是「按 code 映射状态码」这一件事，
  * 而不是「按谁抛的异常分门别类」—— 异常类只有一种，映射规则只有一处。
- *
  * 响应体形状固定为 { code, message, ts }：App 拿 code 做分支，不去解析 message 文案。
+ * <pre>
+ *   handleAppException(AppException)                     业务异常：按 code 映射 404 / 409 / 502 / 503
+ *   handleValidation(MethodArgumentNotValidException)    @Valid 失败：400 invalid_request
+ *   handleIllegalArgument(IllegalArgumentException)       代码里主动抛的参数错误：400 invalid_request
+ *   handleClientAbort(IOException)                        SSE 客户端断开：500 且不带响应体
+ *   handleNoResource(NoResourceFoundException)            静态路径不存在：404 not_found
+ *   handleOther(Exception)                                兜底：500 internal_error
+ *   statusOf(code)                                        错误码 -> HttpStatus（私有）
+ *   body(status, code, message)                           拼 { code, message, ts }（私有）
+ * </pre>
+ * 运行过程：
+ * <pre>
+ *   任意 Controller 抛出异常
+ *        |
+ *        | (1) AppException --> statusOf(e.code())
+ *        |        provider_unavailable -> 503 SERVICE_UNAVAILABLE
+ *        |        session_not_found    -> 404 NOT_FOUND
+ *        |        session_queued       -> 409 CONFLICT
+ *        |        其余                  -> 502 BAD_GATEWAY
+ *        |        log.warn("业务异常 [code]: message")
+ *        |
+ *        | (2) MethodArgumentNotValidException --> 400，取第一条字段错误拼成「字段 + 原因」
+ *        | (3) IllegalArgumentException       --> 400 invalid_request
+ *        | (4) IOException                    --> 500，空 body（只记 debug）
+ *        | (5) NoResourceFoundException       --> 404 not_found
+ *        | (6) Exception                      --> log.error 全堆栈 + 500 internal_error
+ *        v
+ *   ResponseEntity.status(status).body(LinkedHashMap{code, message, ts})
+ * </pre>
+ * 案例：
+ * <pre>
+ *   输入: conversationService.requireSession("s-404") 抛
+ *         AppException(ResponseCodeEnum.SESSION_NOT_FOUND, "会话不存在或已结束: s-404")
+ *   处理: statusOf("session_not_found") -> 404；message 非空原样带出
+ *   输出: 404 {"code":"session_not_found","message":"会话不存在或已结束: s-404","ts":1767225600000}
+ *   其它分支（message 一律取自抛出时给的描述，枚举里的默认文案在这条路径上到不了客户端）:
+ *         上游排队     -> 409 {"code":"session_queued",
+ *                              "message":"数字人后端还在排队（GPU 槽位被占用），请稍后重试",...}
+ *         上游连不上   -> 503 {"code":"provider_unavailable",
+ *                              "message":"OpenTalking 请求失败: /sessions/ot-7f3a",...}
+ *                              （同类抛出点还有「OpenTalking 请求被中断: &lt;uri&gt;」
+ *                               「OpenTalking 事件流不可达: &lt;base&gt;」「OpenTalking 事件流被中断」）
+ *         上游其它失败 -> 502（statusOf 的兜底）
+ *         入参校验失败 -> 400 {"code":"invalid_request","message":"text must not be blank",...}
+ *         SSE 断开     -> 500 且没有响应体（响应已提交，写 JSON 只会刷转换器报错）
+ * </pre>
+ * 设计要点：
+ * <ul>
+ *   <li>按 code 而不是按异常子类映射：全链路只有 AppException 一种业务异常，
+ *       再加一种业务失败只需加一个码，不用加异常类也不用改这里的分支结构。</li>
+ *   <li>statusOf 用 ResponseCodeEnum 的常量做比较而不是再抄一遍字符串字面量：
+ *       这几个码是对外契约，写死在两处迟早对不上。</li>
+ *   <li>IOException 单独接住：SSE 客户端断开（切后台、拔线、curl 超时）必然抛它，
+ *       而那时响应已提交，再写 JSON 错误体只会刷出
+ *       "No converter for [...] with preset Content-Type 'text/event-stream'"，所以只 debug 记一笔。</li>
+ *   <li>NoResourceFoundException 单独接住：访问 / 或 /favicon.ico 是正常 404，
+ *       落到兜底分支会打一整条 ERROR 堆栈，把真实故障淹没。</li>
+ *   <li>业务异常用 warn、未知异常用 error：日志级别本身就是「这算不算故障」的声明。</li>
+ *   <li>message 为 null 时归一成空串：避免前端拿到 null 还要再判一次；ts 每次现取，
+ *       便于和后端的日志时间对齐排查。</li>
+ * </ul>
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {

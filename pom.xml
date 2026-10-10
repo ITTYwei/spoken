@@ -218,11 +218,15 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.0</version>
+        <version>3.13.0</version>
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
           <encoding>${project.build.sourceEncoding}</encoding>
+          <!-- 关键：让 record 组件名写进 class 文件。迁入的 DTO 大量使用 Java record，
+               Jackson 反序列化 record 靠 ParameterNamesModule 读这些参数名；
+               不开 -parameters 就会报 "Name for argument ... not specified"。 -->
+          <parameters>true</parameters>
         </configuration>
       </plugin>
       <plugin>

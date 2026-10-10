@@ -21,6 +21,68 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 对话模型节点（装配链第 3 环：造 ChatModel，并把它能看到的所有工具挂上去）
+ * <p>
+ * 功能：把上下文里的 OpenAiApi + 配置里的 model 组装成 OpenAiChatModel，
+ * 同时把 MCP 工具和 Skills 工具转成 ToolCallback 列表绑到模型默认参数上。
+ * <pre>
+ *   doApply()  造工具回调 --> 造 OpenAiChatModel --> dynamicContext.setChatModel()
+ *   get()      返回下一个节点 AgentNode
+ * </pre>
+ * 运行过程：
+ * <pre>
+ *   AiApiNode.get() --> ChatModelNode
+ *        |
+ *        v
+ *   doApply(requestParameter, dynamicContext)
+ *        |
+ *        | (1) openAiApi = dynamicContext.getOpenAiApi()
+ *        |
+ *        | (2) 装配 MCP 工具: for toolMcp in module.chatModel.toolMcpList
+ *        |        |
+ *        |        v
+ *        |     defaultMcpClientFactory.getTooMcpCreateService(toolMcp)
+ *        |        |        local 非空 --> LocalToolMcpCreateService
+ *        |        |        sse   非空 --> SSEToolMcpCreateService
+ *        |        |        stdio 非空 --> StdioToolMcpCreateService
+ *        |        |        都不匹配   --> 抛 NOT_FOUND_METHOD
+ *        |        v
+ *        |     buildToolCallback(toolMcp) --> ToolCallback[] 累加进 toolCallbackList
+ *        |
+ *        | (3) 装配 Skills 工具: for toolSkills in module.chatModel.toolSkillsList
+ *        |        |
+ *        |        v
+ *        |     toolSkillsCreateService.buildToolCallback(toolSkills) --> 累加
+ *        |
+ *        | (4) OpenAiChatModel.builder()
+ *        |        .openAiApi(openAiApi)
+ *        |        .defaultOptions(OpenAiChatOptions.model(...).toolCallbacks(toolCallbackList))
+ *        |        v
+ *        |     dynamicContext.setChatModel(chatModel)
+ *        v
+ *   router(...) --> AgentNode（用这个 ChatModel 造 LlmAgent）
+ * </pre>
+ * 案例：
+ * <pre>
+ *   输入: module.chatModel{model="deepseek-chat",
+ *                           toolMcpList=[{local={name="local-tools"}}],
+ *                           toolSkillsList=[{type="directory", path="/skills"}]}
+ *   处理: local 非空 --> LocalToolMcpCreateService 造出本机工具回调；
+ *         Skills 服务按 path 扫出技能回调；两者合并进 OpenAiChatOptions
+ *   输出: 无返回值；dynamicContext.getChatModel() 得到一个带全部工具回调的 OpenAiChatModel
+ * </pre>
+ * 设计要点：
+ * <ul>
+ *   <li>工具在装配期一次性绑到模型默认参数上：运行期（ChatService.handleMessage）不用再传工具，
+ *       调用方拿到的 ChatModel 已经是「带工具的」。</li>
+ *   <li>MCP 用工厂 + 三种参数形态（local/sse/stdio）选实现，新增接入方式只需加一个
+ *       TooMcpCreateService 实现并在工厂里加一个分支，节点本身不用改。</li>
+ *   <li>toolMcp 三种参数都不匹配时直接抛 NOT_FOUND_METHOD：配置写错在启动期就暴露，
+ *       不会造出一个「没有工具但看起来正常」的智能体。</li>
+ *   <li>MCP / Skills 的回调都平铺进同一个列表：对模型来说工具来源无差别，只看回调名字。</li>
+ * </ul>
+ */
 @Slf4j
 @Service
 public class ChatModelNode extends AbstractArmorySupport {

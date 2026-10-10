@@ -1,19 +1,60 @@
 package cn.adinall.ai.infrastructure.config;
 
-import cn.adinall.ai.domain.business.shared.adapter.port.IAppConfigPort;
+import cn.adinall.ai.domain.shared.adapter.port.IAppConfigPort;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 应用配置（实现领域层声明的配置端口）。
- *
- * 这里同时承担两个角色：
- * 1. 绑定 application.yml 里的 spoken-ai.* 配置项；
- * 2. 实现 {@link IAppConfigPort}，让用例层不必知道配置是从 YAML、环境变量还是配置中心来的。
- *
- * 默认值与历史版本保持一致 —— 改动默认值等于改了运行时行为。
+ * 应用配置（@ConfigurationProperties(prefix = "spoken-ai")，同时实现领域端口 {@link IAppConfigPort}）
+ * <p>
+ * 功能：绑定 application.yml 里的 spoken-ai.* 配置项，并以领域端口的形式交给用例层。
+ * <pre>
+ *   maxSessionsPerDevice()    同一设备最多几个会话，默认 1（上游单 GPU 槽）
+ *   readyWaitMs()             建会话后等后端就绪的最长阻塞时间，默认 15000
+ *   sessionIdleTimeoutMs()    设备多久没事件算会话已死，默认 300000
+ *   slotReleaseSettleMs()     关旧会话到建新会话之间的额外等待，默认 800
+ *   corsAllowedOrigins()      允许跨域的来源，默认 ["*"]
+ * </pre>
+ * 运行过程（yml -> Bean -> 消费者）：
+ * <pre>
+ *   application.yml:  spoken-ai.ready-wait-ms: 15000
+ *        |
+ *        v
+ *   PersistenceConfiguration: @EnableConfigurationProperties(AppProperties.class)
+ *        |  Spring 松绑定，逐个调用 setter
+ *        v
+ *   AppProperties（本类）
+ *        |
+ *        +--> 作为 IAppConfigPort 注入 ConversationCaseImpl
+ *        |        | (1) sleepQuietly(appConfig.slotReleaseSettleMs())   关旧会话后让位
+ *        |        | (2) deadline = now + appConfig.readyWaitMs()        轮询等 READY
+ *        |
+ *        +--> 注入 WebCorsConfiguration
+ *                 allowedOriginPatterns(appConfig.corsAllowedOrigins()...)
+ * </pre>
+ * 案例：
+ * <pre>
+ *   输入: yml 只写 spoken-ai.slot-release-settle-ms=800，其余不配
+ *   处理: 绑定时只调用 setSlotReleaseSettleMs(800)，其它字段保留字段初值
+ *   输出: IAppConfigPort 的五个方法分别返回
+ *         1 / 15000 / 300000 / 800 / ["*"]；
+ *         ConversationCaseImpl 关掉旧会话后 sleep(800) 再建新会话，
+ *         降低撞上「GPU 槽位还没释放」的概率
+ * </pre>
+ * 设计要点：
+ * <ul>
+ *   <li>同时承担两个角色：绑定 YAML + 实现 {@link IAppConfigPort}，
+ *       让用例层不必知道配置是从 YAML、环境变量还是配置中心来的。</li>
+ *   <li>默认值与历史版本保持一致 —— 改默认值等于改运行时行为：
+ *       例如 slotReleaseSettleMs 调成 0，会明显提高「新建会话就撞槽位忙」的概率。</li>
+ *   <li>类上没有 @Component，靠 PersistenceConfiguration 的 @EnableConfigurationProperties 注册；
+ *       把标注留在装配处，将来换配置来源（配置中心等）时只改一处。</li>
+ *   <li>maxSessionsPerDevice 与 sessionIdleTimeoutMs 目前是留作后续的值：
+ *       当前实现是建会话前无条件关掉旧会话、也没有回收线程，
+ *       读代码时别以为这两个值已经参与调度。</li>
+ * </ul>
  */
 @ConfigurationProperties(prefix = "spoken-ai")
 public class AppProperties implements IAppConfigPort {

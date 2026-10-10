@@ -1,17 +1,17 @@
 package cn.adinall.ai.infrastructure.adapter.port;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import cn.adinall.ai.domain.business.conversation.adapter.port.IAvatarDriverPort;
-import cn.adinall.ai.domain.business.conversation.model.entity.CreateSessionCommandEntity;
-import cn.adinall.ai.domain.business.conversation.model.entity.SayCommandEntity;
-import cn.adinall.ai.domain.business.conversation.model.entity.SpeakCommandEntity;
-import cn.adinall.ai.domain.business.conversation.model.valobj.AvatarProfileVO;
-import cn.adinall.ai.domain.business.conversation.model.valobj.ConversationEventVO;
-import cn.adinall.ai.domain.business.conversation.model.valobj.DriverCapabilityVO;
-import cn.adinall.ai.domain.business.conversation.model.valobj.DriverModelVO;
-import cn.adinall.ai.domain.business.conversation.model.valobj.IceServerVO;
-import cn.adinall.ai.domain.business.conversation.model.valobj.SessionHandleVO;
-import cn.adinall.ai.domain.business.conversation.model.valobj.SessionStatusEnum;
+import cn.adinall.ai.domain.conversation.adapter.port.IAvatarDriverPort;
+import cn.adinall.ai.domain.conversation.model.entity.CreateSessionCommandEntity;
+import cn.adinall.ai.domain.conversation.model.entity.SayCommandEntity;
+import cn.adinall.ai.domain.conversation.model.entity.SpeakCommandEntity;
+import cn.adinall.ai.domain.conversation.model.valobj.AvatarProfileVO;
+import cn.adinall.ai.domain.conversation.model.valobj.ConversationEventVO;
+import cn.adinall.ai.domain.conversation.model.valobj.DriverCapabilityVO;
+import cn.adinall.ai.domain.conversation.model.valobj.DriverModelVO;
+import cn.adinall.ai.domain.conversation.model.valobj.IceServerVO;
+import cn.adinall.ai.domain.conversation.model.valobj.SessionHandleVO;
+import cn.adinall.ai.domain.conversation.model.valobj.SessionStatusEnum;
 import cn.adinall.ai.infrastructure.config.OpenTalkingProperties;
 import cn.adinall.ai.infrastructure.gateway.OpenTalkingEventTranslator;
 import cn.adinall.ai.infrastructure.gateway.OpenTalkingGateway;
@@ -29,13 +29,103 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
- * IAvatarDriverPort 的 OpenTalking 适配器（防腐层）。
- *
- * 它是「上游长什么样」与「领域要什么」之间的那一层：
- * - 上游字段名漂移（session_id / sessionId、sdp / answer / answer_sdp、urls 是数组还是字符串）在这里吸收掉；
- * - 上游状态文案（queued/worker_ready/...）在这里映射成 SessionStatusEnum；
- * - 上游错误码（ot_http_404）在这里被区分成两种：worker 还没就绪（重试）与会话已被关闭（立刻失败）。
- * 领域服务因此拿到的永远是干净的领域类型。
+ * IAvatarDriverPort 的 OpenTalking 适配器（防腐层：上游长什么样 与 领域要什么 之间的那一层）
+ * <p>
+ * 功能：把领域命令翻译成 OpenTalking 的 HTTP/SSE 调用，再把上游响应规整回领域类型。
+ * <pre>
+ *   id()                                实现标识 "opentalking"，取值对应 spoken-ai.provider.avatar
+ *   capabilities()                      声明 WebRTC 视频 / 上行音频 / 打断 / 文本驱动 / 脚本轨直念 / 可用模型
+ *   listAvatars()                       列形象：GET /avatars；上游报错或结果为空时退到 fallbackAvatarIds
+ *   listModels()                        列模型及连接状态：GET /models，只暴露 exposeModels 里的模型
+ *   createSession(command)              POST /sessions 建会话，返回 SessionHandleVO
+ *   status(providerSessionId)           GET /sessions/{id} 查状态；上游 404 当成 CLOSED
+ *   iceServers()                        GET /sessions/webrtc/ice-config；dropStun 打开时摘掉 stun
+ *   exchangeOffer(id, offerSdp)         POST /sessions/{id}/webrtc/offer；带重试换回 answer SDP
+ *   speak(id, command)                  POST /speak：文本是「用户说的话」，上游走 LLM 生成回复
+ *   say(id, command)                    POST /say：脚本轨直念，文本直通 TTS，不经过 LLM
+ *   interrupt(id)                       POST /interrupt：上游只回 200 不发事件；
+ *                                        领域服务 ConversationServiceImpl.interrupt() 随后补发本地 INTERRUPTED
+ *   close(id)                           DELETE /sessions/{id}：释放 GPU 槽位，已关闭视为成功
+ *   transcribeAudio(id, pcm, sampleRate) 语音上行识别；识别结果为空时抛 ot_voice_empty
+ *   events(id)                          订阅 SSE 并逐条过 OpenTalkingEventTranslator
+ * </pre>
+ * 体系架构（本类吸收的三类差异）：
+ * <pre>
+ *   ConversationServiceImpl / CatalogCaseImpl（领域与用例层，只认 IAvatarDriverPort）
+ *        |
+ *        v
+ *   OpenTalkingAvatarDriver（本类）
+ *        |  (a) 字段名漂移: session_id / sessionId / id, sdp / answer / answer_sdp
+ *        |      urls 是数组还是字符串, status / state
+ *        |  (b) 状态文案: queued / worker_ready / ... -> SessionStatusEnum
+ *        |  (c) 错误码: ot_http_404 区分「worker 未就绪」与「会话已被关闭」
+ *        |
+ *        +--> OpenTalkingGateway             HTTP/SSE 调用（唯一讲 OpenTalking 方言的类）
+ *        +--> OpenTalkingJson                宽松取值，读不到返回 null / 默认值
+ *        +--> OpenTalkingEventTranslator     SSE 帧 -> ConversationEventVO
+ *        +--> OpenTalkingProperties          默认形象/模型、超时、dropStun、exposeModels
+ *        |
+ *        v
+ *   OpenTalking 数字人后端（单 GPU 槽位调度）
+ * </pre>
+ * 运行过程（建会话 -> 换 SDP，含排队重试）：
+ * <pre>
+ *   ConversationServiceImpl.createSession(command)
+ *        |
+ *        | (1) avatarId 为空 -> props.getDefaultAvatarId()（anchor）；model 为空 -> props.getDefaultModel()
+ *        |
+ *        | (2) gateway.createSession(avatarId, model, command.voice(), command.llmSystemPrompt())
+ *        |         POST /sessions {avatar_id, model, tts_voice, llm_system_prompt}
+ *        |        |
+ *        |        +--> 响应里取不到 session_id / sessionId / id --> 抛 AppException("ot_bad_response")
+ *        |        v
+ *        |     mapCreateStatus(status)：queued/pending/created 或缺省 -> QUEUED
+ *        |                                 ready/ok/success -> READY
+ *        v
+ *   SessionHandleVO(sessionId, QUEUED)
+ *        |
+ *        v
+ *   exchangeOffer(providerSessionId, offerSdp)
+ *        |
+ *        | offerWithRetry(): POST /sessions/{id}/webrtc/offer
+ *        |        +--> ot_http_404 / ot_http_409 且 sessionGone() 为 false
+ *        |        |        -> Thread.sleep(offerRetryIntervalMs) 后重试
+ *        |        +--> sessionGone() 为 true（CLOSING/CLOSED/ERROR）
+ *        |        |        -> 抛 AppException(SESSION_NOT_FOUND, "会话已被上游关闭...")
+ *        |        +--> 已到 deadline（readyTimeoutMs）
+ *        |                 -> 原样抛 ot_http_404
+ *        v
+ *   从 sdp / answer / answer_sdp 取 answer；取不到抛 ot_bad_answer
+ * </pre>
+ * 案例：
+ * <pre>
+ *   输入: command = CreateSessionCommandEntity{avatarId=null, model=null,
+ *                voice="en-US-AriaNeural", llmSystemPrompt="You are Amy..."}
+ *   处理: 形象兜底为 "anchor"、模型兜底为 "flashhead" -> POST /sessions
+ *         -> 上游返回 {"session_id":"ot-7c1f2a","status":"queued"}
+ *   输出: SessionHandleVO{providerSessionId="ot-7c1f2a", status=QUEUED}
+ *         副作用: 上游起了一个数字人会话并占用 GPU 槽位；本类打一条 session created 日志
+ *   后续: status("ot-7c1f2a") 读 {"state":"worker_ready"} -> READY
+ *         exchangeOffer("ot-7c1f2a", sdp) 若 worker 还没挂上槽位，按每 1000ms 重试、最多 180000ms
+ *         events("ot-7c1f2a") 收到 {"event":"speech.ended","data":{"text":"..."}}
+ *             -> ConversationEventVO{type=ASSISTANT_DONE, data="..."}
+ * </pre>
+ * 设计要点：
+ * <ul>
+ *   <li>上游字段名的漂移只在本类吸收，领域服务拿到的永远是干净的领域类型；
+ *       出问题先看这里，不要改领域模型去迁就上游。</li>
+ *   <li>404 有两种完全不同的含义必须分开：worker 还没挂上槽位（值得等）与会话已被上游关掉
+ *       （再等也不会好）。不区分的话第二种会把整个 readyTimeoutMs（默认 180s）烧完，
+ *       用户看到「转三分钟然后报错」。</li>
+ *   <li>events() 必须用 handle 而不是 map：Reactor 的 map 不允许返回 null，
+ *       遇到不认识的事件会抛 NPE 把整条 SSE 打断，App 侧表现为「事件流中断」。</li>
+ *   <li>events() 里故意不 startWith(SESSION_READY)：用例层已经按真实状态在流头发过一条 ready/queued，
+ *       两边都发会让 App 收到重复事件。</li>
+ *   <li>close() 只吞上游的 AppException：单 GPU 槽调度下「已经关掉了」是常见且正常的情况，
+ *       不该因此让 App 的关会话请求失败；其它异常照常向上抛，不会被静默。</li>
+ *   <li>扩展点：换数字人后端 = 新写一个 IAvatarDriverPort 实现 + 改 spoken-ai.provider.avatar，
+ *       本类与领域层都不用动。</li>
+ * </ul>
  */
 public class OpenTalkingAvatarDriver implements IAvatarDriverPort {
 
@@ -419,7 +509,9 @@ public class OpenTalkingAvatarDriver implements IAvatarDriverPort {
 
     /**
      * 把一整段 PCM 推给上游做语音识别，返回识别文本。
-     * 流程：交给网关走 WebSocket 音频上行口 -> 结果 trim ->
+     * 流程：gateway.transcribeAudio(...) 走 HTTP multipart POST /sessions/{id}/speak_audio
+     * （pcm 为 null 时只发 source=uplink 字段，让上游用它自己 WebRTC 上行缓冲里的音频；
+     * pcm 非空时包成 WAV 以 multipart 文件上传）-> 结果 trim ->
      * 空文本时抛 ot_voice_empty（翻译成用户能看懂的一句话：没有识别出有效语音，请再说一遍）。
      */
     @Override
@@ -434,8 +526,9 @@ public class OpenTalkingAvatarDriver implements IAvatarDriverPort {
 
     /**
      * 关闭上游会话并释放 GPU 槽位。
-     * 流程：DELETE /sessions/{id}；上游报错时只记 debug 不向上抛 —— 单槽调度下「已经关掉了」是常见且正常的情况，
-     * 不该因此让 App 的关会话请求失败。
+     * 流程：DELETE /sessions/{id}；只捕获 AppException 并降级成 debug 日志 ——
+     * 单槽调度下「已经关掉了」是常见且正常的情况，不该因此让 App 的关会话请求失败；
+     * 其它异常照常向上抛。
      */
     @Override
     public void close(String providerSessionId) {

@@ -20,7 +20,90 @@ import reactor.core.publisher.Flux;
 import java.util.Objects;
 
 /**
- * Spring AI 补丁
+ * Spring AI 适配器（ADK BaseLlm 与 Spring AI ChatModel 之间的桥）
+ * <p>
+ * 功能：让 ADK 侧的智能体直接使用一个 Spring AI 的对话模型 —— 把 LlmRequest 转成 Spring AI 的
+ * Prompt，调 ChatModel / StreamingChatModel，再把 ChatResponse 转回 LlmResponse。
+ * <pre>
+ *   generateContent(LlmRequest, stream)  stream=true 走流式，false 走一次调用；
+ *                                        对应模型缺失时返回 Flowable.error 而不抛异常
+ *   connect(LlmRequest)                 永远抛 UnsupportedOperationException（不支持实时连接）
+ *   model()                             父类持有并对外暴露的模型名（缺省时由类名推导）
+ * </pre>
+ * 体系架构（一次对话的完整链路）：
+ * <pre>
+ *   AgentNode.doApply(): LlmAgent.builder().model(new MySpringAI(chatModel))
+ *        |
+ *        v
+ *   ADK Runner 执行 LlmAgent
+ *        |
+ *        v
+ *   MySpringAI.generateContent(llmRequest, stream)   <-- 本类
+ *        |
+ *        | (1) prompt = messageConverter.toLlmPrompt(llmRequest)
+ *        |
+ *        | (2) stream ? streamingChatModel.stream(prompt) : chatModel.call(prompt)
+ *        |
+ *        | (3) ChatResponse --> messageConverter.toLlmResponse(...) --> LlmResponse
+ *        |
+ *        | (4) SpringAIObservabilityHandler: logRequest / logResponse / recordSuccess / recordError
+ *        v
+ *   Flowable&lt;LlmResponse&gt; 交回 ADK
+ * </pre>
+ * 运行过程（非流式分支，代码里的实际步骤）：
+ * <pre>
+ *   generateContent(llmRequest, false)
+ *        |
+ *        +--> chatModel == null
+ *        |        |
+ *        |        v
+ *        |     Flowable.error(IllegalStateException("ChatModel is not configured"))
+ *        |
+ *        v
+ *   generateContent(llmRequest)
+ *        |
+ *        | (1) observabilityHandler.startRequest(model(), "chat")
+ *        | (2) prompt = messageConverter.toLlmPrompt(llmRequest); logRequest(prompt, model())
+ *        | (3) chatResponse = chatModel.call(prompt)
+ *        | (4) llmResponse = messageConverter.toLlmResponse(chatResponse)
+ *        | (5) logResponse(extractTextFromResponse(llmResponse), model())
+ *        | (6) 统计 token: getUsage().getTotalTokens() / getPromptTokens() / getCompletionTokens()
+ *        |        （取不到时 extractXxxTokenCount 统一返回 0）
+ *        | (7) observabilityHandler.recordSuccess(context, total, input, output)
+ *        v
+ *   Flowable.just(llmResponse)
+ *   异常路径: recordError(context, e) --> SpringAIErrorMapper.mapError(e)
+ *             --> Flowable.error(new RuntimeException(mappedError.getNormalizedMessage(), e))
+ * </pre>
+ * 案例：
+ * <pre>
+ *   输入: new MySpringAI(openAiChatModel)（AgentNode 里就是这么包的），LlmRequest 为一句用户文本
+ *   处理: generateContent(llmRequest, false) --> chatModel.call(prompt) --> toLlmResponse
+ *   输出: Flowable 发出一个 LlmResponse；模型名取 extractModelName("OpenAiChatModel")，结果为 "openai"
+ *   失败例: 用 new MySpringAI(streamingChatModel) 构造后调 generateContent(req, false)，
+ *         此时 chatModel 为 null
+ *         --> Flowable.error(IllegalStateException("ChatModel is not configured"))
+ *   失败例: connect(llmRequest) --> 抛 UnsupportedOperationException(
+ *         "Live connection is not supported for Spring AI models.")
+ * </pre>
+ * 设计要点：
+ * <ul>
+ *   <li>适配方向是单向的：ADK 只认 BaseLlm，Spring AI 只认 ChatModel / StreamingChatModel，
+ *       本类把二者接起来，并把消息格式转换下沉给 MyMessageConverter，自己只做流程编排。</li>
+ *   <li>构造器有七个，差别只在「谁是主模型、modelName 从哪来、观测配置是否外部传入」；
+ *       每个构造器都用 instanceof 反向探测对方的类型（ChatModel 也可能同时是 StreamingChatModel），
+ *       所以选哪个构造器，决定了后续哪个分支可用。</li>
+ *   <li>缺模型时不抛异常而返回 Flowable.error：错误要等订阅时才出现 ——
+ *       因此用错构造器不会在装配期报错，只会在第一次对话时暴露。</li>
+ *   <li>modelName 缺省时用 extractModelName 从类名推（"OpenAiChatModel" 去掉 chatmodel / model 后得 "openai"）：
+ *       这只是兜底，需要准确模型名时应走带 modelName 的构造器。</li>
+ *   <li>异常统一经 SpringAIErrorMapper.mapError 归一化后再包成 RuntimeException 抛出，并保留原始 cause；
+ *       观测处理器在转换、调用、成功、失败各记一笔，便于判断失败发生在哪一步。</li>
+ *   <li>不传观测配置时走 createDefaultObservabilityConfig()：enabled=true、metricsEnabled=true、
+ *       includeContent=false（默认不把提示词内容写进观测输出）。</li>
+ *   <li>connect() 直接抛不支持：实时双向连接在本适配器上没有实现，需要该能力必须另写适配器。</li>
+ * </ul>
+ *
  * @author 魏玉石
  * 2026/1/9 08:20
  */

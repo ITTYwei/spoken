@@ -1,30 +1,20 @@
 server:
   port: 8091
 
-# 线程池配置
-thread:
-  pool:
-    executor:
-      config:
-        core-pool-size: 20
-        max-pool-size: 50
-        keep-alive-time: 5000
-        block-queue-size: 5000
-        policy: CallerRunsPolicy
-
-# 数据库配置；启动时配置数据库资源信息
 spring:
   config:
     import:
-#      - classpath:agent/test-agent-02.yml
-#      - classpath:agent/test-agent.yml
-      - classpath:agent/only-one-agent.yml
-#      - classpath:agent/parallel_research_app.yml
+      # spoken-server 模型配置（云腾AI · TT-5.6 luna）
+      - classpath:agent/spoken-server.yml
+
+  # 数据存储统一走 MySQL（GPU 机 172.18.0.102:13306，原生 mysqld）。
+  # createDatabaseIfNotExist=true 让 spoken 库不存在时自动建。
   datasource:
+    url: jdbc:mysql://172.18.0.102:13306/spoken?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
     username: root
-    password: 123456
-    url: jdbc:mysql://172.18.0.102:13306/spoken?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
+    password: "123456"
     driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.zaxxer.hikari.HikariDataSource
   hikari:
     pool-name: Retail_HikariCP
     minimum-idle: 15 #最小空闲连接数量
@@ -36,13 +26,76 @@ spring:
     connection-test-query: SELECT 1
   type: com.zaxxer.hikari.HikariDataSource
 
-# MyBatis 配置【如需使用记得打开】
-#mybatis:
-#  mapper-locations: classpath:/mybatis/mapper/*.xml
-#  config-location:  classpath:/mybatis/config/mybatis-config.xml
+  mvc:
+    async:
+      # SSE 字幕流是长连接：Servlet 容器默认 30s 就把异步请求掐掉，放宽到 30 分钟，
+      # 真正的保活靠用例层 15s 一次的心跳事件。
+      request-timeout: 1800000
 
-# 日志
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: true
+
+# 线程池（agent 脚手架沿用）
+thread:
+  pool:
+    executor:
+      config:
+        core-pool-size: 20
+        max-pool-size: 50
+        keep-alive-time: 5000
+        block-queue-size: 5000
+        policy: CallerRunsPolicy
+
+# MyBatis：SQL 全在 resources/mybatis/mapper/*.xml 里。
+# 下划线转驼峰打开后，session_id -> sessionId 这类映射不用逐列写 resultMap。
+mybatis:
+  mapper-locations: classpath*:mybatis/mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# 数字人对话配置（迁自 spoken-ai）。前缀保持不变，避免改配置契约。
+spoken-ai:
+  provider:
+    # 换数字人后端只改这一行：opentalking
+    avatar: opentalking
+    opentalking:
+      base-url: http://172.18.0.102:8001
+      default-avatar-id: anchor
+      # flashhead = 1.3B 实时（演示用）
+      default-model: flashhead
+      connect-timeout-ms: 5000
+      request-timeout-ms: 30000
+      # 局域网直连：摘掉 stun，避免手机多网卡时等 ICE 收集多花约 7 秒
+      drop-stun: true
+      expose-models:
+        - flashhead
+        - flashtalk
+      fallback-avatar-ids:
+        - anchor
+  # 建会话后最多在 HTTP 请求里等多久（超时返回 QUEUED，让 App 轮询/等 SSE）
+  ready-wait-ms: 15000
+  # 关掉老会话后、建新会话前多等一会儿，等上游把单 GPU 槽放开
+  slot-release-settle-ms: 800
+  max-sessions-per-device: 1
+  session-idle-timeout-ms: 300000
+  cors-allowed-origins:
+    - "*"
+
 logging:
+  config: classpath:logback-spring.xml
   level:
     root: info
-  config: classpath:logback-spring.xml
+    cn.adinall.ai: INFO
+    cn.adinall.ai.infrastructure.gateway: INFO

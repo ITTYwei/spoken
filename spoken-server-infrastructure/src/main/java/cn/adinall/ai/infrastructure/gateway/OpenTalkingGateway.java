@@ -24,15 +24,97 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * OpenTalking API 的网关：整个系统里唯一直接讲「OpenTalking 方言」的地方。
- *
- * 只用 JDK HttpClient，不引入 WebFlux；解析一律走 JsonNode（宽松），
- * 因为对端字段在不同版本里会漂移。
- *
- * 错误码约定（上层靠它做分支，所以这些字面量不能改）：
- * - 连不上 / 被中断 -> provider_unavailable（HTTP 503）
- * - HTTP >= 400 -> ot_http_{code}（如 ot_http_404，适配器据此重试「worker 未就绪」）
- * - 上行语音相关 -> ot_voice_*
+ * OpenTalking API 的网关：整个系统里唯一直接讲「OpenTalking 方言」的地方
+ * <p>
+ * 功能：用 JDK HttpClient 封装上游的 REST 与 SSE 接口，并把 HTTP 层错误统一成 AppException 的错误码。
+ * <pre>
+ *   models() / avatars() / iceConfig()               GET /models、/avatars、/sessions/webrtc/ice-config
+ *   createSession(avatarId, model, ttsVoice, prompt) POST /sessions（avatar_id、model 必发；tts_voice、prompt 非空才发）
+ *   sessionState(providerSessionId)                  GET /sessions/{id}
+ *   offer(providerSessionId, sdp)                    POST /sessions/{id}/webrtc/offer
+ *   speak(id, text, voice)                           POST /sessions/{id}/speak（text 是用户的话，上游走 LLM）
+ *   say(id, text, voice, commandId)                  POST /sessions/{id}/say（脚本轨直念，command_id 去重）
+ *   interrupt(id) / close(id)                        POST /sessions/{id}/interrupt、DELETE /sessions/{id}
+ *   transcribeAudio(id, pcm, sampleRate)             POST /sessions/{id}/speak_audio（multipart）
+ *   eventStream(id)                                  GET /sessions/{id}/events（SSE -> Flux&lt;String&gt;）
+ * </pre>
+ * 体系架构（谁调它、方言在哪）：
+ * <pre>
+ *   OpenTalkingAvatarDriver（适配器，本类唯一的调用方）
+ *        |
+ *        +--> models / avatars / iceConfig / createSession / sessionState / offer
+ *        |        返回 JsonNode（宽松解析，缺字段不抛异常）
+ *        +--> speak / say / interrupt
+ *        |        返回 JsonNode（适配器多数只关心「有没有抛错」）
+ *        +--> close
+ *        |        无返回值（void；内部委托 delete()，忽略响应体）
+ *        +--> transcribeAudio     返回 String（识别文本）
+ *        +--> eventStream         返回 Flux&lt;String&gt;（拼好的 {"event":...,"data":...} 帧）
+ *        |
+ *        v
+ *   OpenTalkingGateway（本类）
+ *        |
+ *        +--> java.net.http.HttpClient     强制 HTTP/1.1；connectTimeoutMs 建连超时
+ *        +--> OpenTalkingJson              解析与多字段名宽松取值
+ *        +--> OpenTalkingProperties        baseUrl / requestTimeoutMs / voiceTimeoutMs
+ *        |
+ *        v
+ *   OpenTalking 后端 baseUrl（默认 http://127.0.0.1:8001）
+ * </pre>
+ * 运行过程（一次 REST 调用，成功与失败两条路）：
+ * <pre>
+ *   gateway.speak("ot-7c1f2a", "hello", null)
+ *        |
+ *        | (1) post("/sessions/ot-7c1f2a/speak", {text:"hello"})
+ *        |        writeJson(body) -> OpenTalkingJson.MAPPER.writeValueAsString
+ *        |        （序列化失败抛 json_encode_failed，属我方 bug，不该重试）
+ *        |
+ *        | (2) request(path)：uri = base + path
+ *        |        .timeout(requestTimeoutMs).header("Accept","application/json")
+ *        |        .header("Content-Type","application/json")
+ *        |        BodyPublishers.ofString(json)
+ *        |
+ *        | (3) send(request)
+ *        |        |
+ *        |        +--> IOException          -> 抛 AppException(provider_unavailable)
+ *        |        +--> InterruptedException -> 恢复中断标记 + provider_unavailable
+ *        |        +--> statusCode >= 400    -> 抛 AppException("ot_http_" + code, ...)
+ *        |        |                            适配器据 ot_http_404 判断「worker 未就绪」并重试
+ *        |        +--> 2xx                -> log.debug（含耗时）-> 返回 read(body) 的 JsonNode
+ *        v
+ *   JsonNode（解析不出时是 MissingNode，调用方用 OpenTalkingJson.text 宽松取）
+ * </pre>
+ * 案例：
+ * <pre>
+ *   输入: createSession(avatarId="anchor", model="flashhead",
+ *                      ttsVoice="en-US-AriaNeural", llmSystemPrompt="You are Amy...")
+ *   处理: body = {avatar_id:"anchor", model:"flashhead",
+ *                 tts_voice:"en-US-AriaNeural", llm_system_prompt:"You are Amy..."}
+ *         （ttsVoice 为空串时不带 tts_voice；形象绑了 persona 时上游会静默忽略 llm_system_prompt）
+ *         POST http://127.0.0.1:8001/sessions
+ *   输出: JsonNode{"session_id":"ot-7c1f2a","status":"queued"}，由适配器取出 session_id 并映射状态
+ *   失败: 上游 404 -> AppException{code="ot_http_404", message="OpenTalking 返回 404: ..."}
+ *   语音: transcribeAudio(id, null, 16000)  -> source=uplink 的 multipart（让上游用自己 WebRTC 上行缓冲）
+ *         transcribeAudio(id, pcm, 8000)   -> AppException{code="unsupported_sample_rate"}
+ *         上游回 {"error":"..."}           -> AppException{code="ot_voice_rejected"}
+ * </pre>
+ * 设计要点：
+ * <ul>
+ *   <li>上游的 URI、字段名、错误码字面量全部收在本类：上层不做字符串判断，
+ *       例外是适配器按 ot_http_404 / ot_http_409 分支，所以这些字面量不能改。</li>
+ *   <li>只用 JDK HttpClient，不引入 WebFlux：强制 HTTP/1.1，上游 SSE 在 1.1 下更稳。</li>
+ *   <li>解析一律走 JsonNode 且宽松（读不到给 null / 默认值）：对端字段在不同版本里会漂移。</li>
+ *   <li>createSession 的 body 分两类：avatar_id 与 model 无条件发送、且 null 会被转成空串；
+ *       tts_voice 与 llm_system_prompt 只在非空时才带上 —— 上游对「不传」与「传空串」的处理不一样，
+ *       空串会盖掉它自己的默认配置，所以调用方必须先兜底（适配器已用配置默认值补上）。</li>
+ *   <li>say 的 command_id 是给上游做重放去重的：同 id 同内容返回 duplicate，
+ *       同 id 不同内容直接报错，所以这个参数不能随便生成。</li>
+ *   <li>transcribeAudio 两种模式差别很关键：pcm 为 null 时才走上游 WebRTC 上行缓冲
+ *       （经过 AEC3，数字人外放的声音已在麦克风里被减掉）；pcm 非空会包成 WAV 上传，
+ *       这条路没有回声消除，只作兜底。</li>
+ *   <li>eventStream 必须把 event: 与 data: 两行合成帧：只读 data 行会丢掉事件名，
+ *       映射层无从判断这是什么事件（字幕一直不出来就是这个原因）。</li>
+ * </ul>
  */
 public class OpenTalkingGateway {
 
@@ -75,7 +157,9 @@ public class OpenTalkingGateway {
     /**
      * POST /sessions 创建会话。
      *
-     * 只把「有值」的字段放进去：上游对 None 和 "" 的处理不一样，空串会盖掉它的默认配置。
+     * body 分两类：avatar_id 与 model 无条件发送，null 会被转成空串（调用方应已兜底）；
+     * tts_voice 与 llm_system_prompt 只在非空时才带上 —— 上游对「不传」和「传空串」的处理不一样，
+     * 空串会盖掉它的默认配置。
      *
      * @param ttsVoice        会话默认音色。作用在 TTS 阶段，**脚本轨和生成轨都受它影响**。
      * @param llmSystemPrompt 发给 LLM 的系统提示词，只影响生成轨。

@@ -3,17 +3,61 @@ package cn.adinall.ai.types.exception;
 import cn.adinall.ai.types.enums.ResponseCodeEnum;
 
 /**
- * 全链路统一业务异常。
+ * 全链路统一业务异常（types 模块唯一的业务异常类型）
+ * <p>
+ * 功能：用一个异常类承载「错误码 + 提示文案」，把两套历史用法（Agent 脚手架约定与
+ * 迁入的数字人对话代码）兼容在同一个 code 字段上。
+ * <pre>
+ *   AppException("E0001")                                    Agent 侧：info 默认等于 code
+ *   AppException("E0001", cause)                             带原因的 Agent 侧用法
+ *   AppException("E0001", "智能体ID不存在")                    显式给 code 与 info
+ *   AppException("E0001", "智能体ID不存在", cause)             再带原因
+ *   AppException(ResponseCodeEnum.SESSION_NOT_FOUND, "msg")   对话侧：code 从枚举取
+ *   AppException(ResponseCodeEnum.X, "msg", cause)            对话侧 + 原因
+ *   getCode()   异常码（Agent 侧约定，等价于 code()）
+ *   getInfo()   异常信息（Agent 侧约定）
+ *   code()      异常码（对话侧约定，等价于 getCode()）
+ * </pre>
+ * 运行过程（两套读取入口对应两条出口）：
+ * <pre>
+ *   Agent 链路
+ *        ChatService: throw new AppException(ResponseCode.E0001.getCode())
+ *                |
+ *                v
+ *        AgentServiceController catch (AppException e)
+ *                | e.getCode() / e.getInfo()
+ *                v
+ *        Response{code="E0001", info="E0001", data=null}     （HTTP 200）
  *
- * 兼容两套用法（Agent 脚手架原约定 + 迁入的数字人对话代码）：
+ *   对话链路
+ *        ConversationServiceImpl: throw new AppException(ResponseCodeEnum.SESSION_NOT_FOUND, "会话不存在或已结束: s-001")
+ *                |
+ *                v
+ *        GlobalExceptionHandler.handleAppException(e)
+ *                | e.code() / e.getMessage()
+ *                v
+ *        HTTP 404 {"code":"session_not_found","message":"会话不存在或已结束: s-001","ts":...}
+ * </pre>
+ * 案例：
+ * <pre>
+ *   输入: new AppException(ResponseCodeEnum.SESSION_NOT_FOUND, "会话不存在或已结束: s-001")
+ *   处理: code="session_not_found"；super(info, cause) 把文案写进 detailMessage
+ *   输出: getCode()/code() = "session_not_found"，getInfo()/getMessage() = "会话不存在或已结束: s-001"
+ *         toString() = AppException{code='session_not_found', info='会话不存在或已结束: s-001'}
+ *         经全局处理器后: 404 {"code":"session_not_found","message":"会话不存在或已结束: s-001"}
+ *   另一例: new AppException("E0001") 的 getInfo() 与 getCode() 都是 "E0001"
+ * </pre>
+ * 设计要点：
  * <ul>
- *   <li>Agent 侧：{@code new AppException("E0001")}，读 {@code getCode()} / {@code getInfo()}</li>
- *   <li>对话侧：{@code new AppException(ResponseCodeEnum.X, "msg")} 或
- *       {@code new AppException("ot_http_400", "msg")}，读 {@code code()} / {@code getMessage()}</li>
+ *   <li>全链路只有这一种业务异常：GlobalExceptionHandler 只做「按 code 映射 HTTP 状态」，
+ *       不做「按异常类型分门别类」，所以新增一种业务失败不必新增异常类。</li>
+ *   <li>两个读取入口（getCode/getInfo 与 code/getMessage）指向同一个 code 字段：
+ *       这是为了兼容两批代码，新代码请按所在链路的既有写法走，不要两种混着读。</li>
+ *   <li>继承 RuntimeException（非受检）：调用方不必到处声明 throws，但漏 catch 就会一路冒到
+ *       全局处理器；只有真的想让它变成 HTTP 错误码时才抛它。</li>
+ *   <li>message 通过 super(info, cause) 写进 detailMessage：日志里打 getMessage() 能直接看到
+ *       可读文案，同时 cause 保留原始堆栈；toString 也刻意只打 code/info，避免日志刷一整棵堆栈。</li>
  * </ul>
- *
- * 两者共用同一个 {@code code} 字段，只是提供了两组读取入口。message 同时写进
- * {@link RuntimeException} 的 detailMessage，所以 {@code getMessage()} 也能拿到文案。
  */
 public class AppException extends RuntimeException {
 
