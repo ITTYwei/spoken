@@ -1,4 +1,4 @@
-curl https://apis.itedus.cn/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer sk-****" -d '{
+curl https://apis.itedus.cn/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer ${LLM_API_KEY:-}" -d '{
   "model": "gpt-4o",
   "messages": [
     {

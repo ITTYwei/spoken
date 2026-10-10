@@ -18,7 +18,7 @@ public class LangChain4jApiTest {
     public static void main(String[] args) {
         OpenAiChatModel model = OpenAiChatModel.builder()
                 .baseUrl("https://apis.itedus.cn/v1")
-                .apiKey("sk-****")
+                .apiKey(SecretEnv.llmApiKey())
                 .modelName("gpt-4o")
                 .build();
 
