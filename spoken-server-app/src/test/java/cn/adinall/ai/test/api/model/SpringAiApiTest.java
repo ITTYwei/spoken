@@ -1,5 +1,6 @@
 package cn.adinall.ai.test.api.model;
 
+import cn.adinall.ai.test.SecretEnv;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;

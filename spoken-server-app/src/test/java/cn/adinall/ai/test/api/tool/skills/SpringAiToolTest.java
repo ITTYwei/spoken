@@ -1,5 +1,6 @@
 package cn.adinall.ai.test.api.tool.skills;
 
+import cn.adinall.ai.test.SecretEnv;
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;

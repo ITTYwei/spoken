@@ -1,5 +1,6 @@
 package cn.adinall.ai.test.api.model;
 
+import cn.adinall.ai.test.SecretEnv;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import lombok.extern.slf4j.Slf4j;
 

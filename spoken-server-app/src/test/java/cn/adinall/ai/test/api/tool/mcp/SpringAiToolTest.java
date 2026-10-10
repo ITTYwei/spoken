@@ -70,10 +70,9 @@ public class SpringAiToolTest {
 
     @Test
     public void test_url() throws MalformedURLException {
-        // 换成真实地址时，api_key 从环境变量 BAIDU_MCP_API_KEY 取：
+        // 换真实地址时，api_key 从环境变量 BAIDU_MCP_API_KEY 取：
         // String fullUrl = "http://appbuilder.baidu.com/v2/ai_search/mcp/sse?api_key=" + SecretEnv.baiduMcpApiKey();
-
-        fullUrl = "http://127.0.0.1:9999/sse?apiKey=xxxx";
+        String fullUrl = "http://127.0.0.1:9999/sse?apiKey=xxxx";
 
         URL url = new URL(fullUrl);
 

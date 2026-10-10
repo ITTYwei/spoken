@@ -3,7 +3,6 @@ package cn.adinall.ai.config;
 import cn.adinall.ai.domain.agent.model.valobj.properties.AiAgentAutoConfigProperties;
 import cn.adinall.ai.domain.agent.model.valobj.AiAgentConfigTableVO;
 import cn.adinall.ai.domain.agent.service.IArmoryService;
-import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -36,7 +35,7 @@ import java.util.Map;
  *        | (2) tables = getTables(); tables == null || tables.isEmpty()
  *        |        |--> log "Ai Agent 自动装配：未配置任何智能体，跳过" --> return
  *        |
- *        | (3) log "Ai Agent 智能体装配 {tables JSON}"
+ *        | (3) log "Ai Agent 智能体装配 {配置摘要}"（只含非敏感字段，apiKey 已脱敏）
  *        |
  *        | (4) armoryService.acceptArmoryAgents(new ArrayList&lt;&gt;(tables.values()))
  *        |        |        RootNode -> AiApiNode -> ChatModelNode -> AgentNode
@@ -51,7 +50,7 @@ import java.util.Map;
  * <pre>
  *   输入: ai.agent.config.enabled=true,
  *         ai.agent.config.tables.demo={app-name: demo-app, agent: {agent-id: "3001"}, ...}
- *   处理: 打印配置 JSON 后 acceptArmoryAgents(["demo" 那张表])
+ *   处理: 打印配置摘要（不含密钥）后 acceptArmoryAgents(["demo" 那张表])
  *   输出: void；副作用 = 容器里多出 "3001" 这个 AiAgentRegisterVO bean。
  *         异常: 装配过程抛 AppException（如 runner.agentName 为空）--> 包装成 RuntimeException 让启动失败
  *         对照: enabled=false 时日志 "跳过"，容器里没有任何 agent bean，但应用照常启动
@@ -65,6 +64,8 @@ import java.util.Map;
  *       否则会出现「应用活着但所有对话都报 E0001」的假健康状态。</li>
  *   <li>本类只做「读开关 + 转发」，具体步骤全在领域侧装配链里，
  *       因此新增装配步骤不需要改这里。</li>
+ *   <li>启动日志只打非敏感字段（见 summarize / mask）：配置对象里含 apiKey 与
+ *       sseEndpoint 中的 api_key，整对象序列化会直接把明文密钥写进磁盘日志。</li>
  * </ul>
  */
 @Slf4j
@@ -92,12 +93,65 @@ public class AiAgentAutoConfig implements ApplicationListener<ApplicationReadyEv
             return;
         }
         try {
-            log.info("Ai Agent 智能体装配 {}", JSON.toJSONString(tables.values()));
+            // 注意：这里绝对不能 JSON.toJSONString(tables) 直接整对象打日志 ——
+            // 该对象含 module.aiApi.apiKey 和 toolMcpList[].sse.sseEndpoint 里的密钥，
+            // 一打就会把明文密钥写进磁盘日志（曾因此真实泄露）。
+            // 只打非敏感字段，apiKey 单独脱敏。
+            log.info("Ai Agent 智能体装配 {}", summarize(tables));
 
             armoryService.acceptArmoryAgents(new ArrayList<>(tables.values()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /** 拼装不含密钥的配置摘要，用于启动日志。包级可见以便单测直接验证不泄露密钥。 */
+    static String summarize(Map<String, AiAgentConfigTableVO> tables) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, AiAgentConfigTableVO> entry : tables.entrySet()) {
+            AiAgentConfigTableVO table = entry.getValue();
+            if (table == null) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append("; ");
+            }
+            sb.append("key=").append(entry.getKey()).append(", appName=").append(table.getAppName());
+
+            AiAgentConfigTableVO.Agent agent = table.getAgent();
+            if (agent != null) {
+                sb.append(", agentId=").append(agent.getAgentId());
+            }
+
+            AiAgentConfigTableVO.Module module = table.getModule();
+            if (module == null) {
+                continue;
+            }
+            AiAgentConfigTableVO.Module.AiApi aiApi = module.getAiApi();
+            if (aiApi != null) {
+                sb.append(", baseUrl=").append(aiApi.getBaseUrl())
+                        .append(", apiKey=").append(mask(aiApi.getApiKey()));
+            }
+            AiAgentConfigTableVO.Module.ChatModel chatModel = module.getChatModel();
+            if (chatModel != null) {
+                sb.append(", model=").append(chatModel.getModel());
+            }
+            if (module.getRunner() != null) {
+                sb.append(", runnerAgent=").append(module.getRunner().getAgentName());
+            }
+        }
+        return sb.toString();
+    }
+
+    /** 密钥脱敏：只留前 3 位与后 4 位，长度不足则整串打码。 */
+    static String mask(String secret) {
+        if (secret == null || secret.isEmpty()) {
+            return "(empty)";
+        }
+        if (secret.length() <= 12) {
+            return "****";
+        }
+        return secret.substring(0, 3) + "****" + secret.substring(secret.length() - 4);
     }
 
 }
