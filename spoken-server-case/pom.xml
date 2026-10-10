@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cn.adinall.ai</groupId>
+        <artifactId>spoken-server</artifactId>
+        <version>1.0</version>
+    </parent>
+
+    <artifactId>spoken-server-case</artifactId>
+    <description>编排层：用例编排与事务边界。只依赖 api 和 domain</description>
+
+    <dependencies>
+        <!-- 系统模块 -->
+        <dependency>
+            <groupId>cn.adinall.ai</groupId>
+            <artifactId>spoken-server-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.adinall.ai</groupId>
+            <artifactId>spoken-server-domain</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
+        <!-- SSE 事件流以 Flux 形式穿过用例层返回给触发层，所以需要 reactor-core 的类型 -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>spoken-server-case</finalName>
+    </build>
+
+</project>

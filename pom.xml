@@ -197,6 +197,11 @@
         <artifactId>spoken-server-trigger</artifactId>
         <version>1.0</version>
       </dependency>
+      <dependency>
+        <groupId>cn.adinall.ai</groupId>
+        <artifactId>spoken-server-case</artifactId>
+        <version>1.0</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <build>
@@ -268,5 +273,6 @@
     <module>spoken-server-trigger</module>
     <module>spoken-server-infrastructure</module>
     <module>spoken-server-types</module>
+    <module>spoken-server-case</module>
   </modules>
 </project>

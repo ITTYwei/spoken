@@ -40,6 +40,10 @@
             <groupId>cn.adinall.ai</groupId>
             <artifactId>spoken-server-domain</artifactId>
         </dependency>
+        <dependency>
+            <groupId>cn.adinall.ai</groupId>
+            <artifactId>spoken-server-case</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

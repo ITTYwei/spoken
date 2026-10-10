@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  会话档案表（training_session）。
+  列名 -> 字段名靠 map-underscore-to-camel-case 自动映射（session_id -> sessionId）。
+  这组 SQL 与 Flyway 的 V1__init.sql 是配套的：表结构不动，这里也不动。
+-->
+<mapper namespace="cn.adinall.ai.infrastructure.dao.ITrainingSessionDao">
+
+    <insert id="insert" parameterType="cn.adinall.ai.infrastructure.dao.po.TrainingSessionPO">
+        insert into training_session (id, device_id, avatar_id, model, voice, scenario_id, status, started_at, ended_at, error_message)
+        values (#{id}, #{deviceId}, #{avatarId}, #{model}, #{voice}, #{scenarioId}, #{status}, #{startedAt}, #{endedAt}, #{errorMessage})
+    </insert>
+
+    <select id="selectById" resultType="cn.adinall.ai.infrastructure.dao.po.TrainingSessionPO">
+        select id, device_id, avatar_id, model, voice, scenario_id, status, started_at, ended_at, error_message
+        from training_session
+        where id = #{id}
+    </select>
+
+    <!-- 状态变更：error_message 只在传了值时才覆盖（避免把上一次的错误信息抹掉），
+         ended_at 同理（只有终态才带值，见仓储实现）。 -->
+    <update id="updateStatus" parameterType="cn.adinall.ai.infrastructure.dao.po.TrainingSessionPO">
+        update training_session
+        <set>
+            status = #{status},
+            <if test="errorMessage != null">error_message = #{errorMessage},</if>
+            <if test="endedAt != null">ended_at = #{endedAt},</if>
+        </set>
+        where id = #{id}
+    </update>
+</mapper>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  回合表（conversation_turn）。
+  id 是数据库自增主键，插入时必须回填 —— App 的跟读评测用 turnId 关联到这条回合（assessment.turn_id）。
+-->
+<mapper namespace="cn.adinall.ai.infrastructure.dao.IConversationTurnDao">
+
+    <insert id="insert" parameterType="cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into conversation_turn (session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at)
+        values (#{sessionId}, #{seq}, #{userText}, #{assistantText}, #{audioPath}, #{latencyMs}, #{createdAt})
+    </insert>
+
+    <select id="selectById" resultType="cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO">
+        select id, session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at
+        from conversation_turn
+        where id = #{id}
+    </select>
+
+    <select id="selectBySessionIdOrderBySeqAsc" resultType="cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO">
+        select id, session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at
+        from conversation_turn
+        where session_id = #{sessionId}
+        order by seq asc
+    </select>
+
+    <select id="selectLastBySessionId" resultType="cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO">
+        select id, session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at
+        from conversation_turn
+        where session_id = #{sessionId}
+        order by seq desc
+        limit 1
+    </select>
+
+    <update id="updateAssistant" parameterType="cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO">
+        update conversation_turn
+        set assistant_text = #{assistantText},
+            latency_ms = #{latencyMs}
+        where id = #{id}
+    </update>
+</mapper>
