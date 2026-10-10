@@ -41,3 +41,18 @@ build/
 /data/
 /spoken-server-app/data/
 /spoken-server-app/.local-config
+
+
+# --- 忽略含敏感信息的 Agent 配置 ---
+spoken-server-app/src/main/resources/agent/parallel_research_app.yml
+spoken-server-app/src/main/resources/agent/test-agent.yml
+spoken-server-app/src/main/resources/agent/demo.yml
+spoken-server-app/src/main/resources/agent/only-one-agent.yml
+
+# --- 忽略含敏感信息的测试类 ---
+spoken-server-app/src/test/java/cn/adinall/ai/test/api/agent/SequentialAgentTest.java
+spoken-server-app/src/test/java/cn/adinall/ai/test/api/tool/mcp/LangChain4jToolTest.java
+spoken-server-app/src/test/java/cn/adinall/ai/test/api/tool/mcp/SpringAiToolTest.java
+
+# --- 忽略含敏感信息的领域服务 ---
+spoken-server-domain/src/main/java/cn/adinall/ai/domain/agent/service/armory/matter/mcp/client/impl/SSEToolMcpCreateService.java
