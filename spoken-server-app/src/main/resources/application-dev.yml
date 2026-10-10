@@ -84,6 +84,13 @@ spoken-ai:
       default-avatar-id: anchor
       # flashhead = 1.3B 实时（演示用）
       default-model: flashhead
+      # TTS 引擎。音色与引擎必须配套：上游音色按引擎命名空间命名
+      # （dashscope 的 Cherry/Ethan、edge 的 en-US-AriaNeural、xiaomi_mimo 的 Mia ...）。
+      # 留空 = 不发该字段，沿用上游全局默认（edge）；换回 Edge 只需把这里清空
+      # 并让场景音色退回 en-US-* 音色名。
+      # dashscope = 阿里云百炼 Qwen TTS（qwen3-tts-flash-realtime），
+      # 需要 OpenTalking 侧配好 OPENTALKING_TTS_DASHSCOPE_API_KEY。
+      default-tts-provider: dashscope
       connect-timeout-ms: 5000
       request-timeout-ms: 30000
       # 局域网直连：摘掉 stun，避免手机多网卡时等 ICE 收集多花约 7 秒

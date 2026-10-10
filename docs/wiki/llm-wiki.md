@@ -131,6 +131,55 @@
 
 ---
 
+### 2.9 智能体人格契约与分级语言策略（2026-10-10）
+
+产品目标不是「纠错」，而是让学员**愿意继续说**。两条准入要求落成了可执行的契约：
+
+- **第①层 零评判**：不许出现 wrong / incorrect / mistake / error / mispronounced，不许报分数、不许提「评测」二字；
+  要纠正就说「A more natural way to say that is ...」，**一轮最多提一条**。
+- **第②层 会追问**：每轮回复必须以**一个基于学员刚说的具体细节**的问句收尾；禁止 "And you?" 这类万能追问，
+  禁止复述学员原句。**追问率才是这套产品的质量指标**，不是「答对了」。
+
+职责切分（改行为先看这里）：
+
+```
+agent/spoken-server.yml 的 instruction       不变量：人格契约（零评判 / 必追问 / 三档行为 / TTS 格式）
+domain/.../ReplyPromptBuilder                每轮变量：场景人设 + 档位 + 语言策略 + 本轮数据
+domain/.../LearnerLevelTracker               档位判定与滞后
+infrastructure/.../InMemoryScenarioRepository 场景人设（只写「我是谁」，不写语言规则）
+```
+
+**为什么语言策略不能写进 instruction**：早先写死 "Always reply in English only"，与「低水平学员用中文陪」
+互斥 —— 模型会二选一，行为不可控。现在语言策略按档位**逐轮下发**。
+
+| 档位 | 语言策略 |
+|---|---|
+| `LOW`  | 主要用中文陪，给一句 3~6 词的英文示范让他借用，并用中文邀请他跟读 |
+| `MID`  | 简单英文短句；个别生词后面括注中文 |
+| `HIGH` | 全英文，不许出现中文字符 |
+
+档位判定（`LearnerLevelTracker.judge`）：
+
+| 信号 | 分值 |
+|---|---|
+| 完全没识别出内容 / 文本含中文 | -2 |
+| 英文词数 1~2 | -1 |
+| 英文词数 ≥ 8 | +1 |
+| 评测分 < 60 / ≥ 85 | -1 / +1 |
+
+合计 ≥1 → HIGH；≤-2 → LOW；否则 MID（门槛设 -2 是为了让「只答一句 Yes」不被打到中文档）。
+**下调立刻生效、上调需连续 2 轮，且一次只挪一档**（LOW→MID→HIGH，不许跳级）。
+真机实测演进：中文→LOW，英语×2→MID，英语×2→HIGH。
+
+**档位只影响我方措辞，绝不下发给 App 展示** —— 一旦显示就变成「系统在给我打等级」，与零评判冲突。
+初始档位取场景难度且**只往高推**：一见面就假定学员不行本身就是一种评判。
+
+场景人设这次才真正进了 agent（此前 `systemPromptHint` 只发给了我们用不到的上游 LLM，等于白写）：
+`free`=Amy、`interview`=Alex。`ConversationServiceImpl` 因此多注入了 `IScenarioRepository`。
+回复原文会打进日志（`回复已下发 ... text=...`）—— 人格契约是否被遵守只能看原文，这是它唯一的可观测手段。
+
+---
+
 ## 3. 后端代码结构（本目录）
 
 ```
@@ -194,6 +243,28 @@ spoken-server/
 19. **`GlobalExceptionHandler.statusOf` 原来的兜底是 502**：领域层主动抛的 `invalid_request`（缺参数、空音频）和 413 都会掉到 502。已补上 `INVALID_REQUEST→400`、`AUDIO_TOO_LARGE→413`，并新增 `MissingServletRequestPart/ParameterException→400`、`MaxUploadSizeExceededException→413` 两个处理器。
 
 ---
+
+20. **OpenTalking 的 `/say` 与 `/speak` 不继承建会话时的 `tts_provider`**（2026-10-10 实测）：
+    上游在这两个端点是**请求级解析**引擎的（`_effective_tts_provider(requested)`），没带就回退到**上游全局默认**
+    （当时是 `edge`）。表现：建会话传了 `tts_provider=dashscope` 也成功，但一 `/say` 就报
+    `400 invalid Edge TTS voice id: 'Cherry'`。**引擎必须每次发声请求都带**。
+    另外音色是**按引擎命名空间**命名的（`dashscope/Cherry`、`edge/en-US-AriaNeural`、`xiaomi_mimo/Mia`），
+    **换音色必须同时换 `spoken-ai.provider.opentalking.default-tts-provider`**，只换名字不换引擎解不出来。
+    百炼（dashscope）TTS 需要 `OPENTALKING_TTS_DASHSCOPE_API_KEY`，与 STT 的 Key 可共用同一个；
+    `POST /runtime-config/apply` 可热更新且**会持久化写回 OpenTalking 的 `.env`**，不必重启。
+
+21. **Android 侧 WebRTC AEC 采集缓冲是 float32，且数值已在 int16 量程内**（2026-10-10 实测，整条 STT 链路的隐形杀手）：
+    真机缓冲 1920 字节 = 480 帧 × **4 字节**，每 10ms 一次 → 48kHz 单声道（`initialize` 报 `channels=1` 是对的，
+    4 字节不是立体声而是 float32）。**两个坑叠在一起**：
+    (a) 按 int16 解 → 得到噪声，STT 永远回「没有识别出有效语音」；
+    (b) 按 float32 解但乘 32767 → 缓冲里的数值是 ±6500 量级（**已经是 int16 量程，不是 [-1,1] 归一化**），
+        乘完全部撞到 ±32767 变成**满量程方波**（电平表 RMS/Peak 都显示 0dBFS，看着像「有声音」）。
+    正确做法：**直接取整，不乘系数**。离线验证方式：把缓冲落盘，用四种解释分别灌 STT 比对，一次定案。
+
+22. **Reactor 的 `map` 不允许返回 null**：返回 null 会抛
+    `NullPointerException: The mapper ... returned a null value`，**整条 SSE 流当场断掉**，
+    后面的 `filter(Objects::nonNull)` 根本没机会执行。表现是 App 显示「连接已断开」。
+    要丢弃事件只能用**前置 `filter`**，不能在 `map` 里返回 null。
 
 ## 6. 迁移记录（spoken-ai → spoken-server）
 

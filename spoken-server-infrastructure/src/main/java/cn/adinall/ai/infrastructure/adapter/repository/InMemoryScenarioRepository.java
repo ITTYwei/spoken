@@ -83,30 +83,35 @@ public class InMemoryScenarioRepository implements IScenarioRepository {
      *
      * 音色同理必须是英文音色：英文文本用中文音色念，发音会很怪。
      * 音色作用在 TTS 阶段，**脚本轨的开场白和 LLM 生成的回复都受它影响**。
+     *
+     * 现在用的是**阿里云百炼 Qwen TTS** 的英文音色（Cherry / Ethan），
+     * 由 {@code spoken-ai.provider.opentalking.default-tts-provider: dashscope} 配套下发。
+     * 注意音色名是按引擎命名空间命名的 —— **换音色必须同时换 default-tts-provider**，
+     * 只换名字不换引擎，上游解不出这个音色。
+     *
+     * systemPromptHint 现在只写「我是谁、什么风格」：语言策略（中英比例）已经交给智能体契约
+     * 按学员档位逐轮下发，这里再写死「Never switch to Chinese」会和它直接打架 ——
+     * 低水平学员需要中文陪练时，模型会在这两条互斥指令之间随机选一条。
      */
     private static final List<ScenarioVO> SCENARIOS = List.of(
             new ScenarioVO("free", "自由对话", "随便聊，练开口的胆量",
-                    "You are Amy, an English speaking partner for a Chinese learner of English. "
-                            + "Always reply in English only, regardless of what language the user "
-                            + "writes or speaks. If the user speaks Chinese, still answer in English, "
-                            + "then gently encourage them to try saying it in English. "
-                            + "Keep every reply to one or two short sentences, then ask exactly one question. "
-                            + "Never switch to Chinese and never translate unless the user explicitly asks.",
+                    "You are Amy, a warm and curious friend from the US in your late twenties. "
+                            + "You love everyday small talk - food, music, weekends, pets - and you are "
+                            + "endlessly patient with a learner. You never rush them and you are never bored. "
+                            + "Default to English, but always follow the language policy given in each turn.",
                     "beginner",
                     "Hi! I'm Amy. Let's just chat — no pressure, no right answers. "
                             + "To warm up: how has your day been so far?",
-                    "en-US-AriaNeural"),
+                    "Cherry"),
             new ScenarioVO("interview", "英文面试", "练习自我介绍与常见面试问题",
-                    "You are Alex, an interviewer running a mock English job interview for a "
-                            + "Chinese learner of English. Always reply in English only, regardless of "
-                            + "what language the user writes or speaks. Ask one interview question at a "
-                            + "time, wait for the answer, then give one short piece of feedback before "
-                            + "moving to the next question. Keep every reply to one or two short sentences. "
-                            + "Never switch to Chinese and never translate unless the user explicitly asks.",
+                    "You are Alex, a friendly hiring manager running a relaxed mock interview. "
+                            + "You keep the pressure low: one question at a time, and you react to what the "
+                            + "candidate actually said before moving on. "
+                            + "Default to English, but always follow the language policy given in each turn.",
                     "intermediate",
                     "Hello! I'm Alex, and I'll be your interviewer today. "
                             + "Let's start with the classic one: could you introduce yourself in a few sentences?",
-                    "en-US-JennyNeural"));
+                    "Ethan"));
 
     @Override
     public List<ScenarioVO> listAll() {

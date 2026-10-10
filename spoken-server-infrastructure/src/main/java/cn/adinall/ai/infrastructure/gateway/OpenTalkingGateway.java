@@ -158,18 +158,25 @@ public class OpenTalkingGateway {
      * POST /sessions 创建会话。
      *
      * body 分两类：avatar_id 与 model 无条件发送，null 会被转成空串（调用方应已兜底）；
-     * tts_voice 与 llm_system_prompt 只在非空时才带上 —— 上游对「不传」和「传空串」的处理不一样，
-     * 空串会盖掉它的默认配置。
+     * tts_provider、tts_voice 与 llm_system_prompt 只在非空时才带上 —— 上游对「不传」和「传空串」
+     * 的处理不一样，空串会盖掉它的默认配置。
      *
+     * @param ttsProvider     TTS 引擎（edge / dashscope / ...）。**必须和 ttsVoice 配套**：
+     *                        上游音色按引擎命名空间命名，只发音色不发引擎会解不出正确的音色。
+     *                        空 = 不发，沿用上游全局默认。
      * @param ttsVoice        会话默认音色。作用在 TTS 阶段，**脚本轨和生成轨都受它影响**。
      * @param llmSystemPrompt 发给 LLM 的系统提示词，只影响生成轨。
      *                        注意上游的优先级是 {@code persona_prompt or llm_system_prompt}——
      *                        形象一旦绑了 persona，这里传的会被静默忽略。
      */
-    public JsonNode createSession(String avatarId, String model, String ttsVoice, String llmSystemPrompt) {
+    public JsonNode createSession(String avatarId, String model, String ttsProvider, String ttsVoice,
+                                  String llmSystemPrompt) {
         Map<String, Object> body = new java.util.HashMap<>();
         body.put("avatar_id", avatarId == null ? "" : avatarId);
         body.put("model", model == null ? "" : model);
+        if (ttsProvider != null && !ttsProvider.isBlank()) {
+            body.put("tts_provider", ttsProvider);
+        }
         if (ttsVoice != null && !ttsVoice.isBlank()) {
             body.put("tts_voice", ttsVoice);
         }
@@ -189,11 +196,23 @@ public class OpenTalkingGateway {
         return post("/sessions/" + providerSessionId + "/webrtc/offer", Map.of("sdp", sdp, "type", "offer"));
     }
 
-    /** POST /sessions/{id}/speak；voice 为空时不带该字段，让上游用会话默认音色。 */
-    public JsonNode speak(String providerSessionId, String text, String voice) {
-        Map<String, Object> body = voice == null || voice.isBlank()
-                ? Map.of("text", text)
-                : Map.of("text", text, "voice", voice);
+    /**
+     * POST /sessions/{id}/speak —— 文本先过上游 LLM 生成回复再念。
+     *
+     * tts_provider 必须每次都带：上游在 speak/say 里是「请求级解析」的
+     * （{@code _effective_tts_provider(requested)}），没带就回退到**上游全局默认引擎**，
+     * **不会**继承建会话时传的 tts_provider —— 实测漏发会报
+     * {@code invalid Edge TTS voice id: 'Cherry'}。
+     */
+    public JsonNode speak(String providerSessionId, String text, String voice, String ttsProvider) {
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("text", text);
+        if (voice != null && !voice.isBlank()) {
+            body.put("voice", voice);
+        }
+        if (ttsProvider != null && !ttsProvider.isBlank()) {
+            body.put("tts_provider", ttsProvider);
+        }
         return post("/sessions/" + providerSessionId + "/speak", body);
     }
 
@@ -202,12 +221,18 @@ public class OpenTalkingGateway {
      *
      * 与 {@link #speak} 的区别：speak 的 text 是「用户说的话」，上游会用 LLM 生成回复；
      * say 的 text 就是数字人要说的话，直通 TTS。
+     *
+     * tts_provider 与 speak 同理**必须每次带**：上游不会从会话继承，漏发就回退全局默认引擎。
      */
-    public JsonNode say(String providerSessionId, String text, String voice, String commandId) {
+    public JsonNode say(String providerSessionId, String text, String voice, String ttsProvider,
+                        String commandId) {
         Map<String, Object> body = new java.util.HashMap<>();
         body.put("text", text);
         if (voice != null && !voice.isBlank()) {
             body.put("voice", voice);
+        }
+        if (ttsProvider != null && !ttsProvider.isBlank()) {
+            body.put("tts_provider", ttsProvider);
         }
         if (commandId != null && !commandId.isBlank()) {
             // 上游用它做重放去重：同 id 同内容返回 duplicate，同 id 不同内容直接报错。

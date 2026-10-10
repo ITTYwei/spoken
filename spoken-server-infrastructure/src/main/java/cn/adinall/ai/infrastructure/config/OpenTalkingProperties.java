@@ -121,6 +121,18 @@ public class OpenTalkingProperties {
     /** 只暴露这些模型给 App；留空表示全部暴露。 */
     private List<String> exposeModels = new ArrayList<>(List.of("flashhead", "flashtalk"));
 
+    /**
+     * 建会话时下发的 TTS 引擎（如 edge / dashscope / xiaomi_mimo / local_cosyvoice）。
+     *
+     * 为什么必须显式下发：上游的音色是**按引擎命名空间**命名的 —— `Cherry` 属于 dashscope、
+     * `Mia` 属于 xiaomi_mimo、`en-US-AriaNeural` 属于 edge。只发 tts_voice 不发引擎，
+     * 上游会拿它自己的全局默认引擎去解这个音色名，换引擎就换不动（会报音色不存在或直接忽略）。
+     *
+     * 留空 = 不发该字段，沿用上游全局默认（现状是 edge）。这样**不影响 OpenTalking 的其它使用方**，
+     * 只有我们这边想换引擎时才在这里点一下。
+     */
+    private String defaultTtsProvider = "";
+
     public String getBaseUrl() {
         return baseUrl;
     }
@@ -207,5 +219,13 @@ public class OpenTalkingProperties {
 
     public void setExposeModels(List<String> exposeModels) {
         this.exposeModels = exposeModels;
+    }
+
+    public String getDefaultTtsProvider() {
+        return defaultTtsProvider;
+    }
+
+    public void setDefaultTtsProvider(String defaultTtsProvider) {
+        this.defaultTtsProvider = defaultTtsProvider;
     }
 }

@@ -311,14 +311,18 @@ public class OpenTalkingAvatarDriver implements IAvatarDriverPort {
                 ? props.getDefaultAvatarId() : command.avatarId();
         String model = command.model() == null || command.model().isBlank()
                 ? props.getDefaultModel() : command.model();
-        JsonNode root = gateway.createSession(avatarId, model, command.voice(), command.llmSystemPrompt());
+        // TTS 引擎同样走配置兜底：音色是按引擎命名空间命名的，两者必须配套下发（见 OpenTalkingProperties）。
+        String ttsProvider = props.getDefaultTtsProvider();
+        JsonNode root = gateway.createSession(avatarId, model, ttsProvider, command.voice(),
+                command.llmSystemPrompt());
         String sessionId = OpenTalkingJson.text(root, "session_id", "sessionId", "id");
         if (sessionId == null) {
             throw new AppException("ot_bad_response", "OpenTalking 未返回 session_id");
         }
         SessionStatusEnum status = mapCreateStatus(OpenTalkingJson.text(root, "status"));
-        log.info("OpenTalking session created: {} avatar={} model={} status={} voice={} promptChars={}",
+        log.info("OpenTalking session created: {} avatar={} model={} status={} tts={}/{} promptChars={}",
                 sessionId, avatarId, model, status,
+                ttsProvider == null || ttsProvider.isBlank() ? "(上游默认)" : ttsProvider,
                 command.voice() == null ? "(默认)" : command.voice(),
                 command.llmSystemPrompt() == null ? 0 : command.llmSystemPrompt().length());
         return new SessionHandleVO(sessionId, status);
@@ -486,16 +490,19 @@ public class OpenTalkingAvatarDriver implements IAvatarDriverPort {
     /** 让上游用文本驱动数字人说话：POST /sessions/{id}/speak。只负责下发，不等结果。 */
     @Override
     public void speak(String providerSessionId, SpeakCommandEntity command) {
-        gateway.speak(providerSessionId, command.text(), command.voice());
+        gateway.speak(providerSessionId, command.text(), command.voice(), props.getDefaultTtsProvider());
     }
 
     /**
      * 脚本轨：让数字人原样念出这段文本，不经过 LLM。
      * 上游 /say 直通 TTS —— 实测首块音频 ~1.0s；同样的文本走 /speak 要约 6.9s（还得等 LLM）。
+     *
+     * TTS 引擎每次都随请求下发：上游 speak/say 是请求级解析引擎的，不会继承建会话时传的那个。
      */
     @Override
     public void say(String providerSessionId, SayCommandEntity command) {
-        gateway.say(providerSessionId, command.text(), command.voice(), command.commandId());
+        gateway.say(providerSessionId, command.text(), command.voice(),
+                props.getDefaultTtsProvider(), command.commandId());
     }
 
     /**

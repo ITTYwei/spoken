@@ -1,6 +1,7 @@
 package cn.adinall.ai.domain.conversation.service.impl;
 
 import cn.adinall.ai.domain.conversation.adapter.port.IAvatarDriverPort;
+import cn.adinall.ai.domain.conversation.adapter.repository.IScenarioRepository;
 import cn.adinall.ai.domain.conversation.adapter.port.IConversationEventBusPort;
 import cn.adinall.ai.domain.conversation.adapter.port.IReplyGeneratorPort;
 import cn.adinall.ai.domain.conversation.adapter.repository.IConversationSessionRepository;
@@ -18,6 +19,8 @@ import cn.adinall.ai.domain.conversation.model.valobj.ConversationEventVO;
 import cn.adinall.ai.domain.conversation.model.valobj.ConversationTurnResultVO;
 import cn.adinall.ai.domain.conversation.model.valobj.EventTypeEnum;
 import cn.adinall.ai.domain.conversation.model.valobj.IceServerVO;
+import cn.adinall.ai.domain.conversation.model.valobj.LearnerLevelEnum;
+import cn.adinall.ai.domain.conversation.model.valobj.ScenarioVO;
 import cn.adinall.ai.domain.conversation.model.valobj.SessionHandleVO;
 import cn.adinall.ai.domain.conversation.model.valobj.SessionStatusEnum;
 import cn.adinall.ai.domain.conversation.service.IConversationService;
@@ -34,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -124,19 +128,31 @@ public class ConversationServiceImpl implements IConversationService {
     private final IPronunciationService pronunciationService;
     /** 回复生成（Java 接管 LLM 时用它产出数字人要说的话）。 */
     private final IReplyGeneratorPort replyGenerator;
+    /** 场景仓储：取场景人设（Amy / Alex）塞进智能体提示词 —— 否则数字人换个场景还是同一个性格。 */
+    private final IScenarioRepository scenarioRepository;
+
+    /**
+     * 每个会话一个「学习者水平」跟踪器。
+     *
+     * 放在内存里而不是聚合上：聚合是每次请求从库里重建的，装不住跨轮状态。
+     * 丢了也不致命 —— 会话本身就是短生命周期的，进程重启时上游会话也已失效。
+     */
+    private final Map<String, LearnerLevelTracker> levelTrackers = new ConcurrentHashMap<>();
 
     public ConversationServiceImpl(IAvatarDriverPort avatarDriver,
                                    IConversationSessionRepository sessionRepository,
                                    IConversationTurnRepository turnRepository,
                                    IConversationEventBusPort eventBus,
                                    IPronunciationService pronunciationService,
-                                   IReplyGeneratorPort replyGenerator) {
+                                   IReplyGeneratorPort replyGenerator,
+                                   IScenarioRepository scenarioRepository) {
         this.avatarDriver = avatarDriver;
         this.sessionRepository = sessionRepository;
         this.turnRepository = turnRepository;
         this.eventBus = eventBus;
         this.pronunciationService = pronunciationService;
         this.replyGenerator = replyGenerator;
+        this.scenarioRepository = scenarioRepository;
     }
 
     // ------------------------------------------------------------------ 建会话
@@ -383,10 +399,60 @@ public class ConversationServiceImpl implements IConversationService {
         //    失败只降级成「没有评测卡」，不阻断这轮对话。
         PronunciationAssessmentAggregate assessment = assessQuietly(sessionId, turnId, wav, text, expectedText);
 
-        // 3) 智能体生成：异步，边出边推字幕、边按句让数字人开口
-        startReply(session, turnId, text, assessment);
+        // 3) 定档位：这一轮学员说得怎么样 -> 数字人下一句该用什么语言说
+        LearnerLevelEnum level = learnerLevel(session, text, assessment);
+
+        // 4) 智能体生成：异步；拿到整段后交上游脚本轨念出来
+        startReply(session, turnId, text, assessment, level);
 
         return new ConversationTurnResultVO(text, turnId, assessment);
+    }
+
+    /**
+     * 取（并按本轮证据更新）本会话的学习者档位。
+     *
+     * 流程：没有跟踪器就按场景难度建一个 -> 用本轮识别文本与评测分判瞬时信号 -> 收进跟踪器得到稳定档位。
+     * 信号为 null（既没文本也没评测）时档位保持不变。
+     */
+    private LearnerLevelEnum learnerLevel(ConversationSessionAggregate session, String userText,
+                                          PronunciationAssessmentAggregate assessment) {
+        Double score = assessment == null || assessment.getResult() == null
+                ? null : assessment.getResult().score();
+        LearnerLevelEnum signal = LearnerLevelTracker.judge(userText, score);
+        LearnerLevelTracker tracker = levelTrackers.computeIfAbsent(session.getSessionId(),
+                id -> new LearnerLevelTracker(initialLevel(session.getScenarioId())));
+        LearnerLevelEnum level = tracker.accept(signal);
+        if (signal != null) {
+            log.info("学员档位 session={} 本轮信号={} 生效档位={} 识别字数={} 评测分={}",
+                    session.getSessionId(), signal, level,
+                    userText == null ? 0 : userText.length(), score);
+        }
+        return level;
+    }
+
+    /**
+     * 初始档位：只按场景难度**往上**推，绝不因为场景写着 beginner 就先按 LOW 开口。
+     *
+     * 一见面就假定学员不行，与「零评判」的准入要求直接冲突。真正的 LOW 只能由学员自己的表现
+     * （逃回中文、或既说不出又发不准）换出来 —— 见 {@link LearnerLevelTracker#judge}。
+     */
+    private LearnerLevelEnum initialLevel(String scenarioId) {
+        ScenarioVO scenario = scenarioRepository.findById(scenarioId);
+        String level = scenario == null ? null : scenario.level();
+        return level != null && level.equalsIgnoreCase("advanced")
+                ? LearnerLevelEnum.HIGH : LearnerLevelEnum.MID;
+    }
+
+    /**
+     * 场景人设（Amy / Alex 这类身份与风格）。
+     *
+     * agent 的 instruction 只写通用契约（零评判 / 必追问 / 分级 / TTS 格式），
+     * 「这一场我是谁」必须由场景提供 —— 否则换个场景数字人还是同一个性格，
+     * 之前这段人设只发给了上游那个我们用不到的 LLM，等于白写。
+     */
+    private String scenarioPersona(ConversationSessionAggregate session) {
+        ScenarioVO scenario = scenarioRepository.findById(session.getScenarioId());
+        return scenario == null ? null : scenario.systemPromptHint();
     }
 
     /**
@@ -445,9 +511,9 @@ public class ConversationServiceImpl implements IConversationService {
      * 在上游事件协议层面解决掉，不是用例层能绕开的。
      */
     private void startReply(ConversationSessionAggregate session, Long turnId, String userText,
-                            PronunciationAssessmentAggregate assessment) {
+                            PronunciationAssessmentAggregate assessment, LearnerLevelEnum level) {
         String sessionId = session.getSessionId();
-        String prompt = ReplyPromptBuilder.build(userText, assessment);
+        String prompt = ReplyPromptBuilder.build(userText, assessment, level, scenarioPersona(session));
         StringBuilder full = new StringBuilder();
         AtomicReference<Long> firstDeltaLatencyMs = new AtomicReference<>();
 
@@ -490,8 +556,10 @@ public class ConversationServiceImpl implements IConversationService {
                     Map.<String, Object>of("message", "下发回复失败: " + e.getMessage())));
             return;
         }
-        log.info("回复已下发 session={} turnId={} chars={} firstDeltaMs={}",
-                session.getSessionId(), turnId, text.length(), firstDeltaLatencyMs.get());
+        // 把回复原文也打进日志：人格契约（零评判 / 必追问 / 分级）是否被遵守，只能看原文判断。
+        // 回复只有一两句，日志体积可忽略；这也是这个功能唯一的线上可观测手段。
+        log.info("回复已下发 session={} turnId={} chars={} firstDeltaMs={} text={}",
+                session.getSessionId(), turnId, text.length(), firstDeltaLatencyMs.get(), text);
     }
 
     private void onReplyFailed(String sessionId, Long turnId, Throwable error) {
@@ -518,6 +586,8 @@ public class ConversationServiceImpl implements IConversationService {
             sessionRepository.update(session);
             sessionRepository.remove(sessionId);
             eventBus.remove(sessionId);
+            // 档位跟踪器是纯内存状态，会话没了就一起丢，避免 Map 随会话数无限长大
+            levelTrackers.remove(sessionId);
         });
     }
 
@@ -573,6 +643,13 @@ public class ConversationServiceImpl implements IConversationService {
             case ASSISTANT_DELTA -> session.appendAssistantDelta(asText(event.data()));
             case ASSISTANT_DONE -> {
                 String text = session.finishAssistant(asFullText(event.data()));
+                if (text == null || text.isBlank()) {
+                    // 上游的 speech.ended / speech.stopped 有时不带文本，且这一轮一个 subtitle.chunk
+                    // 都没吐过（例如刚开口就被打断）。事件仍然必须发出去 —— 客户端要靠它给
+                    // 「正在回复」的气泡收尾；但空文本属于上游语义缺口，记一条便于追。
+                    log.warn("assistant.done 无文本（上游未给整段、本轮也没有累积字幕）session={}",
+                            session.getSessionId());
+                }
                 completeAssistantTurn(session.getSessionId(), text, session.responseLatencyMs());
                 // 我们对 App 承诺 assistant.done 的 data 就是「整段文本」。
                 // 但上游不一定守约：mock 在 done 里只给最后一块增量，
