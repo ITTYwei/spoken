@@ -17,6 +17,7 @@ package cn.adinall.ai.domain.conversation.model.valobj;
  *   STT_FINAL           stt.final            用户语音的最终转写（本地也会补一条）
  *   ASSISTANT_DELTA     assistant.delta      数字人回复的流式文本增量
  *   ASSISTANT_DONE      assistant.done       数字人回复收口（data 承诺是整段文本）
+ *   ASSESSMENT_DONE     assessment.done      发音评测完成（分数 / 错词 / 韵律）
  *   TTS_START           tts.start            开始播放某段语音
  *   VIDEO_FIRST_FRAME   video.first_frame    第一帧画面已送到客户端
  *   INTERRUPTED         interrupted          打断回执（领域服务会补发一条本地事件）
@@ -52,6 +53,8 @@ public enum EventTypeEnum {
     /** 数字人回复的流式文本增量 */
     ASSISTANT_DELTA("assistant.delta"),
     ASSISTANT_DONE("assistant.done"),
+    /** 发音评测完成（data 是评测结果的对外形状） */
+    ASSESSMENT_DONE("assessment.done"),
     /** 开始播放某段语音 */
     TTS_START("tts.start"),
     /** 第一帧画面已送到客户端 */

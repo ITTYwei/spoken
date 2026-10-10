@@ -156,6 +156,28 @@ public interface IAvatarDriverPort {
     }
 
     /**
+     * 上传一段音频（WAV 字节）做服务端识别，返回识别文本；**不触发数字人播报**。
+     *
+     * 与 {@link #transcribeAudio} 的分工（这是「Java 接管 LLM」之后新增的能力）：
+     * <ul>
+     *   <li>{@code transcribeAudio} 是**老链路**：让上游用它的 WebRTC 上行缓冲，识别完**顺手触发
+     *       STT→LLM→TTS 整条流水线**（数字人自己开口）。所以它不能用来「只要文本」。</li>
+     *   <li>{@code transcribeUploaded} 是**新链路**：音频由我方上传（App 截的 AEC3 后 PCM，
+     *       Java 封成 WAV），只换回文本，不说话。拿到文本之后由 Java 去评测、跑 agent，
+     *       再把结果经 {@link #say} 交给上游渲染。</li>
+     * </ul>
+     *
+     * 只有 capabilities().upstreamAudio() 为 true 的实现才需要给出真实结果。
+     * 默认直接拒绝 —— 宁可在调用点报一句看得懂的错，也不要静默退化。
+     *
+     * @param wav 16kHz 单声道 16bit 的 WAV 字节（含 44 字节头；上游用 ffmpeg 解码，别传裸 PCM）
+     */
+    default String transcribeUploaded(String providerSessionId, byte[] wav) {
+        throw new AppException(ResponseCodeEnum.UPSTREAM_AUDIO_UNSUPPORTED,
+                "当前数字人后端（" + id() + "）不支持上传音频识别");
+    }
+
+    /**
      * 打断当前正在说的内容。
      */
     void interrupt(String providerSessionId);

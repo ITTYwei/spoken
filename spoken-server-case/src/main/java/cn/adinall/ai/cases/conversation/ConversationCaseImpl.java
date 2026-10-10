@@ -1,6 +1,7 @@
 package cn.adinall.ai.cases.conversation;
 
 import cn.adinall.ai.api.dto.CreateConversationSessionRequestDTO;
+import cn.adinall.ai.api.dto.ConversationTurnResponseDTO;
 import cn.adinall.ai.api.dto.IceServerResponseDTO;
 import cn.adinall.ai.api.dto.OpeningResponseDTO;
 import cn.adinall.ai.api.dto.SayRequestDTO;
@@ -13,8 +14,11 @@ import cn.adinall.ai.domain.conversation.model.entity.SayCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.SpeakCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.StartConversationCommandEntity;
 import cn.adinall.ai.domain.conversation.model.valobj.EventTypeEnum;
+import cn.adinall.ai.domain.conversation.model.valobj.ConversationTurnResultVO;
+import cn.adinall.ai.domain.conversation.model.valobj.LlmOwnerEnum;
 import cn.adinall.ai.domain.conversation.model.valobj.SessionStatusEnum;
 import cn.adinall.ai.domain.conversation.service.IConversationService;
+import cn.adinall.ai.cases.pronunciation.PronunciationAssembler;
 import cn.adinall.ai.domain.shared.adapter.port.IAppConfigPort;
 import cn.adinall.ai.domain.conversation.model.valobj.ScenarioVO;
 import cn.adinall.ai.domain.conversation.adapter.repository.IScenarioRepository;
@@ -278,8 +282,18 @@ public class ConversationCaseImpl implements IConversationCase {
     }
 
     @Override
-    public String voice(String sessionId, byte[] pcm, int sampleRate) {
-        return conversationService.transcribeAndRecord(sessionId, pcm, sampleRate);
+    public ConversationTurnResponseDTO voice(String sessionId, byte[] pcm, int sampleRate, String expectedText) {
+        // llm-owner 开关：agent 走新链路（评测 + agent + 按句 /say），opentalking 退回老链路。
+        if (appConfig.llmOwner() == LlmOwnerEnum.OPENTALKING) {
+            String text = conversationService.transcribeAndRecord(sessionId, pcm, sampleRate);
+            return new ConversationTurnResponseDTO(text, null, null);
+        }
+        ConversationTurnResultVO result =
+                conversationService.converseTurn(sessionId, pcm, sampleRate, expectedText);
+        return new ConversationTurnResponseDTO(
+                result.userText(),
+                result.turnId(),
+                result.assessment() == null ? null : PronunciationAssembler.toResponse(result.assessment()));
     }
 
     @Override

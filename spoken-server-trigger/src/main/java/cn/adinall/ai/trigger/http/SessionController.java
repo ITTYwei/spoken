@@ -1,6 +1,7 @@
 package cn.adinall.ai.trigger.http;
 
 import cn.adinall.ai.api.dto.CreateConversationSessionRequestDTO;
+import cn.adinall.ai.api.dto.ConversationTurnResponseDTO;
 import cn.adinall.ai.api.dto.IceServerResponseDTO;
 import cn.adinall.ai.api.dto.OpeningResponseDTO;
 import cn.adinall.ai.api.dto.SayRequestDTO;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
@@ -191,13 +193,14 @@ public class SessionController {
      * 返回识别文本，App 拿它收掉「正在识别」的转圈；用户台词本身会走 SSE 的 stt.final。
      */
     @PostMapping(value = "/{sessionId}/voice", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public Map<String, Object> voice(@PathVariable String sessionId,
-                                     @RequestHeader(value = "X-Sample-Rate", defaultValue = "16000") int sampleRate,
-                                     @RequestBody(required = false) byte[] pcm) {
-        // 空 body 是**正常用法**，不是错误：意思是「用服务端那份过了 AEC3 的音频」。
+    public ConversationTurnResponseDTO voice(@PathVariable String sessionId,
+                                             @RequestHeader(value = "X-Sample-Rate", defaultValue = "16000") int sampleRate,
+                                             @RequestParam(value = "expectedText", required = false) String expectedText,
+                                             @RequestBody(required = false) byte[] pcm) {
+        // 空 body 是**老链路**的正常用法（表示「用服务端那份过了 AEC3 的音频」）；
+        // 新链路（llm-owner=agent）需要 App 把 AEC 后的裸 PCM 放进 body。
         byte[] payload = (pcm == null || pcm.length == 0) ? null : pcm;
-        String text = conversationCase.voice(sessionId, payload, sampleRate);
-        return Map.of("text", text);
+        return conversationCase.voice(sessionId, payload, sampleRate, expectedText);
     }
 
     /** 打断当前这句。 */

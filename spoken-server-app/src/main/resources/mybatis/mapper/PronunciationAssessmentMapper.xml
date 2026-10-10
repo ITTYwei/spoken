@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  跟读评测记录表（pronunciation_assessment）。
+  id 是数据库自增主键，插入时必须回填 —— 响应里的 assessmentId 就是它，App 拿它做记录列表 key。
+  result_json 存完整评测结果（错词明细、韵律曲线、音素向量），其余标量列是为了能直接 SQL 查询与排序。
+-->
+<mapper namespace="cn.adinall.ai.infrastructure.dao.IPronunciationAssessmentDao">
+
+    <insert id="insert" parameterType="cn.adinall.ai.infrastructure.dao.po.PronunciationAssessmentPO"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into pronunciation_assessment
+            (session_id, turn_id, expected_text, lang, content_type, audio_bytes,
+             score, transcribe, word_error_rate, phoneme_error_rate, acoustic_distance,
+             feedback, result_json, latency_ms, created_at)
+        values
+            (#{sessionId}, #{turnId}, #{expectedText}, #{lang}, #{contentType}, #{audioBytes},
+             #{score}, #{transcribe}, #{wordErrorRate}, #{phonemeErrorRate}, #{acousticDistance},
+             #{feedback}, #{resultJson}, #{latencyMs}, #{createdAt})
+    </insert>
+
+    <!-- 列顺序与 PO 字段靠 map-underscore-to-camel-case 自动对应，不写 resultMap -->
+    <sql id="allColumns">
+        id, session_id, turn_id, expected_text, lang, content_type, audio_bytes,
+        score, transcribe, word_error_rate, phoneme_error_rate, acoustic_distance,
+        feedback, result_json, latency_ms, created_at
+    </sql>
+
+    <select id="selectById" resultType="cn.adinall.ai.infrastructure.dao.po.PronunciationAssessmentPO">
+        select <include refid="allColumns"/>
+        from pronunciation_assessment
+        where id = #{id}
+    </select>
+
+    <select id="selectBySessionIdDesc" resultType="cn.adinall.ai.infrastructure.dao.po.PronunciationAssessmentPO">
+        select <include refid="allColumns"/>
+        from pronunciation_assessment
+        where session_id = #{sessionId}
+        order by created_at desc, id desc
+    </select>
+
+    <select id="selectByTurnId" resultType="cn.adinall.ai.infrastructure.dao.po.PronunciationAssessmentPO">
+        select <include refid="allColumns"/>
+        from pronunciation_assessment
+        where turn_id = #{turnId}
+        order by created_at desc, id desc
+    </select>
+</mapper>

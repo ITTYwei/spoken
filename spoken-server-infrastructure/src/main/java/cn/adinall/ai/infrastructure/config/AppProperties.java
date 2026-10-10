@@ -1,5 +1,6 @@
 package cn.adinall.ai.infrastructure.config;
 
+import cn.adinall.ai.domain.conversation.model.valobj.LlmOwnerEnum;
 import cn.adinall.ai.domain.shared.adapter.port.IAppConfigPort;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -76,6 +77,24 @@ public class AppProperties implements IAppConfigPort {
 
     /** 允许跨域的来源，供 WebCorsConfiguration 装配 CORS 规则。 */
     private List<String> corsAllowedOrigins = new ArrayList<>(List.of("*"));
+
+    /**
+     * 谁产出数字人的回答文本（spoken-ai.llm-owner）：agent（默认）| opentalking。
+     *
+     * 存字符串而不是枚举，是为了让 Spring 的松绑定直接把 yml 里的字面量注进来；
+     * 解析成 {@link LlmOwnerEnum} 的动作放在 {@link #llmOwner()} 里，
+     * 写错值时回落到 AGENT 而不是让应用起不来。
+     */
+    private String llmOwner = "agent";
+
+    @Override
+    public LlmOwnerEnum llmOwner() {
+        return LlmOwnerEnum.of(llmOwner);
+    }
+
+    public void setLlmOwner(String llmOwner) {
+        this.llmOwner = llmOwner;
+    }
 
     @Override
     public int maxSessionsPerDevice() {

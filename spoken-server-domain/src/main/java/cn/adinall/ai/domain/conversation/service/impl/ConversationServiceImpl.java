@@ -2,20 +2,26 @@ package cn.adinall.ai.domain.conversation.service.impl;
 
 import cn.adinall.ai.domain.conversation.adapter.port.IAvatarDriverPort;
 import cn.adinall.ai.domain.conversation.adapter.port.IConversationEventBusPort;
+import cn.adinall.ai.domain.conversation.adapter.port.IReplyGeneratorPort;
 import cn.adinall.ai.domain.conversation.adapter.repository.IConversationSessionRepository;
 import cn.adinall.ai.domain.conversation.adapter.repository.IConversationTurnRepository;
 import cn.adinall.ai.domain.conversation.model.aggregate.ConversationSessionAggregate;
 import cn.adinall.ai.domain.conversation.model.aggregate.ConversationTurnAggregate;
+import cn.adinall.ai.domain.conversation.model.aggregate.PronunciationAssessmentAggregate;
+import cn.adinall.ai.domain.conversation.model.entity.AssessPronunciationCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.CreateSessionCommandEntity;
+import cn.adinall.ai.domain.conversation.model.entity.GenerateReplyCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.SayCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.SpeakCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.StartConversationCommandEntity;
 import cn.adinall.ai.domain.conversation.model.valobj.ConversationEventVO;
+import cn.adinall.ai.domain.conversation.model.valobj.ConversationTurnResultVO;
 import cn.adinall.ai.domain.conversation.model.valobj.EventTypeEnum;
 import cn.adinall.ai.domain.conversation.model.valobj.IceServerVO;
 import cn.adinall.ai.domain.conversation.model.valobj.SessionHandleVO;
 import cn.adinall.ai.domain.conversation.model.valobj.SessionStatusEnum;
 import cn.adinall.ai.domain.conversation.service.IConversationService;
+import cn.adinall.ai.domain.conversation.service.IPronunciationService;
 import cn.adinall.ai.types.enums.ResponseCodeEnum;
 import cn.adinall.ai.types.exception.AppException;
 import org.slf4j.Logger;
@@ -24,9 +30,11 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 会话领域服务实现（「会话编排」的心脏，只做业务、不做等待）
@@ -112,15 +120,23 @@ public class ConversationServiceImpl implements IConversationService {
     private final IConversationSessionRepository sessionRepository;
     private final IConversationTurnRepository turnRepository;
     private final IConversationEventBusPort eventBus;
+    /** 发音评测（新链路里插在 STT 与 LLM 之间的一步）。 */
+    private final IPronunciationService pronunciationService;
+    /** 回复生成（Java 接管 LLM 时用它产出数字人要说的话）。 */
+    private final IReplyGeneratorPort replyGenerator;
 
     public ConversationServiceImpl(IAvatarDriverPort avatarDriver,
                                    IConversationSessionRepository sessionRepository,
                                    IConversationTurnRepository turnRepository,
-                                   IConversationEventBusPort eventBus) {
+                                   IConversationEventBusPort eventBus,
+                                   IPronunciationService pronunciationService,
+                                   IReplyGeneratorPort replyGenerator) {
         this.avatarDriver = avatarDriver;
         this.sessionRepository = sessionRepository;
         this.turnRepository = turnRepository;
         this.eventBus = eventBus;
+        this.pronunciationService = pronunciationService;
+        this.replyGenerator = replyGenerator;
     }
 
     // ------------------------------------------------------------------ 建会话
@@ -332,6 +348,157 @@ public class ConversationServiceImpl implements IConversationService {
         eventBus.publish(sessionId, ConversationEventVO.of(EventTypeEnum.STT_FINAL,
                 Map.<String, Object>of("text", text, "turnId", turnId)));
         return text;
+    }
+
+    // ------------------------------------------------------ 一轮对话（Java 接管 LLM）
+
+    /**
+     * 一轮完整对话：上传音频 -> 上游只识别 -> 发音评测 -> 智能体生成 -> 按句 /say。
+     *
+     * 同步段（本方法返回）只做「识别 + 落库 + 评测」这三件确定且快的事；智能体生成是流式的，
+     * 走 {@link #startReply} 在后台订阅，边出边推 SSE、边按句让数字人开口。
+     */
+    @Override
+    public ConversationTurnResultVO converseTurn(String sessionId, byte[] pcm, int sampleRate,
+                                                 String expectedText) {
+        ConversationSessionAggregate session = requireSession(sessionId);
+        session.requireOpen();
+        if (!avatarDriver.capabilities().upstreamAudio()) {
+            throw new AppException(ResponseCodeEnum.UPSTREAM_AUDIO_UNSUPPORTED,
+                    "当前数字人后端不支持上传音频识别，请改用文字输入");
+        }
+
+        // App 上传的是裸 PCM（无头），下游两个消费者都按文件解，所以这里统一封一次 WAV。
+        byte[] wav = WavEncoder.toWav(pcm, sampleRate);
+
+        // 1) 识别：只换文本，不说话（老链路会让上游接着 LLM+TTS，那条我们已经不用了）
+        String text = avatarDriver.transcribeUploaded(session.getProviderSessionId(), wav);
+        session.noteUserSpeechEnded();
+        session.lastUserText(text);
+        Long turnId = appendUserTurn(sessionId, text).getId();
+        eventBus.publish(sessionId, ConversationEventVO.of(EventTypeEnum.STT_FINAL,
+                Map.<String, Object>of("text", text, "turnId", turnId)));
+
+        // 2) 评测：参照文本优先用 App 给的题面，没有就用刚识别出来的文本（自由对话场景）。
+        //    失败只降级成「没有评测卡」，不阻断这轮对话。
+        PronunciationAssessmentAggregate assessment = assessQuietly(sessionId, turnId, wav, text, expectedText);
+
+        // 3) 智能体生成：异步，边出边推字幕、边按句让数字人开口
+        startReply(session, turnId, text, assessment);
+
+        return new ConversationTurnResultVO(text, turnId, assessment);
+    }
+
+    /**
+     * 评测并落库；失败只记 warn、返回 null —— 评测是可失败的一环（上游抖动、音频太短），
+     * 它失败不该让整轮对话失败。
+     */
+    private PronunciationAssessmentAggregate assessQuietly(String sessionId, Long turnId, byte[] wav,
+                                                           String text, String expectedText) {
+        String reference = (expectedText == null || expectedText.isBlank()) ? text : expectedText;
+        if (reference == null || reference.isBlank()) {
+            return null;
+        }
+        try {
+            PronunciationAssessmentAggregate assessment = pronunciationService.assess(sessionId, turnId,
+                    new AssessPronunciationCommandEntity(wav, "turn.wav", "audio/wav", reference, null));
+            // 评测结果既进 agent 提示词，也推一条 assessment.done 给 SSE（推送式客户端 / 观测用）。
+            // data 是「评测聚合的对外信封」，与 HTTP 响应里的 assessment 字段同源。
+            eventBus.publish(sessionId, ConversationEventVO.of(EventTypeEnum.ASSESSMENT_DONE,
+                    assessmentData(assessment)));
+            return assessment;
+        } catch (Exception e) {
+            log.warn("发音评测失败（不影响本轮对话）session={} turnId={}: {}", sessionId, turnId, e.toString());
+            return null;
+        }
+    }
+
+    /** 评测结果的 SSE 信封：只带 UI 需要的东西，不带韵律曲线与音素向量（那是 HTTP 全量响应的职责）。 */
+    private static Map<String, Object> assessmentData(PronunciationAssessmentAggregate assessment) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("assessmentId", assessment.getId());
+        data.put("turnId", assessment.getTurnId());
+        if (assessment.getResult() != null) {
+            data.put("score", assessment.getResult().score());
+            data.put("transcribe", assessment.getResult().transcribe());
+            data.put("wordErrorRate", assessment.getResult().wordErrorRate());
+            data.put("phonemeErrorRate", assessment.getResult().phonemeErrorRate());
+            data.put("errorCount", assessment.getResult().errorCount());
+            data.put("errors", assessment.getResult().errors());
+            data.put("feedback", assessment.getResult().feedback());
+        }
+        return data;
+    }
+
+    /**
+     * 异步跑智能体生成回复，拿到整段后一次性交给上游脚本轨（/say）念出来。
+     *
+     * 为什么是「整段一次 /say」，而不是按句边生成边下发：
+     * 上游每收到一次 /say 就会发一轮 speech.started / subtitle.chunk / speech.ended，
+     * 而 App 的字幕与「正在播放」状态全挂在这套事件上。逐句下发会造成三个后果：
+     *   1. 字幕被上游复述一遍（和我方增量重复，App 会把回复显示两遍）；
+     *   2. 播放状态每句闪一次；
+     *   3. 回合落库只留最后一句（每次 speech.ended 都会覆盖 assistantText）。
+     * 所以这里只做「取文本 + 一次下发」，字幕仍由上游驱动 —— 与迁移前的行为一致。
+     *
+     * 代价：首句音频要等模型写完整段（比逐句下发慢）。要追这个延迟得先把上面三个问题
+     * 在上游事件协议层面解决掉，不是用例层能绕开的。
+     */
+    private void startReply(ConversationSessionAggregate session, Long turnId, String userText,
+                            PronunciationAssessmentAggregate assessment) {
+        String sessionId = session.getSessionId();
+        String prompt = ReplyPromptBuilder.build(userText, assessment);
+        StringBuilder full = new StringBuilder();
+        AtomicReference<Long> firstDeltaLatencyMs = new AtomicReference<>();
+
+        replyGenerator.generate(new GenerateReplyCommandEntity(sessionId, prompt))
+                .publishOn(Schedulers.boundedElastic())  // /say 是阻塞 HTTP，别占 SSE 事件线程
+                .subscribe(
+                        delta -> onReplyDelta(session, delta, full, firstDeltaLatencyMs),
+                        error -> onReplyFailed(sessionId, turnId, error),
+                        () -> onReplyDone(session, turnId, full, firstDeltaLatencyMs));
+    }
+
+    private void onReplyDelta(ConversationSessionAggregate session, String delta, StringBuilder full,
+                              AtomicReference<Long> firstDeltaLatencyMs) {
+        if (delta == null || delta.isEmpty()) {
+            return;
+        }
+        if (firstDeltaLatencyMs.get() == null) {
+            // 首字延迟：从用户说完到模型吐出第一个字，这是「听得快不快」的真实体感。
+            firstDeltaLatencyMs.set(session.responseLatencyMs());
+        }
+        full.append(delta);
+    }
+
+    /** 模型写完了：整段下发给上游念；字幕、播放状态与回合落库都交给上游那套事件。 */
+    private void onReplyDone(ConversationSessionAggregate session, Long turnId, StringBuilder full,
+                             AtomicReference<Long> firstDeltaLatencyMs) {
+        String text = full.toString().trim();
+        if (text.isEmpty()) {
+            // 模型一个字都没回（例如被内容策略拦了）：什么都不下发，别让数字人念空气。
+            log.warn("智能体没有产出文本，本轮不下发 session={} turnId={}", session.getSessionId(), turnId);
+            return;
+        }
+        try {
+            avatarDriver.say(session.getProviderSessionId(),
+                    new SayCommandEntity(text, session.getVoice(),
+                            session.getSessionId() + ":reply:" + turnId));
+        } catch (Exception e) {
+            log.warn("下发回复失败 session={} turnId={}: {}", session.getSessionId(), turnId, e.toString());
+            eventBus.publish(session.getSessionId(), ConversationEventVO.of(EventTypeEnum.ERROR,
+                    Map.<String, Object>of("message", "下发回复失败: " + e.getMessage())));
+            return;
+        }
+        log.info("回复已下发 session={} turnId={} chars={} firstDeltaMs={}",
+                session.getSessionId(), turnId, text.length(), firstDeltaLatencyMs.get());
+    }
+
+    private void onReplyFailed(String sessionId, Long turnId, Throwable error) {
+        // 只推一条 error 事件告知客户端，不把会话打成 ERROR：一次回复失败不等于会话不可用。
+        log.error("生成回复失败 session={} turnId={}", sessionId, turnId, error);
+        eventBus.publish(sessionId, ConversationEventVO.of(EventTypeEnum.ERROR,
+                Map.<String, Object>of("message", "生成回复失败: " + error.getMessage())));
     }
 
     /**

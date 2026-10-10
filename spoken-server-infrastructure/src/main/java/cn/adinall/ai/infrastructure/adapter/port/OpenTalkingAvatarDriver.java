@@ -525,6 +525,26 @@ public class OpenTalkingAvatarDriver implements IAvatarDriverPort {
     }
 
     /**
+     * 上传一段 WAV 做识别，**不触发数字人播报**。
+     *
+     * 流程：gateway.transcribeUploaded(...) 走 HTTP multipart POST /sessions/{id}/transcribe
+     * （上游那条路由是「只识别不说话」的）-> 结果 trim ->
+     * 空文本时抛 ot_voice_empty（翻译成用户能看懂的一句话：没有识别出有效语音，请再说一遍）。
+     *
+     * 与 {@link #transcribeAudio} 的分工见 IAvatarDriverPort 的同名方法：
+     * 那条是「上游自己 STT+LLM+TTS 一条龙」，本条只换文本、说话权在我方。
+     */
+    @Override
+    public String transcribeUploaded(String providerSessionId, byte[] wav) {
+        String text = gateway.transcribeUploaded(providerSessionId, wav);
+        String trimmed = text == null ? "" : text.trim();
+        if (trimmed.isEmpty()) {
+            throw new AppException(ResponseCodeEnum.NO_SPEECH, "没有识别出有效语音，请再说一遍");
+        }
+        return trimmed;
+    }
+
+    /**
      * 关闭上游会话并释放 GPU 槽位。
      * 流程：DELETE /sessions/{id}；只捕获 AppException 并降级成 debug 日志 ——
      * 单槽调度下「已经关掉了」是常见且正常的情况，不该因此让 App 的关会话请求失败；

@@ -277,6 +277,40 @@ public class OpenTalkingGateway {
         return text;
     }
 
+    /**
+     * 上传一段 WAV 做识别，**不触发数字人播报**（POST /sessions/{id}/transcribe）。
+     *
+     * 与 {@link #transcribeAudio} 的关键区别：那条（不传 file 时）会在识别完成后继续跑
+     * LLM→TTS→渲染，数字人会自己开口；本条只换回文本，说话与否由我方决定。
+     * 「Java 接管 LLM」这条链路上必须先拿到文本（去评测、去跑 agent），所以走这条。
+     *
+     * @param wav 16kHz 单声道 16bit 的 WAV 字节（含 44 字节头）
+     */
+    public String transcribeUploaded(String providerSessionId, byte[] wav) {
+        if (wav == null || wav.length == 0) {
+            throw new AppException("invalid_audio", "音频为空");
+        }
+        String boundary = "----SpokenAi" + java.util.UUID.randomUUID().toString().replace("-", "");
+        HttpRequest request = request("/sessions/" + providerSessionId + "/transcribe")
+                .timeout(Duration.ofMillis(Math.max(props.getRequestTimeoutMs(), props.getVoiceTimeoutMs())))
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .POST(HttpRequest.BodyPublishers.ofByteArray(multipartFile(boundary, wav)))
+                .build();
+        JsonNode response = send(request);
+        String error = OpenTalkingJson.text(response, "error", "detail");
+        if (error != null) {
+            throw new AppException("ot_transcribe_rejected", error);
+        }
+        String text = OpenTalkingJson.text(response, "text");
+        if (text == null) {
+            // 上游回 {"text": ""}（或压根没有 text 字段）= 这段音频里没有可识别的人声。
+            // 这是**正常结果**，不是上游故障：AEC 把数字人的声音消掉之后，剩下的就是静音。
+            // 判成 502 会让客户端把「你没说话」显示成「服务器挂了」——真机上已经出现过这种误报。
+            throw new AppException(ResponseCodeEnum.NO_SPEECH, "没有识别出有效语音，请再说一遍");
+        }
+        return text;
+    }
+
     private static byte[] pcmToWav(byte[] pcm, int sampleRate) {
         ByteBuffer header = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN);
         header.put(new byte[]{'R', 'I', 'F', 'F'});

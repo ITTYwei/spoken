@@ -13,6 +13,9 @@ package cn.adinall.ai.types.enums;
  *   UPSTREAM_AUDIO_UNSUPPORTED "upstream_audio_unsupported" 后端不支持语音上行      -> HTTP 502
  *   SCRIPTED_SAY_UNSUPPORTED   "scripted_say_unsupported"   后端不支持脚本轨直念     -> HTTP 502
  *   PROVIDER_UNAVAILABLE       "provider_unavailable"       连不上上游数字人服务     -> HTTP 503
+ *   NO_SPEECH                  "no_speech"                 音频里没有人声（正常）    -> HTTP 400
+ *   PRONUNCIATION_FAILED       "pronunciation_failed"       评测没拿到可用结果       -> HTTP 502
+ *   AUDIO_TOO_LARGE            "audio_too_large"            上传音频超过上限         -> HTTP 413
  *   INVALID_REQUEST            "invalid_request"           入参不合法              -> HTTP 400
  *   NOT_FOUND                  "not_found"                 静态资源/路径不存在      -> HTTP 404
  *   INTERNAL_ERROR             "internal_error"            兜底                    -> HTTP 500
@@ -78,8 +81,15 @@ public enum ResponseCodeEnum {
     /** 用了一个不支持脚本轨直念的后端实现；用例层应改用触发词让 LLM 生成 -> HTTP 502 */
     SCRIPTED_SAY_UNSUPPORTED("scripted_say_unsupported", "当前数字人后端不支持脚本轨直念"),
 
+    /** 上传的音频里没有可识别的人声 —— **正常结果，不是故障**（AEC 把数字人的声音消掉后剩下的就是静音）-> HTTP 400 */
+    NO_SPEECH("no_speech", "没有识别出有效语音"),
     /** 连不上上游数字人服务（网络层失败，不是业务失败）-> HTTP 503 */
     PROVIDER_UNAVAILABLE("provider_unavailable", "数字人服务不可用"),
+
+    /** 发音评测跑完了但没拿到可用结果（上游返回了空/非法内容）-> HTTP 502 */
+    PRONUNCIATION_FAILED("pronunciation_failed", "发音评测失败"),
+    /** 上传的音频超过上游可接受的大小上限 -> HTTP 413 */
+    AUDIO_TOO_LARGE("audio_too_large", "音频文件过大"),
 
     /** 入参不合法 -> HTTP 400 */
     INVALID_REQUEST("invalid_request", "请求参数不合法"),

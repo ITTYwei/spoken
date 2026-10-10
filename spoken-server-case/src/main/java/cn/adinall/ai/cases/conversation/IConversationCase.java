@@ -1,6 +1,7 @@
 package cn.adinall.ai.cases.conversation;
 
 import cn.adinall.ai.api.dto.CreateConversationSessionRequestDTO;
+import cn.adinall.ai.api.dto.ConversationTurnResponseDTO;
 import cn.adinall.ai.api.dto.IceServerResponseDTO;
 import cn.adinall.ai.api.dto.OpeningResponseDTO;
 import cn.adinall.ai.api.dto.SayRequestDTO;
@@ -105,9 +106,18 @@ public interface IConversationCase {
     OpeningResponseDTO opening(String sessionId);
 
     /**
-     * 语音上行（裸 PCM / s16le 单声道）。返回识别文本；用户台词也会走 SSE 的 stt.final。
+     * 语音上行（裸 PCM / s16le 单声道）。
+     *
+     * 返回值随配置 {@code spoken-ai.llm-owner} 走两条路：
+     * <ul>
+     *   <li>{@code agent}（默认）—— 上传音频 -> 上游只识别 -> 发音评测 -> 智能体流式回答，
+     *       返回 {@code text + turnId + assessment}；回答文本从 SSE 的 assistant.delta 来；</li>
+     *   <li>{@code opentalking} —— 老链路（音频交上游一条龙），只返回 {@code text}。</li>
+     * </ul>
+     *
+     * @param expectedText 跟读题面；为空时用识别出的文本当评测参照（自由对话场景）
      */
-    String voice(String sessionId, byte[] pcm, int sampleRate);
+    ConversationTurnResponseDTO voice(String sessionId, byte[] pcm, int sampleRate, String expectedText);
 
     /** 打断当前这句。 */
     void interrupt(String sessionId);

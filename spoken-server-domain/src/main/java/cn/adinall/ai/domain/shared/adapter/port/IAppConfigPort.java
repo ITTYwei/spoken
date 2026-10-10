@@ -1,5 +1,7 @@
 package cn.adinall.ai.domain.shared.adapter.port;
 
+import cn.adinall.ai.domain.conversation.model.valobj.LlmOwnerEnum;
+
 import java.util.List;
 
 /**
@@ -66,6 +68,21 @@ public interface IAppConfigPort {
      * 当前实现是「单设备单会话」（建会话前无条件关掉旧会话），这个值留作后续做多会话调度时使用。
      */
     int maxSessionsPerDevice();
+
+    /**
+     * 谁产出数字人的回答文本（对应配置 spoken-ai.llm-owner）。
+     *
+     * <p>这是「评测能不能插进对话链路」的总开关：
+     * <ul>
+     *   <li>{@link LlmOwnerEnum#AGENT}（默认）—— Java 自己跑智能体，于是能在 LLM 之前插入发音评测
+     *       （用户语音 → 评测 → 拼进提示词 → agent 流式 → 按句 /say）；</li>
+     *   <li>{@link LlmOwnerEnum#OPENTALKING} —— 把音频交给上游一条龙，行为与迁移前一致。</li>
+     * </ul>
+     *
+     * 放在配置端口而不是写死在用例里：这两条路径要能随时切换做对比与降级，
+     * 而「当前用哪条」是部署决策，不是业务规则。
+     */
+    LlmOwnerEnum llmOwner();
 
     /** 设备多久没任何事件就认为会话已死、可被回收（毫秒）。同样暂未启用回收线程。 */
     long sessionIdleTimeoutMs();

@@ -32,6 +32,15 @@ spring:
       # 真正的保活靠用例层 15s 一次的心跳事件。
       request-timeout: 1800000
 
+  servlet:
+    multipart:
+      # 跟读评测走 multipart 上传录音。Spring Boot 默认单文件上限只有 1MB / 整个请求 10MB，
+      # 一段十几秒的 wav 就能顶到，不改这里会在 Controller 之前就抛
+      # MaxUploadSizeExceededException（表现是 500 而不是我们的 413）。
+      # 这里放宽到 16MB，与 spoken-ai.provider.openpronounce.max-audio-bytes 对齐。
+      max-file-size: 16MB
+      max-request-size: 20MB
+
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -84,6 +93,34 @@ spoken-ai:
         - flashtalk
       fallback-avatar-ids:
         - anchor
+
+    # 发音评测后端：openpronounce（GPU 机 docker 容器，宿主机 8070 -> 容器 8000）。
+    # 换评测后端只改 pronounce 这一行（新写一个 IPronunciationPort 实现 + 一个同结构配置类）。
+    pronounce: openpronounce
+    openpronounce:
+      base-url: http://172.18.0.102:8070
+      default-lang: en
+      connect-timeout-ms: 5000
+      request-timeout-ms: 60000
+      # 评测是重活：两个 Wav2Vec2 模型 + DTW。本机 GPU（RTX 5090）实测约 0.2s，
+      # 但容器一旦退回 OPENPRONOUNCE_DEVICE=cpu 会慢一两个数量级，所以单独给一个宽超时。
+      assess-timeout-ms: 180000
+      # 与 spring.servlet.multipart.max-file-size 对齐：本地先挡，省掉一次注定失败的 15MB 上传。
+      max-audio-bytes: 16777216
+      # 上游支持 en/fr/es/de/it/pt/nl，但只有英语对着人工评分校准过。
+      # 留空 = 全部暴露；产品上想只放英语时填 [en]。
+      expose-languages: []
+
+  # 谁产出数字人的回答文本：
+  #   agent（默认）      —— Java 自己跑智能体，因此能在 LLM 之前插入发音评测
+  #   opentalking        —— 上游 STT+LLM+TTS 一条龙（迁移前的行为，用于回退对比）
+  # 注意：agent 模式还需要 ai.agent.config.enabled=true（见 agent/spoken-server.yml）
+  # 以及进程环境里有 LK888_API_KEY（用户级环境变量已配，若新进程读不到需 export）。
+  llm-owner: agent
+  reply:
+    # 走 agent 时用哪个智能体（对应 agent/spoken-server.yml 里的 agent.agent-id）
+    agent-id: "100003"
+
   # 建会话后最多在 HTTP 请求里等多久（超时返回 QUEUED，让 App 轮询/等 SSE）
   ready-wait-ms: 15000
   # 关掉老会话后、建新会话前多等一会儿，等上游把单 GPU 槽放开

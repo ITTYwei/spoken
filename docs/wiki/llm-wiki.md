@@ -12,6 +12,7 @@
 - 三端链路：**Android App（Kotlin/Compose）→ Java 后端 → OpenTalking（GPU 数字人引擎）**。
 - 本目录 `spoken-server` = **Java 后端**（当前开发主战场），包名 `cn.adinall.ai`，Spring Boot 3.4.3 + Google ADK agent 脚手架 + 迁入的数字人对话后端。
 - 后端当前定位是「**嘴和耳朵**」：收语音（STT）、让数字人说话（TTS/画面）。**LLM 对话策略后续由用户用 agent 自己接管**（尚未做）。
+- 另有第四条链路：**跟读发音评分 → OpenPronounce**（GPU 机 docker，`172.18.0.102:8070`）。2026-10-10 已对接，见 §2.7。
 
 ---
 
@@ -20,10 +21,13 @@
 | 位置 | 内容 | 状态 |
 |---|---|---|
 | `D:\develop\code\project\jugao\spoken-server`（本目录） | Java 后端（`cn.adinall.ai`） | **当前主战场** |
-| `C:\Users\16639\Documents\Codex\2026-09-23\nm-172-18-0-102-opentalking\spoken-ai` | 迁移来源：Android App（`android/`）+ 原 Java 后端（`com.spokenai`） | 已迁移，旧 Java 后端基本被 spoken-server 取代；**Android 仍在这里** |
+| `D:\develop\code\project\jugao\android` | Android App（Kotlin/Compose） | 2026-10-10 迁到本机，与后端同级目录；评测链路的 App 侧改动在这里 |
+| `C:\Users\16639\Documents\Codex\2026-09-23\nm-172-18-0-102-opentalking\spoken-ai` | 迁移来源：原 Android App + 原 Java 后端（`com.spokenai`） | 旧 Java 后端基本被 spoken-server 取代；Android 已迁到上一行 |
 | GPU 机 `172.18.0.102` 上 `/home/nm/develop/code/` | OpenTalking / SoulX-FlashHead / omnirt（有本地补丁） | 生产运行中，见 §4 |
+| GPU 机 `/home/nm/develop/code/OpenPronounce` | OpenPronounce 源码（有 git，MIT） | 上游原件，未改 |
+| GPU 机 `/home/nm/develop/code/openpronounce-deploy` | OpenPronounce 部署（docker-compose + Dockerfile + 部署步骤.md + 模型缓存） | 生产运行中，见 §2.7 |
 
-**重要**：Android App 代码**没有**迁到本目录，还在旧目录的 `android/` 下。改 App 要去那边。
+**重要**：Android App 代码在**隔壁目录** `D:\develop\code\project\jugao\android`（不在本仓库）。改 App 去那边。
 
 ---
 
@@ -67,22 +71,87 @@
 - 已知坑：**排队中被 DELETE 的会话会变僵尸**（`unknown session ... for cmd close`），既不取消也不释放队列计数，只能重启 OpenTalking 清。
 - 相关补丁：`flashtalk_attach_timeout_sec=120`（弃置会话释放槽）、App 侧等会话超时 600s。
 
+### 2.7 跟读发音评测（OpenPronounce，2026-10-10 新增）
+- **它是什么**：MIT 许可的开源「音素级发音评分」服务。给一段录音 + 期望文本，回分数、错词（含逐音素 IPA）、转写、音高/能量曲线。CPU/GPU 都能跑，**无需 API key**。
+- **部署**：GPU 机 docker 容器 `openpronounce`（镜像 `openpronounce:local`），宿主机 **8070** → 容器 8000。
+  - `OPENPRONOUNCE_DEVICE=cuda`（RTX 5090）→ 实测 **~0.2 秒/句**；退回 cpu 会慢一到两个数量级。
+  - `OPENPRONOUNCE_TTS=piper` + `HF_HUB_OFFLINE=1`：**全离线**（gTTS 在 GPU 机不可达，所以必须用 piper）。
+  - 模型在 `openpronounce-deploy/models/hf`，合成缓存在 `openpronounce-deploy/cache`。
+- **上游契约**（`GET /openapi.json` 是权威，README 落后于线上）：
+  | 端点 | Content-Type | 说明 |
+  |---|---|---|
+  | `POST /pronunciation` | `multipart/form-data` | `file` + `expected_text` + `lang` → 完整评测 JSON |
+  | `POST /speech2text` | `multipart/form-data` | `file` + `lang` → `{"transcript":...}` |
+  | `POST /phonemes` | **`application/x-www-form-urlencoded`** | `text` + `lang` → `{"words":[],"phonemes":[]}` |
+  | `POST /tts` | **`application/x-www-form-urlencoded`** | `text` + `lang` → 16k 单声道 wav 字节 |
+  | `GET /languages` / `GET /health` | — | 语言表 / 存活 |
+- **我方对接**（分层，换供应商只改实现类 + 一行配置）：
+  - `trigger`: `PronunciationController`（`/api/v1/sessions/{id}/pronunciation`）+ `PronunciationToolController`（`/api/v1/pronunciation/*`）。
+  - `case`: `cn.adinall.ai.cases.pronunciation.IPronunciationCase` / `PronunciationCaseImpl` / `PronunciationAssembler`。
+  - `domain`: `IPronunciationPort`（端口）、`IPronunciationService`、`PronunciationAssessmentAggregate`、`PronunciationResultVO` 等。
+  - `infrastructure`: `OpenPronounceGateway`（唯一讲 OpenPronounce 方言的地方）、`OpenPronouncePronunciationAdapter`、`OpenPronounceProperties`（前缀 `spoken-ai.provider.openpronounce`）、`PronunciationConfiguration`。
+  - 落库：`pronunciation_assessment` 表（Flyway `V3`），完整结果存 `result_json`，另存 score/错误率等标量列供查询。
+- **接口清单**：
+  | 方法 | 路径 | 说明 |
+  |---|---|---|
+  | POST | `/api/v1/sessions/{id}/pronunciation` | 跟读评测（multipart：`file`/`expectedText`/`lang`/`turnId`）→ 分数+错词+韵律，**并落库** |
+  | GET | `/api/v1/sessions/{id}/pronunciation` | 本场评测记录（倒序） |
+  | GET | `/api/v1/pronunciation/languages` | 语言表 |
+  | GET | `/api/v1/pronunciation/health` | 探针（**永远 200**，body 里 `status=ok/down`） |
+  | POST | `/api/v1/pronunciation/speech2text` | 纯识别（multipart） |
+  | POST | `/api/v1/pronunciation/phonemes` | 音素化（form） |
+  | POST | `/api/v1/pronunciation/tts` | 参考音合成（form）→ `audio/wav` |
+- **音频从哪来（已定案）**：**App 侧截 AEC3 后的 PCM，随 `POST /voice` 以 octet-stream 上传给 Java**。
+  - 关键结论：**AEC3 不是 OpenTalking 做的，是 Android 端做的**（WebRTC SDK 的 native APM，靠 `createAudioSource` 的 `googEchoCancellation2=true` 打开）。OpenTalking/aiortc 只做「Opus 解码 + 重采样到 16k」，全仓搜不到任何 AEC 实现。
+  - 所以「干净的音频」只能从 WebRTC APM 输出端取：App 用 `PeerConnectionFactory.Builder.setAudioProcessingFactory(ExternalAudioProcessingFactory)` + `setCapturePostProcessing(...)` 在 AEC3 **之后**截一份 PCM。⚠️ 换自定义 factory 后 AEC3 是否仍开启需**真机验证一次**。
+  - 麦克风音轨仍要 `addTrack`（这是让 WebRTC 采集 + AEC 跑起来的开关），但 `setMicSending(false)` 永不发包——OpenTalking 不再需要收到上行。
+- **产品现状**：上游支持 7 种语言，但**只有英语对着人工评分校准过**（其余复用英语的音素阈值）。想在界面上只放英语，把 `spoken-ai.provider.openpronounce.expose-languages` 配成 `[en]` 即可。
+
+### 2.8 Java 接管 LLM（评测嵌入对话主链路，2026-10-10）
+- **背景**：迁移前 OpenTalking 是 STT+LLM+TTS 一条龙，评测插不进去。现在 Java 自己跑 LLM，于是评测能插在 STT 与 LLM 之间。
+- **一轮对话的新链路**（`POST /voice`，`llm-owner=agent` 时）：
+  ```
+  App 上传 AEC 后 PCM（octet-stream）
+    → WavEncoder 封 WAV
+    → OpenTalking /transcribe（只识别、不说话）
+    → 落回合 + 推 stt.final
+    → OpenPronounce 评测（参照文本 = expectedText 或识别文本）→ 落库 + 推 assessment.done
+    → 拼提示词（用户文本 + 评测分数/错词）→ Google ADK agent 流式生成
+    → 每个增量推 assistant.delta；按句切分逐句 /say（数字人边生成边开口）
+    → 流结束推 assistant.done + 回填回合的 assistantText
+  ```
+- **HTTP 响应**：`{"text","turnId","assessment"}`（向后兼容扩充，assessment 为 null 时该键不下发）。
+- **关键开关/配置**：
+  - `spoken-ai.llm-owner: agent|opentalking`（默认 agent；opentalking 退回老链路 `/speak_audio` 一条龙）。
+  - `spoken-ai.reply.agent-id: "100003"`（用哪个智能体）。
+  - `ai.agent.config.enabled: true` + 环境变量 `LK888_API_KEY`（agent 装配必需）。
+- **新增类**：`IReplyGeneratorPort`/`AgentReplyGenerator`（ADK→文本增量）、`ConversationServiceImpl.converseTurn`、`ReplyPromptBuilder`、`ReplySpeechChunker`、`WavEncoder`、`IAvatarDriverPort.transcribeUploaded`。
+- **上游字幕去重**：agent 模式里 OpenTalking `/say` 会吐 `subtitle.chunk`/`speech.ended`（被翻译成 assistant.delta/done），与 Java 本地推的重复 —— 已在上游事件流里吞掉（`applyDriverEvent` 按 llm-owner 过滤），只保留 `tts.start` 等。
+- **遗留坑（agent 脚手架从未真跑过）**：`agent/spoken-server.yml` 原先缺 `module.agents`（智能体列表）和 `module.runner.agent-name`（入口），`enabled=true` 一开就 NPE（`agents is null`，见 AgentNode:85）。已补齐：`agents:[{name:spokenCoach,...}]` + `runner.agent-name: spokenCoach`。
+
 ---
 
 ## 3. 后端代码结构（本目录）
 
 ```
 spoken-server/
-├── types/          ResponseCodeEnum（对话码）、AppException（双约定）、ResponseCode（agent 码，别混）
-├── api/            IAgentService（agent 端口）+ DTO（含迁入的对话 DTO，多为 Java record）
+├── types/          ResponseCodeEnum（对话码，含 pronunciation_failed / audio_too_large）、AppException（双约定）、ResponseCode（agent 码，别混）
+├── api/            IAgentService（agent 端口）+ DTO（含迁入的对话 DTO，多为 Java record；发音评测 DTO 也在这里）
 ├── domain/
 │   ├── agent/      脚手架自带 agent 框架（armory/chat/workflow/mcp/skills），原样未动
-│   ├── conversation/  迁入的对话领域（adapter/port、adapter/repository、model/aggregate|entity|valobj、service）
+│   ├── conversation/  迁入的对话领域 + 发音评测领域
+│   │                  IPronunciationPort / IPronunciationService / IPronunciationAssessmentRepository
+│   │                  PronunciationAssessmentAggregate、AssessPronunciationCommandEntity
+│   │                  PronunciationResultVO / ErrorVO / PhoneVO / ProsodyVO / LanguagesVO / PhonemesVO
 │   └── shared/        IAppConfigPort（adapter/port）
-├── case/           编排层（catalog/conversation），注意包名是 `cases`（case 是关键字）
+├── case/           编排层（catalog/conversation/pronunciation），注意包名是 `cases`（case 是关键字）
 ├── infrastructure/ OpenTalking gateway/驱动/事件翻译/仓储/DAO/PO/配置
+│                   + OpenPronounceGateway / OpenPronouncePronunciationAdapter / OpenPronounceProperties
+│                   + PronunciationAssessmentRepository / IPronunciationAssessmentDao / PronunciationAssessmentPO
 ├── trigger/        SessionController + CatalogController + GlobalExceptionHandler + AgentServiceController
+│                   + PronunciationController + PronunciationToolController
 └── app/            Application（入口）、Cors、application.yml/application-dev.yml、MyBatis mapper
+                  resources/db/migration/V1~V3（Flyway）
 ```
 
 分层约定：`trigger → case → domain → infrastructure`；HTTP 契约（端点路径 + JSON 形状）**不能变**，Android 依赖它。
@@ -115,6 +184,14 @@ spoken-server/
 12. **AiAgentAutoConfig 无配置会 NPE**：已加 `enabled=false` + 空表守卫，agent 未启用时跳过，对话后端可独立启动。
 13. **H2 → MySQL**：数据存储已统一 MySQL（`172.18.0.102:13306/spoken`），H2 已移除。Flyway 迁移带表/字段注释。
 14. **记忆功能是死代码**：`has_memory` 恒为 False（`memory_enabled` 与 `character_id` 互斥逻辑导致），简单记忆永远不生效。这是已知遗留，不是 bug 触发路径。
+15. **Flyway 迁移脚本丢了（2026-10-10 已修）**：`V1__init.sql` / `V2__session_scenario.sql` **从未提交进 git**，只作为本地未跟踪文件存在，后来被删掉；而 MySQL 的 `flyway_schema_history` 里已经记着应用过 V1/V2。症状：
+    - 库里表都在、老环境却**启动失败**：`Migration checksum mismatch for migration version 1/2`（Flyway 校验本地脚本与历史记录的 CRC 不一致）。
+    - 全新环境反而建不出表（没有任何迁移文件可跑）。
+    **修法**：按线上库实际结构重建 `V1__init.sql` / `V2__session_scenario.sql`，然后把 `flyway_schema_history.checksum` 对齐成 Flyway 报的 `Resolved locally` 值（就是 `flyway repair` 干的事），再加 `V3`。**教训：迁移文件必须提交 git；改动已应用的迁移文件后必须跑 repair，否则一律启动失败。**
+16. **Spring multipart 默认上限只有 1MB**：跟读评测上传录音会直接撞 `MaxUploadSizeExceededException`，而且是在 Controller 之前抛的。已在 `application-dev.yml` 放宽到 `max-file-size: 16MB` / `max-request-size: 20MB`，并把该异常映射成 **413 audio_too_large**（不映射的话会落兜底变成 500）。
+17. **OpenPronounce 的 `/phonemes` 与 `/tts` 收的是 `application/x-www-form-urlencoded`，不是 JSON body**：FastAPI 的 `Form(...)`。用 JSON 打过去得到 **422**（不是「安静地当成没传」）。`/pronunciation` 与 `/speech2text` 才是 `multipart/form-data`。权威依据是 `GET http://172.18.0.102:8070/openapi.json`。
+18. **OpenPronounce 线上响应比它的 README 多好几个字段**：多了顶层 `distance`/`feedback`/`language`，`differences` 里多了 `word_distance`/`phoneme_distance`/`words_with_errors`/`expected_phonemes`/`transcribed_phonemes`，`errors[]` 多了 `actual_word`/`phone_distance`。**别照 README 建模，照 `/openapi.json` + 一次真实调用**。
+19. **`GlobalExceptionHandler.statusOf` 原来的兜底是 502**：领域层主动抛的 `invalid_request`（缺参数、空音频）和 413 都会掉到 502。已补上 `INVALID_REQUEST→400`、`AUDIO_TOO_LARGE→413`，并新增 `MissingServletRequestPart/ParameterException→400`、`MaxUploadSizeExceededException→413` 两个处理器。
 
 ---
 
@@ -143,6 +220,7 @@ spoken-server/
 | FlashHead WS | 8766 |
 | FlashTalk WS | 18766 |
 | MySQL | 13306（root/123456，库 `spoken`） |
+| **OpenPronounce** | **8070**（docker 容器内 8000；全离线，piper TTS） |
 | **Java 后端（本目录）** | **8091**（dev profile；旧 spoken-ai 是 8080） |
 
 ### 构建/运行
@@ -159,7 +237,7 @@ java -jar spoken-server-app/target/ai-agent-scaffold-lite-app.jar
 - `spoken-ai.provider.opentalking.drop-stun = true`（局域网直连摘 STUN，省 ~7s）
 - 数据源 MySQL `172.18.0.102:13306/spoken`，`createDatabaseIfNotExist=true`
 
-### Android（在旧目录 `spoken-ai/android/`）
+### Android（`D:\develop\code\project\jugao\android`，与本仓库同级）
 - 构建：Gradle `C:\Users\16639\.spokenai-tools\gradle-8.11.1`，SDK `C:\Users\16639\.spokenai-tools\android-sdk`
 - 手机：小米 8（`b955e2bc`）；后端地址在 App「后端地址」里配（当前 `http://192.168.20.41:8091`）
 - 关键文件：`feature-talk/`（`TalkViewModel`、`VoiceSegmenter`、`VoiceRecorder`、`TalkScreen`、`ConnectScreen`）、`core-rtc/`（`SpokenRtcClient`，WebRTC+上行音轨+AEC）、`core-net/`（`SpokenAiApi`、`ServerConfigStore`）
@@ -173,10 +251,15 @@ java -jar spoken-server-app/target/ai-agent-scaffold-lite-app.jar
 - 存储统一 MySQL + 表/字段注释。
 - WebRTC 上行 + AEC3 回声消除；语音识别音频从上行缓冲取。
 - 手机连 8091 测试通过。
+- **跟读发音评测对接 OpenPronounce（2026-10-10）**：端口+适配器+网关+用例+Controller 全套；评测结果落库（`pronunciation_assessment`，Flyway V3）；顺带修掉丢失的 Flyway V1/V2。
+- **Java 接管 LLM + 评测嵌入对话主链路（2026-10-10）**：`/voice` 新语义（上传 AEC 后 PCM → STT → 评测 → agent 流式 → 按句 /say → SSE），端到端验证通过（turnId 关联、agent 正确引用评测结论、SSE 无重复）。见 §2.8。
 
-**待办（用户后续自己做）**：
-1. **agent 接管 LLM 会话文本**：用户自己管理 LLM 对话（agent 出文本 → `/say` 念），脚手架 `domain.agent` 框架已就位。
-2. **口语训练回答策略**：替换掉原来的发音评测（training 域未迁）。
+**待办**：
+1. **App 侧接入（Android 在 `D:\develop\code\project\jugao\android`，不在本仓库）**：
+   - 用 `setCapturePostProcessing` 截 AEC3 后 PCM，**真机验证换自定义 factory 后 AEC3 仍开启**（这是唯一不确定项）。
+   - 把 `POST /voice` 的 body 从空改成裸 PCM（octet-stream），处理新响应 `{text,turnId,assessment}` 渲染评测卡片（`ChatLine.assessment` + `AssessmentChip` 已就绪）。
+   - 删掉调不通的 `POST /api/v1/training/assess`（该接口 8091 上不存在，且调用处只有 onSuccess、失败静默）。
+2. **回答策略微调**：`ReplyPromptBuilder`（提示词）与 `agent/spoken-server.yml` 的 instruction 是「怎么回应 + 纠音」的唯二落点，按产品口味调。
 3. **命名清理（可选）**：`training_session` → `conversation_session`。
 4. **旧 spoken-ai 后端下线**：8080 上的旧后端（若还跑着）确认后可停。
 5. **GPU 单槽扩展**：如需多用户并发，见旧文档 `work/direct-say/R1-single-gpu-slot-research.md`（方案 A/B 调研）。
@@ -188,6 +271,8 @@ java -jar spoken-server-app/target/ai-agent-scaffold-lite-app.jar
 | 术语 | 含义 |
 |---|---|
 | OpenTalking | GPU 数字人引擎（Python，172.18.0.102:8001） |
+| OpenPronounce | GPU 发音评测引擎（docker，172.18.0.102:8070；MIT，音素级评分） |
+| 跟读评测 | 用户跟读一句题面 → 录音送 OpenPronounce → 分数/错词/韵律，落 `pronunciation_assessment` 表 |
 | FlashHead / FlashTalk | 数字人画面模型 / 音频驱动模型 |
 | 生成轨 / 脚本轨 | `/speak`（LLM 生成）/ `/say`（直通 TTS） |
 | STT / TTS | 语音识别（dashscope）/ 语音合成（edge-tts） |

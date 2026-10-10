@@ -7,8 +7,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.io.IOException;
@@ -22,9 +25,11 @@ import java.util.Map;
  * 而不是「按谁抛的异常分门别类」—— 异常类只有一种，映射规则只有一处。
  * 响应体形状固定为 { code, message, ts }：App 拿 code 做分支，不去解析 message 文案。
  * <pre>
- *   handleAppException(AppException)                     业务异常：按 code 映射 404 / 409 / 502 / 503
+ *   handleAppException(AppException)                     业务异常：按 code 映射 404 / 409 / 400 / 413 / 502 / 503
  *   handleValidation(MethodArgumentNotValidException)    @Valid 失败：400 invalid_request
  *   handleIllegalArgument(IllegalArgumentException)       代码里主动抛的参数错误：400 invalid_request
+ *   handleMissingParam(MissingServletRequest*Exception)  少传必填 part/参数：400 invalid_request
+ *   handleTooLarge(MaxUploadSizeExceededException)       上传体积超限：413 audio_too_large
  *   handleClientAbort(IOException)                        SSE 客户端断开：500 且不带响应体
  *   handleNoResource(NoResourceFoundException)            静态路径不存在：404 not_found
  *   handleOther(Exception)                                兜底：500 internal_error
@@ -39,14 +44,18 @@ import java.util.Map;
  *        |        provider_unavailable -> 503 SERVICE_UNAVAILABLE
  *        |        session_not_found    -> 404 NOT_FOUND
  *        |        session_queued       -> 409 CONFLICT
+ *        |        invalid_request      -> 400 BAD_REQUEST
+ *        |        audio_too_large      -> 413 PAYLOAD_TOO_LARGE
  *        |        其余                  -> 502 BAD_GATEWAY
  *        |        log.warn("业务异常 [code]: message")
  *        |
  *        | (2) MethodArgumentNotValidException --> 400，取第一条字段错误拼成「字段 + 原因」
  *        | (3) IllegalArgumentException       --> 400 invalid_request
- *        | (4) IOException                    --> 500，空 body（只记 debug）
- *        | (5) NoResourceFoundException       --> 404 not_found
- *        | (6) Exception                      --> log.error 全堆栈 + 500 internal_error
+ *        | (4) MissingServletRequestPart/ParameterException --> 400 invalid_request（少传必填字段）
+ *        | (5) MaxUploadSizeExceededException --> 413 audio_too_large
+ *        | (6) IOException                    --> 500，空 body（只记 debug）
+ *        | (7) NoResourceFoundException       --> 404 not_found
+ *        | (8) Exception                      --> log.error 全堆栈 + 500 internal_error
  *        v
  *   ResponseEntity.status(status).body(LinkedHashMap{code, message, ts})
  * </pre>
@@ -122,6 +131,30 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理「请求里少了必填字段」：multipart 少一个 part、或查询/表单少一个参数。
+     *
+     * 这两种都是客户端把请求拼错了，属于 400；不接住的话会落到兜底分支返回 500，
+     * 让 App 以为是自己后端挂了（跟读评测的 file/expectedText 漏传就会走到这里）。
+     */
+    @ExceptionHandler({MissingServletRequestPartException.class, MissingServletRequestParameterException.class})
+    public ResponseEntity<Map<String, Object>> handleMissingParam(Exception e) {
+        return body(HttpStatus.BAD_REQUEST, ResponseCodeEnum.INVALID_REQUEST.getCode(), e.getMessage());
+    }
+
+    /**
+     * 处理上传体积超限（spring.servlet.multipart.max-file-size）。
+     *
+     * 这个异常在进 Controller 之前就抛了，所以拿不到我们自己的「音频超过上限」那句文案；
+     * 映射成 413 与领域层 audio_too_large 的语义保持一致，App 只需按 413 一种情况处理。
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleTooLarge(MaxUploadSizeExceededException e) {
+        log.warn("上传体积超限: {}", e.getMessage());
+        return body(HttpStatus.PAYLOAD_TOO_LARGE, ResponseCodeEnum.AUDIO_TOO_LARGE.getCode(),
+                "上传文件超过大小上限，请缩短录音后重试");
+    }
+
+    /**
      * SSE 客户端断开（App 切后台、拔线、curl 超时）必然抛 IOException。
      * 这时响应已经提交，再去写 JSON 错误体只会刷
      * "No converter for [...] with preset Content-Type 'text/event-stream'"。
@@ -153,6 +186,10 @@ public class GlobalExceptionHandler {
      * 错误码 -> HTTP 状态码。
      * 用 ResponseCodeEnum 里的字面量做比较而不是再抄一遍字符串：这几个码是对外契约，
      * 改一处就要两边一起改，写死在两处迟早对不上。
+     *
+     * INVALID_REQUEST 与 AUDIO_TOO_LARGE 是给「领域层主动抛出的入参错误」用的：
+     * @Valid 校验失败走的是另一个分支（handleValidation），但领域层（如发音评测端口）
+     * 也会自己挡非法的音频/题面 —— 那些也是 400/413，不该落到 502 的兜底上去。
      */
     private static HttpStatus statusOf(String code) {
         if (ResponseCodeEnum.PROVIDER_UNAVAILABLE.getCode().equals(code)) {
@@ -163,6 +200,17 @@ public class GlobalExceptionHandler {
         }
         if (ResponseCodeEnum.SESSION_QUEUED.getCode().equals(code)) {
             return HttpStatus.CONFLICT;
+        }
+        if (ResponseCodeEnum.INVALID_REQUEST.getCode().equals(code)) {
+            return HttpStatus.BAD_REQUEST;
+        }
+        // 「音频里没人声」是正常结果，不是上游故障：把它判成 502 会让客户端把
+        // 「你没说话」显示成「服务器挂了」——真有这类把正常当故障的误报。
+        if (ResponseCodeEnum.NO_SPEECH.getCode().equals(code)) {
+            return HttpStatus.BAD_REQUEST;
+        }
+        if (ResponseCodeEnum.AUDIO_TOO_LARGE.getCode().equals(code)) {
+            return HttpStatus.PAYLOAD_TOO_LARGE;
         }
         return HttpStatus.BAD_GATEWAY;
     }
