@@ -16,8 +16,8 @@ import java.util.Map;
  */
 public class AiAgentAutoConfigLogTest {
 
-    private static final String FAKE_LLM_KEY = "sk-UT0000000000000000000000000000000000000000000FAKE";
-    private static final String FAKE_BAIDU_KEY = "bce-v3/ALTAK-UTFAKEFAKE0000000000000/ut0000000000000000000000000000";
+    private static final String FAKE_LLM_KEY = "sk-FAKE-FOR-TEST-ONLY-DO-NOT-USE-0000";
+    private static final String FAKE_BAIDU_KEY = "bce-v3/ALTAK-FAKE-FOR-TEST-ONLY/DO-NOT-USE-0000";
 
     private static AiAgentConfigTableVO buildTable() {
         AiAgentConfigTableVO.Module.AiApi aiApi = new AiAgentConfigTableVO.Module.AiApi();
@@ -81,15 +81,15 @@ public class AiAgentAutoConfigLogTest {
         Assert.assertTrue(summary.contains("model=gpt-4.1"));
         Assert.assertTrue(summary.contains("runnerAgent=spokenCoach"));
         // 密钥只留前 3 后 4，便于比对是哪一个 key，又不足以还原
-        Assert.assertTrue("apiKey 应脱敏保留末 4 位", summary.contains("sk-****FAKE"));
-        Assert.assertFalse("脱敏后不应还能看出中间内容", summary.contains("sk-UT"));
+        Assert.assertTrue("apiKey 应脱敏保留末 4 位", summary.contains("sk-****0000"));
+        Assert.assertFalse("脱敏后不应还能看出中间内容", summary.contains("sk-FAKE"));
     }
 
     /** 脱敏规则：长串保留前 3 后 4，短串整体打码，null/空不抛异常。 */
     @Test
     public void maskBehaviour() {
         // 52 位：留前 3 位 + 末 4 位
-        Assert.assertEquals("sk-****FAKE", AiAgentAutoConfig.mask(FAKE_LLM_KEY));
+        Assert.assertEquals("sk-****0000", AiAgentAutoConfig.mask(FAKE_LLM_KEY));
         // 14 位：仍走“前 3 后 4”分支
         Assert.assertEquals("123****1234", AiAgentAutoConfig.mask("12345678901234"));
         // 12 位及以下：整体打码
