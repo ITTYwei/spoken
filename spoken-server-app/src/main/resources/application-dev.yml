@@ -10,7 +10,7 @@ spring:
   # 数据存储统一走 MySQL（GPU 机 172.18.0.102:13306，原生 mysqld）。
   # createDatabaseIfNotExist=true 让 spoken 库不存在时自动建。
   datasource:
-    url: jdbc:mysql://172.18.0.102:13306/spoken?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://172.18.0.102:13306/spoken?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&forceConnectionTimeZoneToSession=true&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
     username: root
     password: "123456"
     driver-class-name: com.mysql.cj.jdbc.Driver

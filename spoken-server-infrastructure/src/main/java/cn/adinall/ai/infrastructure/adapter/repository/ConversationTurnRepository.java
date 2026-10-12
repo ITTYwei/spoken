@@ -3,6 +3,7 @@ package cn.adinall.ai.infrastructure.adapter.repository;
 import cn.adinall.ai.domain.conversation.adapter.repository.IConversationTurnRepository;
 import cn.adinall.ai.domain.conversation.model.aggregate.ConversationTurnAggregate;
 import cn.adinall.ai.infrastructure.dao.IConversationTurnDao;
+import cn.adinall.ai.infrastructure.dao.DatabaseTime;
 import cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -96,7 +97,6 @@ public class ConversationTurnRepository implements IConversationTurnRepository {
         po.setAssistantText(turn.getAssistantText());
         po.setAudioPath(turn.getAudioPath());
         po.setLatencyMs(turn.getLatencyMs());
-        po.setCreatedAt(turn.getCreatedAt());
         turnDao.insert(po);
         turn.assignId(po.getId());
         return turn;
@@ -136,6 +136,6 @@ public class ConversationTurnRepository implements IConversationTurnRepository {
         return ConversationTurnAggregate.restore(po.getId(), po.getSessionId(),
                 po.getSeq() == null ? 0 : po.getSeq(), po.getUserText(), po.getAssistantText(),
                 po.getAudioPath(), po.getLatencyMs(),
-                po.getCreatedAt() == null ? System.currentTimeMillis() : po.getCreatedAt());
+                po.getCreatedAt() == null ? System.currentTimeMillis() : DatabaseTime.toEpochMillis(po.getCreatedAt()));
     }
 }

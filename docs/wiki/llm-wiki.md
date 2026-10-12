@@ -3,6 +3,17 @@
 > **这份文件是给「AI / 新人」衔接用的项目记忆。**
 > 换工作目录、开新会话时，先让 AI 读本文件，即可直接衔接，不必重新摸一遍。
 > 最后更新：2026-10-10。维护原则：每次有架构级改动，同步更新本文件。
+>
+> 📄 **姊妹文档：[`product-design.md`](./product-design.md)（产品设计逻辑）** ——
+> 本页讲「代码怎么写的」（架构、坑、环境、迁移），那一页讲「产品为什么长这样」
+> （人格契约、分级语言策略、评测可见性边界、交互与降级语义）。
+> **要改产品行为（追问策略、档位规则、评测呈现），先读那一页。**
+>
+> 🗄️ **数据模型：[`user-data-model.md`](./user-data-model.md)（账号 / 画像 / 对话策划 / 对话记录）** ——
+> V4~V8 新增 13 张表与 3 张改造的评审说明。**含一个破坏性契约变更：`turnId` → `messageId`**，
+> V9 修复画像/身份唯一约束，补齐消息幂等、收尾任务与按日统计；当前业务代码仍使用旧 turn 链路，见该文档 §9。
+> V10 将全部业务表的 created_at/updated_at 统一为 DATETIME 默认创建/自动更新时间，PO/mapper 已同步，见该文档 §10。
+> 以及「从设备升级到用户」带来的连锁代码改动清单。
 
 ---
 
@@ -116,17 +127,19 @@
     → OpenTalking /transcribe（只识别、不说话）
     → 落回合 + 推 stt.final
     → OpenPronounce 评测（参照文本 = expectedText 或识别文本）→ 落库 + 推 assessment.done
-    → 拼提示词（用户文本 + 评测分数/错词）→ Google ADK agent 流式生成
-    → 每个增量推 assistant.delta；按句切分逐句 /say（数字人边生成边开口）
-    → 流结束推 assistant.done + 回填回合的 assistantText
+    → 拼提示词（用户文本 + 评测分数/错词）→ Google ADK agent 生成（内部流式收增量）
+    → 收齐整段文本 → **一次** /say（整段交上游 TTS + 数字人动作）
+    → 上游 speech.ended → assistant.done：字幕定稿、复位播放状态、回填回合的 assistantText
   ```
 - **HTTP 响应**：`{"text","turnId","assessment"}`（向后兼容扩充，assessment 为 null 时该键不下发）。
 - **关键开关/配置**：
   - `spoken-ai.llm-owner: agent|opentalking`（默认 agent；opentalking 退回老链路 `/speak_audio` 一条龙）。
   - `spoken-ai.reply.agent-id: "100003"`（用哪个智能体）。
   - `ai.agent.config.enabled: true` + 环境变量 `LK888_API_KEY`（agent 装配必需）。
-- **新增类**：`IReplyGeneratorPort`/`AgentReplyGenerator`（ADK→文本增量）、`ConversationServiceImpl.converseTurn`、`ReplyPromptBuilder`、`ReplySpeechChunker`、`WavEncoder`、`IAvatarDriverPort.transcribeUploaded`。
-- **上游字幕去重**：agent 模式里 OpenTalking `/say` 会吐 `subtitle.chunk`/`speech.ended`（被翻译成 assistant.delta/done），与 Java 本地推的重复 —— 已在上游事件流里吞掉（`applyDriverEvent` 按 llm-owner 过滤），只保留 `tts.start` 等。
+- **新增类**：`IReplyGeneratorPort`/`AgentReplyGenerator`（ADK→文本增量）、`ConversationServiceImpl.converseTurn`、`ReplyPromptBuilder`、`WavEncoder`、`IAvatarDriverPort.transcribeUploaded`。
+- **字幕由上游驱动**：agent 模式下 Java **不**自己推 `assistant.delta`（`onReplyDelta` 只把增量累加进缓冲），字幕、播放状态与回合落库都搭上游 `/say` 那套 `speech.started` / `subtitle.chunk` / `speech.ended` 事件的车 —— 这样天然不会重复。
+  （2026-10-12 曾短暂改成「Java 自己推字幕 + 逐句 /say」，那时需要在上游事件流里按 llm-owner 过滤 assistant 事件；该版本已回退，过滤也随之删除。）
+- ⚠️ **别再试「逐句流式下发」**（2026-10-12 试过并回退）：延迟大头是模型 TTFT（直连实测 2~15s，波动极大），流式换不来可测收益，却多出一套事件协议与状态机（还踩过 `command_id` 撞 id 导致第二轮 409）。完整复盘见 [`product-design.md`](./product-design.md) §5.3。**要再快只能换更快的模型 / 服务商。**
 - **遗留坑（agent 脚手架从未真跑过）**：`agent/spoken-server.yml` 原先缺 `module.agents`（智能体列表）和 `module.runner.agent-name`（入口），`enabled=true` 一开就 NPE（`agents is null`，见 AgentNode:85）。已补齐：`agents:[{name:spokenCoach,...}]` + `runner.agent-name: spokenCoach`。
 
 ---
@@ -172,7 +185,10 @@ infrastructure/.../InMemoryScenarioRepository 场景人设（只写「我是谁�
 真机实测演进：中文→LOW，英语×2→MID，英语×2→HIGH。
 
 **档位只影响我方措辞，绝不下发给 App 展示** —— 一旦显示就变成「系统在给我打等级」，与零评判冲突。
-初始档位取场景难度且**只往高推**：一见面就假定学员不行本身就是一种评判。
+初始档位：**有历史就用长期水平**（`user_learning_stat.long_term_level`，长期 LOW → 开场用中文），
+**没历史才从场景难度推且只往高推**；长期水平必须按近期表现算，否则一次糟糕经历会把人钉死在 LOW。
+开场白走脚本轨（不经 LLM），所以必须**按档位存多份**（`opening_line_low/mid/high`）——
+规则、护栏与断点见 [`product-design.md`](./product-design.md) §3.4。
 
 场景人设这次才真正进了 agent（此前 `systemPromptHint` 只发给了我们用不到的上游 LLM，等于白写）：
 `free`=Amy、`interview`=Alex。`ConversationServiceImpl` 因此多注入了 `IScenarioRepository`。
@@ -323,7 +339,7 @@ java -jar spoken-server-app/target/ai-agent-scaffold-lite-app.jar
 - WebRTC 上行 + AEC3 回声消除；语音识别音频从上行缓冲取。
 - 手机连 8091 测试通过。
 - **跟读发音评测对接 OpenPronounce（2026-10-10）**：端口+适配器+网关+用例+Controller 全套；评测结果落库（`pronunciation_assessment`，Flyway V3）；顺带修掉丢失的 Flyway V1/V2。
-- **Java 接管 LLM + 评测嵌入对话主链路（2026-10-10）**：`/voice` 新语义（上传 AEC 后 PCM → STT → 评测 → agent 流式 → 按句 /say → SSE），端到端验证通过（turnId 关联、agent 正确引用评测结论、SSE 无重复）。见 §2.8。
+- **Java 接管 LLM + 评测嵌入对话主链路（2026-10-10）**：`/voice` 新语义（上传 AEC 后 PCM → STT → 评测 → agent 生成 → 整段 /say → SSE），端到端验证通过（turnId 关联、agent 正确引用评测结论、SSE 无重复）。见 §2.8。
 
 **待办**：
 1. **App 侧接入（Android 在 `D:\develop\code\project\jugao\android`，不在本仓库）**：

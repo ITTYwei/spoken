@@ -1,10 +1,23 @@
 -- =====================================================================
 -- 数字人对话服务（spoken-server）数据模型
 -- 库名：spoken（连接信息见 application-dev.yml）
--- 本文件与 Flyway 迁移保持一致，用于查阅表结构；实际建表由 Flyway 在启动时完成。
---   V1__init.sql                   training_session + conversation_turn
---   V2__session_scenario.sql       training_session.scenario_id
---   V3__pronunciation_assessment.sql   pronunciation_assessment
+-- 本文件用于查阅表结构；实际建表由 Flyway 在启动时完成。
+--   V1__init.sql                        training_session + conversation_turn
+--   V2__session_scenario.sql            training_session.scenario_id
+--   V3__pronunciation_assessment.sql    pronunciation_assessment
+--   V4__user_account.sql                app_user / user_identity / user_device / user_login_log
+--   V5__user_profile.sql                user_profile / user_profile_item / user_learning_stat
+--   V6__conversation_plan.sql           conversation_scenario / _stage / user_practice_plan / _item（含官方场景种子）
+--   V7__conversation_message.sql        conversation_message / conversation_summary + 会话与评测表加列
+--   V8__scenario_opening_by_level.sql   conversation_scenario 加分档开场白（opening_line_low/mid/high）
+--   V9__data_integrity.sql              全值/有效身份唯一、消息去重、收尾任务、按日事实与近期档位证据
+--   V10__audit_datetime.sql             全部 19 张业务表统一 DATETIME 创建/更新时间
+--
+-- ⚠️ V4 起本文件【不再逐表镜像新增结构的 DDL】：新增表以迁移脚本为唯一真源，
+--    避免同一份结构在两处漂移（V1/V2 丢失 + 校验和不符的坑就是这么来的，见迁移脚本文末陷阱记录）。
+--    下面保留 V1~V3 基础三张表（审计时间已对齐 V10），其余改造与新表请直接读迁移脚本，
+--    或对已连接的库执行 SHOW CREATE TABLE。
+--    表清单与设计理由见 docs/wiki/user-data-model.md。
 --
 -- ⚠️ 历史坑：V1/V2 的脚本曾经丢失（只存在于本地未跟踪文件里，从未提交 git），
 --    而库里 flyway_schema_history 已记着应用过 V1/V2 —— 结果是全新环境能建表、
@@ -30,6 +43,8 @@ CREATE TABLE IF NOT EXISTS `training_session` (
     `started_at`    BIGINT       DEFAULT NULL COMMENT '创建时间（epoch 毫秒）',
     `ended_at`      BIGINT       DEFAULT NULL COMMENT '结束时间（epoch 毫秒，仅终态 CLOSED/ERROR 有值）',
     `error_message` VARCHAR(512) DEFAULT NULL COMMENT '错误信息（仅终态为 ERROR 时有值）',
+    `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数字人对话会话档案表';
 
@@ -45,7 +60,8 @@ CREATE TABLE IF NOT EXISTS `conversation_turn` (
     `assistant_text` VARCHAR(4000) DEFAULT NULL COMMENT '数字人回复的文本',
     `audio_path`     VARCHAR(512)  DEFAULT NULL COMMENT '音频文件路径（预留，当前未使用）',
     `latency_ms`     BIGINT        DEFAULT NULL COMMENT '从用户说完到数字人回复的延迟（毫秒）',
-    `created_at`     BIGINT        DEFAULT NULL COMMENT '创建时间（epoch 毫秒）',
+    `created_at`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     KEY `idx_turn_session` (`session_id`, `seq`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数字人对话回合表';
@@ -58,8 +74,8 @@ CREATE TABLE IF NOT EXISTS `conversation_turn` (
 -- 两处刻意的设计：
 --   1. result_json 存完整评测结果（错词明细、逐音素、韵律曲线、音素向量）。
 --      上游响应结构还在漂移（0.3.0 已比它的 README 多出好几个字段），摊成几十列
---      意味着它每加一个字段就要改表。用 LONGTEXT 而不是 JSON 类型，是为了不在
---      上游改结构时被 MySQL 的 JSON 校验卡住。注意：存的是「我方驼峰命名的规范形状」
+--      意味着它每加一个字段就要改表。沿用 LONGTEXT 兼容历史存储；JSON 类型也支持
+--      动态字段，只校验 JSON 文档是否合法，并不会锁定字段结构。注意：存的是「我方驼峰命名的规范形状」
 --      （PronunciationResultVO 的序列化结果），不是上游原始 JSON。
 --   2. score / transcribe / 两个错误率 / acoustic_distance 另存标量列：它们与 result_json
 --      同源（写入时都来自同一个评测结果），不会分叉；存在是为了让「按会话查、按分数排序、
@@ -81,7 +97,8 @@ CREATE TABLE IF NOT EXISTS `pronunciation_assessment` (
     `feedback`           VARCHAR(2000) DEFAULT NULL COMMENT '上游生成的一句人话反馈',
     `result_json`        LONGTEXT      DEFAULT NULL COMMENT '完整评测结果 JSON（错词明细 / 韵律曲线 / 音素向量）',
     `latency_ms`         BIGINT        DEFAULT NULL COMMENT '后端调用一次评测的耗时（毫秒）',
-    `created_at`         BIGINT        DEFAULT NULL COMMENT '创建时间（epoch 毫秒）',
+    `created_at`         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     KEY `idx_pa_session` (`session_id`, `created_at`),
     KEY `idx_pa_turn` (`turn_id`)

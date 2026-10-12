@@ -11,7 +11,7 @@ package cn.adinall.ai.domain.conversation.model.valobj;
  * 案例：
  * <pre>
  *   输入: spoken-ai.llm-owner=agent（或不配，默认就是 agent）
- *   处理: 用例层走 converseTurn：上传音频 → /transcribe 拿文本 → 评测 → agent 流式 → 按句 /say
+ *   处理: 用例层走 converseTurn：上传音频 → /transcribe 拿文本 → 评测 → agent 生成 → 整段 /say
  *   输出: 评测结果与回复文本都从 Java 侧推给 App；OpenTalking 只负责 TTS 与渲染
  *
  *   输入: spoken-ai.llm-owner=opentalking

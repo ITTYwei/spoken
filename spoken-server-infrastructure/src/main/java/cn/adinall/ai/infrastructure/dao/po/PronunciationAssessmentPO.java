@@ -1,5 +1,7 @@
 package cn.adinall.ai.infrastructure.dao.po;
 
+import java.time.LocalDateTime;
+
 /**
  * pronunciation_assessment 表的行映射对象（跟读评测记录）
  * <p>
@@ -21,7 +23,7 @@ package cn.adinall.ai.infrastructure.dao.po;
  *   feedback          上游给的一句人话反馈
  *   resultJson        完整评测结果的 JSON（错词明细、韵律曲线、音素向量都在里面）
  *   latencyMs         调用评测的耗时（毫秒）
- *   createdAt         创建时间（epoch 毫秒）
+ *   createdAt         数据库创建时间（DATETIME，秒精度）
  * </pre>
  * 体系架构：
  * <pre>
@@ -90,8 +92,9 @@ public class PronunciationAssessmentPO {
     private String resultJson;
     /** 调用评测的耗时（毫秒）。 */
     private Long latencyMs;
-    /** 创建时间（epoch 毫秒）。 */
-    private Long createdAt;
+    /** 数据库自动生成的审计时间（Asia/Shanghai）。 */
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public Long getId() {
         return id;
@@ -213,11 +216,19 @@ public class PronunciationAssessmentPO {
         this.latencyMs = latencyMs;
     }
 
-    public Long getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Long createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

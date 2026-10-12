@@ -1,5 +1,7 @@
 package cn.adinall.ai.infrastructure.dao.po;
 
+import java.time.LocalDateTime;
+
 /**
  * training_session 表的持久化对象（PO：一场会话的档案行）
  * <p>
@@ -69,6 +71,9 @@ public class TrainingSessionPO {
     private Long startedAt;
     private Long endedAt;
     private String errorMessage;
+    /** V10 补齐的审计时间，由数据库生成。 */
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public String getId() {
         return id;
@@ -148,5 +153,21 @@ public class TrainingSessionPO {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

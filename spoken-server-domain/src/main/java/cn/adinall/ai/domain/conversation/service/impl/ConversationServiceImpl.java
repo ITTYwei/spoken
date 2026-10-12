@@ -1,30 +1,28 @@
 package cn.adinall.ai.domain.conversation.service.impl;
 
 import cn.adinall.ai.domain.conversation.adapter.port.IAvatarDriverPort;
-import cn.adinall.ai.domain.conversation.adapter.repository.IScenarioRepository;
 import cn.adinall.ai.domain.conversation.adapter.port.IConversationEventBusPort;
 import cn.adinall.ai.domain.conversation.adapter.port.IReplyGeneratorPort;
 import cn.adinall.ai.domain.conversation.adapter.repository.IConversationSessionRepository;
 import cn.adinall.ai.domain.conversation.adapter.repository.IConversationTurnRepository;
 import cn.adinall.ai.domain.conversation.model.aggregate.ConversationSessionAggregate;
 import cn.adinall.ai.domain.conversation.model.aggregate.ConversationTurnAggregate;
-import cn.adinall.ai.domain.conversation.model.aggregate.PronunciationAssessmentAggregate;
-import cn.adinall.ai.domain.conversation.model.entity.AssessPronunciationCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.CreateSessionCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.GenerateReplyCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.SayCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.SpeakCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.StartConversationCommandEntity;
 import cn.adinall.ai.domain.conversation.model.valobj.ConversationEventVO;
-import cn.adinall.ai.domain.conversation.model.valobj.ConversationTurnResultVO;
 import cn.adinall.ai.domain.conversation.model.valobj.EventTypeEnum;
 import cn.adinall.ai.domain.conversation.model.valobj.IceServerVO;
 import cn.adinall.ai.domain.conversation.model.valobj.LearnerLevelEnum;
-import cn.adinall.ai.domain.conversation.model.valobj.ScenarioVO;
+import cn.adinall.ai.domain.conversation.model.valobj.UserUtteranceVO;
+import cn.adinall.ai.domain.conversation.model.valobj.PronunciationFeedbackVO;
 import cn.adinall.ai.domain.conversation.model.valobj.SessionHandleVO;
 import cn.adinall.ai.domain.conversation.model.valobj.SessionStatusEnum;
 import cn.adinall.ai.domain.conversation.service.IConversationService;
-import cn.adinall.ai.domain.conversation.service.IPronunciationService;
+import cn.adinall.ai.domain.conversation.service.level.LearnerLevelTracker;
+import cn.adinall.ai.domain.conversation.service.reply.ReplyPromptBuilder;
 import cn.adinall.ai.types.enums.ResponseCodeEnum;
 import cn.adinall.ai.types.exception.AppException;
 import org.slf4j.Logger;
@@ -33,7 +31,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -124,12 +121,8 @@ public class ConversationServiceImpl implements IConversationService {
     private final IConversationSessionRepository sessionRepository;
     private final IConversationTurnRepository turnRepository;
     private final IConversationEventBusPort eventBus;
-    /** 发音评测（新链路里插在 STT 与 LLM 之间的一步）。 */
-    private final IPronunciationService pronunciationService;
     /** 回复生成（Java 接管 LLM 时用它产出数字人要说的话）。 */
     private final IReplyGeneratorPort replyGenerator;
-    /** 场景仓储：取场景人设（Amy / Alex）塞进智能体提示词 —— 否则数字人换个场景还是同一个性格。 */
-    private final IScenarioRepository scenarioRepository;
 
     /**
      * 每个会话一个「学习者水平」跟踪器。
@@ -143,16 +136,12 @@ public class ConversationServiceImpl implements IConversationService {
                                    IConversationSessionRepository sessionRepository,
                                    IConversationTurnRepository turnRepository,
                                    IConversationEventBusPort eventBus,
-                                   IPronunciationService pronunciationService,
-                                   IReplyGeneratorPort replyGenerator,
-                                   IScenarioRepository scenarioRepository) {
+                                   IReplyGeneratorPort replyGenerator) {
         this.avatarDriver = avatarDriver;
         this.sessionRepository = sessionRepository;
         this.turnRepository = turnRepository;
         this.eventBus = eventBus;
-        this.pronunciationService = pronunciationService;
         this.replyGenerator = replyGenerator;
-        this.scenarioRepository = scenarioRepository;
     }
 
     // ------------------------------------------------------------------ 建会话
@@ -366,61 +355,46 @@ public class ConversationServiceImpl implements IConversationService {
         return text;
     }
 
-    // ------------------------------------------------------ 一轮对话（Java 接管 LLM）
-
-    /**
-     * 一轮完整对话：上传音频 -> 上游只识别 -> 发音评测 -> 智能体生成 -> 按句 /say。
-     *
-     * 同步段（本方法返回）只做「识别 + 落库 + 评测」这三件确定且快的事；智能体生成是流式的，
-     * 走 {@link #startReply} 在后台订阅，边出边推 SSE、边按句让数字人开口。
-     */
+    /** 识别并记录一条用户话语；评测和回复由用例编排。 */
     @Override
-    public ConversationTurnResultVO converseTurn(String sessionId, byte[] pcm, int sampleRate,
-                                                 String expectedText) {
+    public UserUtteranceVO transcribeUploadedAndRecord(String sessionId, byte[] wav) {
         ConversationSessionAggregate session = requireSession(sessionId);
         session.requireOpen();
         if (!avatarDriver.capabilities().upstreamAudio()) {
             throw new AppException(ResponseCodeEnum.UPSTREAM_AUDIO_UNSUPPORTED,
                     "当前数字人后端不支持上传音频识别，请改用文字输入");
         }
-
-        // App 上传的是裸 PCM（无头），下游两个消费者都按文件解，所以这里统一封一次 WAV。
-        byte[] wav = WavEncoder.toWav(pcm, sampleRate);
-
-        // 1) 识别：只换文本，不说话（老链路会让上游接着 LLM+TTS，那条我们已经不用了）
         String text = avatarDriver.transcribeUploaded(session.getProviderSessionId(), wav);
         session.noteUserSpeechEnded();
         session.lastUserText(text);
         Long turnId = appendUserTurn(sessionId, text).getId();
         eventBus.publish(sessionId, ConversationEventVO.of(EventTypeEnum.STT_FINAL,
                 Map.<String, Object>of("text", text, "turnId", turnId)));
+        return new UserUtteranceVO(text, turnId);
+    }
 
-        // 2) 评测：参照文本优先用 App 给的题面，没有就用刚识别出来的文本（自由对话场景）。
-        //    失败只降级成「没有评测卡」，不阻断这轮对话。
-        PronunciationAssessmentAggregate assessment = assessQuietly(sessionId, turnId, wav, text, expectedText);
-
-        // 3) 定档位：这一轮学员说得怎么样 -> 数字人下一句该用什么语言说
-        LearnerLevelEnum level = learnerLevel(session, text, assessment);
-
-        // 4) 智能体生成：异步；拿到整段后交上游脚本轨念出来
-        startReply(session, turnId, text, assessment, level);
-
-        return new ConversationTurnResultVO(text, turnId, assessment);
+    @Override
+    public void replyForTurn(String sessionId, Long turnId, String userText,
+                             PronunciationFeedbackVO feedback, LearnerLevelEnum initialLevel, String persona) {
+        ConversationSessionAggregate session = requireSession(sessionId);
+        session.requireOpen();
+        LearnerLevelEnum level = learnerLevel(session, userText, feedback, initialLevel);
+        startReply(session, turnId, userText, feedback, level, persona);
     }
 
     /**
      * 取（并按本轮证据更新）本会话的学习者档位。
      *
-     * 流程：没有跟踪器就按场景难度建一个 -> 用本轮识别文本与评测分判瞬时信号 -> 收进跟踪器得到稳定档位。
+     * 流程：没有跟踪器就建一个（起点由用例层传入）
+     * -> 用本轮识别文本与评测分判瞬时信号 -> 收进跟踪器得到稳定档位。
      * 信号为 null（既没文本也没评测）时档位保持不变。
      */
     private LearnerLevelEnum learnerLevel(ConversationSessionAggregate session, String userText,
-                                          PronunciationAssessmentAggregate assessment) {
-        Double score = assessment == null || assessment.getResult() == null
-                ? null : assessment.getResult().score();
+                                          PronunciationFeedbackVO assessment, LearnerLevelEnum initialLevel) {
+        Double score = assessment == null ? null : assessment.score();
         LearnerLevelEnum signal = LearnerLevelTracker.judge(userText, score);
         LearnerLevelTracker tracker = levelTrackers.computeIfAbsent(session.getSessionId(),
-                id -> new LearnerLevelTracker(initialLevel(session.getScenarioId())));
+                id -> new LearnerLevelTracker(initialLevel == null ? LearnerLevelEnum.MID : initialLevel));
         LearnerLevelEnum level = tracker.accept(signal);
         if (signal != null) {
             log.info("学员档位 session={} 本轮信号={} 生效档位={} 识别字数={} 评测分={}",
@@ -428,72 +402,6 @@ public class ConversationServiceImpl implements IConversationService {
                     userText == null ? 0 : userText.length(), score);
         }
         return level;
-    }
-
-    /**
-     * 初始档位：只按场景难度**往上**推，绝不因为场景写着 beginner 就先按 LOW 开口。
-     *
-     * 一见面就假定学员不行，与「零评判」的准入要求直接冲突。真正的 LOW 只能由学员自己的表现
-     * （逃回中文、或既说不出又发不准）换出来 —— 见 {@link LearnerLevelTracker#judge}。
-     */
-    private LearnerLevelEnum initialLevel(String scenarioId) {
-        ScenarioVO scenario = scenarioRepository.findById(scenarioId);
-        String level = scenario == null ? null : scenario.level();
-        return level != null && level.equalsIgnoreCase("advanced")
-                ? LearnerLevelEnum.HIGH : LearnerLevelEnum.MID;
-    }
-
-    /**
-     * 场景人设（Amy / Alex 这类身份与风格）。
-     *
-     * agent 的 instruction 只写通用契约（零评判 / 必追问 / 分级 / TTS 格式），
-     * 「这一场我是谁」必须由场景提供 —— 否则换个场景数字人还是同一个性格，
-     * 之前这段人设只发给了上游那个我们用不到的 LLM，等于白写。
-     */
-    private String scenarioPersona(ConversationSessionAggregate session) {
-        ScenarioVO scenario = scenarioRepository.findById(session.getScenarioId());
-        return scenario == null ? null : scenario.systemPromptHint();
-    }
-
-    /**
-     * 评测并落库；失败只记 warn、返回 null —— 评测是可失败的一环（上游抖动、音频太短），
-     * 它失败不该让整轮对话失败。
-     */
-    private PronunciationAssessmentAggregate assessQuietly(String sessionId, Long turnId, byte[] wav,
-                                                           String text, String expectedText) {
-        String reference = (expectedText == null || expectedText.isBlank()) ? text : expectedText;
-        if (reference == null || reference.isBlank()) {
-            return null;
-        }
-        try {
-            PronunciationAssessmentAggregate assessment = pronunciationService.assess(sessionId, turnId,
-                    new AssessPronunciationCommandEntity(wav, "turn.wav", "audio/wav", reference, null));
-            // 评测结果既进 agent 提示词，也推一条 assessment.done 给 SSE（推送式客户端 / 观测用）。
-            // data 是「评测聚合的对外信封」，与 HTTP 响应里的 assessment 字段同源。
-            eventBus.publish(sessionId, ConversationEventVO.of(EventTypeEnum.ASSESSMENT_DONE,
-                    assessmentData(assessment)));
-            return assessment;
-        } catch (Exception e) {
-            log.warn("发音评测失败（不影响本轮对话）session={} turnId={}: {}", sessionId, turnId, e.toString());
-            return null;
-        }
-    }
-
-    /** 评测结果的 SSE 信封：只带 UI 需要的东西，不带韵律曲线与音素向量（那是 HTTP 全量响应的职责）。 */
-    private static Map<String, Object> assessmentData(PronunciationAssessmentAggregate assessment) {
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("assessmentId", assessment.getId());
-        data.put("turnId", assessment.getTurnId());
-        if (assessment.getResult() != null) {
-            data.put("score", assessment.getResult().score());
-            data.put("transcribe", assessment.getResult().transcribe());
-            data.put("wordErrorRate", assessment.getResult().wordErrorRate());
-            data.put("phonemeErrorRate", assessment.getResult().phonemeErrorRate());
-            data.put("errorCount", assessment.getResult().errorCount());
-            data.put("errors", assessment.getResult().errors());
-            data.put("feedback", assessment.getResult().feedback());
-        }
-        return data;
     }
 
     /**
@@ -511,9 +419,9 @@ public class ConversationServiceImpl implements IConversationService {
      * 在上游事件协议层面解决掉，不是用例层能绕开的。
      */
     private void startReply(ConversationSessionAggregate session, Long turnId, String userText,
-                            PronunciationAssessmentAggregate assessment, LearnerLevelEnum level) {
+                            PronunciationFeedbackVO assessment, LearnerLevelEnum level, String persona) {
         String sessionId = session.getSessionId();
-        String prompt = ReplyPromptBuilder.build(userText, assessment, level, scenarioPersona(session));
+        String prompt = ReplyPromptBuilder.build(userText, assessment, level, persona);
         StringBuilder full = new StringBuilder();
         AtomicReference<Long> firstDeltaLatencyMs = new AtomicReference<>();
 

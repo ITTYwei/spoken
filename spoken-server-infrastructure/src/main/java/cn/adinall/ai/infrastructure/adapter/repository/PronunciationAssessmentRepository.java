@@ -1,9 +1,10 @@
 package cn.adinall.ai.infrastructure.adapter.repository;
 
-import cn.adinall.ai.domain.conversation.adapter.repository.IPronunciationAssessmentRepository;
-import cn.adinall.ai.domain.conversation.model.aggregate.PronunciationAssessmentAggregate;
-import cn.adinall.ai.domain.conversation.model.valobj.PronunciationResultVO;
+import cn.adinall.ai.domain.pronunciation.adapter.repository.IPronunciationAssessmentRepository;
+import cn.adinall.ai.domain.pronunciation.model.aggregate.PronunciationAssessmentAggregate;
+import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationResultVO;
 import cn.adinall.ai.infrastructure.dao.IPronunciationAssessmentDao;
+import cn.adinall.ai.infrastructure.dao.DatabaseTime;
 import cn.adinall.ai.infrastructure.dao.po.PronunciationAssessmentPO;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -117,7 +118,6 @@ public class PronunciationAssessmentRepository implements IPronunciationAssessme
         po.setFeedback(result == null ? null : result.feedback());
         po.setResultJson(toJson(result));
         po.setLatencyMs(assessment.getLatencyMs());
-        po.setCreatedAt(assessment.getCreatedAt());
 
         assessmentDao.insert(po);
         assessment.assignId(po.getId());
@@ -165,7 +165,7 @@ public class PronunciationAssessmentRepository implements IPronunciationAssessme
                 po.getAudioBytes() == null ? 0 : po.getAudioBytes(),
                 fromJson(po.getResultJson(), po.getId()),
                 po.getLatencyMs(),
-                po.getCreatedAt() == null ? System.currentTimeMillis() : po.getCreatedAt());
+                po.getCreatedAt() == null ? System.currentTimeMillis() : DatabaseTime.toEpochMillis(po.getCreatedAt()));
     }
 
     /** 结果对象 -> JSON；为 null 时存 null（列允许为空）。 */

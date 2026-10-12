@@ -4,7 +4,7 @@
 <!--
   会话档案表（training_session）。
   列名 -> 字段名靠 map-underscore-to-camel-case 自动映射（session_id -> sessionId）。
-  这组 SQL 与 Flyway 的 V1__init.sql 是配套的：表结构不动，这里也不动。
+  审计时间由 V10 统一为 DATETIME，插入省略审计列，交给数据库默认值生成。
 -->
 <mapper namespace="cn.adinall.ai.infrastructure.dao.ITrainingSessionDao">
 
@@ -14,7 +14,7 @@
     </insert>
 
     <select id="selectById" resultType="cn.adinall.ai.infrastructure.dao.po.TrainingSessionPO">
-        select id, device_id, avatar_id, model, voice, scenario_id, status, started_at, ended_at, error_message
+        select id, device_id, avatar_id, model, voice, scenario_id, status, started_at, ended_at, error_message, created_at, updated_at
         from training_session
         where id = #{id}
     </select>

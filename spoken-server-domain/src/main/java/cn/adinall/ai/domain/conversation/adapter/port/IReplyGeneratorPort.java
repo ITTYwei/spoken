@@ -34,8 +34,9 @@ import reactor.core.publisher.Flux;
  * </pre>
  * 设计要点：
  * <ul>
- *   <li>返回 {@code Flux<String>} 增量而不是整段字符串：调用方要一边推 SSE 字幕、
- *       一边把够长的片段送去 TTS —— 「边生成边出声」这个产品要求决定了签名必须是流式的。
+ *   <li>返回 {@code Flux<String>} 增量而不是整段字符串：适配器天然按块收到模型输出，
+ *       增量签名让调用方自己决定「逐块处理还是收齐再用」。当前实现是**收齐整段再一次
+ *       /say**（逐句流式试过并回退，见 docs/wiki/product-design.md §5.3）；
  *       整段收集用 {@code Flux.reduce} 或者下面的默认实现即可，不必两条接口。</li>
  *   <li>用 Reactor 的 Flux 而不是 ADK 的 Flowable：领域不该依赖 ADK（以及它背后的 RxJava）。
  *       适配器负责两边的桥接。</li>

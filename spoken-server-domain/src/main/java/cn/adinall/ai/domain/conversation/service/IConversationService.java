@@ -6,7 +6,9 @@ import cn.adinall.ai.domain.conversation.model.entity.SayCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.SpeakCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.StartConversationCommandEntity;
 import cn.adinall.ai.domain.conversation.model.valobj.ConversationEventVO;
-import cn.adinall.ai.domain.conversation.model.valobj.ConversationTurnResultVO;
+import cn.adinall.ai.domain.conversation.model.valobj.UserUtteranceVO;
+import cn.adinall.ai.domain.conversation.model.valobj.PronunciationFeedbackVO;
+import cn.adinall.ai.domain.conversation.model.valobj.LearnerLevelEnum;
 import cn.adinall.ai.domain.conversation.model.valobj.IceServerVO;
 import reactor.core.publisher.Flux;
 
@@ -125,39 +127,12 @@ public interface IConversationService {
      */
     String transcribeAndRecord(String sessionId, byte[] pcm, int sampleRate);
 
-    /**
-     * 走一轮完整对话（**Java 接管 LLM 的那条链路**，对应配置 spoken-ai.llm-owner=agent）。
-     *
-     * 与 {@link #transcribeAndRecord} 的分工：
-     * <ul>
-     *   <li>{@code transcribeAndRecord}（老链路）—— 音频交给上游，上游做 STT 之后**自己**继续
-     *       LLM→TTS→渲染（数字人自己开口）。本地只补一条 stt.final 并落库。</li>
-     *   <li>{@code converseTurn}（新链路）—— 音频由我方上传（App 截的 AEC3 后 PCM），
-     *       上游**只做识别不说话**；拿到文本后本地依次做「发音评测 → 拼提示词 → 智能体生成 →
-     *       按句 /say」，数字人说的话完全由我方决定。</li>
-     * </ul>
-     *
-     * 执行过程（同步段立即返回，异步段继续推事件）：
-     * <pre>
-     *   同步段（返回值就是它）
-     *     1. WavEncoder.toWav(pcm)                      裸 PCM 封成 WAV
-     *     2. avatarDriver.transcribeUploaded(wav)       上游只识别（POST /transcribe）
-     *     3. appendUserTurn + 推 stt.final              -> turnId
-     *     4. pronunciationService.assess(...)           发音评测（失败不阻断，只少一张卡）
-     *     5. 推 assessment.done
-     *
-     *   异步段（订阅 replyGenerator 的流，边收边做）
-     *     6. agent 增量 -> 推 assistant.delta + 按句调 avatarDriver.say（数字人逐句开口）
-     *     7. 流结束     -> 推 assistant.done + 回填回合的 assistantText
-     * </pre>
-     *
-     * @param sessionId    会话 id
-     * @param pcm          裸 PCM（16k / 单声道 / s16le），App 已做 AEC3
-     * @param sampleRate   采样率（本链路约定 16000）
-     * @param expectedText 跟读题面；为空时用识别出的文本当参照（自由对话场景）
-     * @return 同步段的结果：识别文本 + turnId + 评测结果（供 HTTP 响应直接返回）
-     */
-    ConversationTurnResultVO converseTurn(String sessionId, byte[] pcm, int sampleRate, String expectedText);
+    /** 上传文件识别并记录用户轮次，不编排发音评测。 */
+    UserUtteranceVO transcribeUploadedAndRecord(String sessionId, byte[] wav);
+
+    /** 根据本轮教学输入生成回复；场景和评测数据由用例层映射。 */
+    void replyForTurn(String sessionId, Long turnId, String userText,
+                      PronunciationFeedbackVO feedback, LearnerLevelEnum initialLevel, String persona);
 
     /** 结束会话并释放上游资源；重复调用安全。 */
     void closeSession(String sessionId);

@@ -41,3 +41,5 @@ build/
 /data/
 /spoken-server-app/data/
 /spoken-server-app/.local-config
+/docs/report/
+/.skill-sources/

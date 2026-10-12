@@ -13,18 +13,18 @@
         insert into pronunciation_assessment
             (session_id, turn_id, expected_text, lang, content_type, audio_bytes,
              score, transcribe, word_error_rate, phoneme_error_rate, acoustic_distance,
-             feedback, result_json, latency_ms, created_at)
+             feedback, result_json, latency_ms)
         values
             (#{sessionId}, #{turnId}, #{expectedText}, #{lang}, #{contentType}, #{audioBytes},
              #{score}, #{transcribe}, #{wordErrorRate}, #{phonemeErrorRate}, #{acousticDistance},
-             #{feedback}, #{resultJson}, #{latencyMs}, #{createdAt})
+             #{feedback}, #{resultJson}, #{latencyMs})
     </insert>
 
     <!-- 列顺序与 PO 字段靠 map-underscore-to-camel-case 自动对应，不写 resultMap -->
     <sql id="allColumns">
         id, session_id, turn_id, expected_text, lang, content_type, audio_bytes,
         score, transcribe, word_error_rate, phoneme_error_rate, acoustic_distance,
-        feedback, result_json, latency_ms, created_at
+        feedback, result_json, latency_ms, created_at, updated_at
     </sql>
 
     <select id="selectById" resultType="cn.adinall.ai.infrastructure.dao.po.PronunciationAssessmentPO">

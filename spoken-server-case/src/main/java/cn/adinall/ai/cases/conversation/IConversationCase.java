@@ -110,8 +110,9 @@ public interface IConversationCase {
      *
      * 返回值随配置 {@code spoken-ai.llm-owner} 走两条路：
      * <ul>
-     *   <li>{@code agent}（默认）—— 上传音频 -> 上游只识别 -> 发音评测 -> 智能体流式回答，
-     *       返回 {@code text + turnId + assessment}；回答文本从 SSE 的 assistant.delta 来；</li>
+     *   <li>{@code agent}（默认）—— 上传音频 -> 上游只识别 -> 发音评测 -> 智能体生成回答，
+     *       返回 {@code text + turnId + assessment}；回答的字幕与播放状态走 SSE
+     *       （由上游 {@code /say} 的 subtitle / speech 事件驱动）；</li>
      *   <li>{@code opentalking} —— 老链路（音频交上游一条龙），只返回 {@code text}。</li>
      * </ul>
      *

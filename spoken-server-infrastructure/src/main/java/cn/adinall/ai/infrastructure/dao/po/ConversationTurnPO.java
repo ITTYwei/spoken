@@ -1,5 +1,7 @@
 package cn.adinall.ai.infrastructure.dao.po;
 
+import java.time.LocalDateTime;
+
 /**
  * conversation_turn 表的持久化对象（PO：一问一答占一行）
  * <p>
@@ -12,7 +14,7 @@ package cn.adinall.ai.infrastructure.dao.po;
  *   assistantText  String   数字人整段回复；未定稿时为 null（列 assistant_text）
  *   audioPath      String   用户音频落盘路径，可为 null（列 audio_path）
  *   latencyMs      Long     从用户说完到回复定稿的毫秒数（列 latency_ms）
- *   createdAt      Long     回合建立时刻的毫秒时间戳（列 created_at）
+ *   createdAt      LocalDateTime  数据库创建时间（列 created_at，秒精度）
  * </pre>
  * 字段与列的对照（列名靠 MyBatis 下划线转驼峰自动映射，PO 上不写注解）：
  * <pre>
@@ -45,7 +47,7 @@ package cn.adinall.ai.infrastructure.dao.po;
  *       所以插入时必须回填（Mapper 里的 useGeneratedKeys / keyProperty）。</li>
  *   <li>保留 null 语义而不给默认值：assistantText 为 null 表示这轮还没回完，
  *       audioPath 为 null 表示没留音频；填成空串会让「还没回复」与「回复为空」分不清。</li>
- *   <li>时间戳用 Long（毫秒）而不是 LocalDateTime：与建表脚本的 bigint 一致，跨时区无歧义。</li>
+ *   <li>审计时间用 LocalDateTime 对应 DATETIME，按 Asia/Shanghai 解释；仓储读取时转换为领域毫秒值。</li>
  *   <li>这是 PO 不是领域对象：没有行为、没有校验、只有 getter/setter ——
  *       状态流转（先建后补）由 ConversationTurnAggregate 负责。</li>
  * </ul>
@@ -59,7 +61,8 @@ public class ConversationTurnPO {
     private String assistantText;
     private String audioPath;
     private Long latencyMs;
-    private Long createdAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public Long getId() {
         return id;
@@ -117,11 +120,19 @@ public class ConversationTurnPO {
         this.latencyMs = latencyMs;
     }
 
-    public Long getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Long createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

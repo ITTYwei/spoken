@@ -75,7 +75,7 @@ public interface IAppConfigPort {
      * <p>这是「评测能不能插进对话链路」的总开关：
      * <ul>
      *   <li>{@link LlmOwnerEnum#AGENT}（默认）—— Java 自己跑智能体，于是能在 LLM 之前插入发音评测
-     *       （用户语音 → 评测 → 拼进提示词 → agent 流式 → 按句 /say）；</li>
+     *       （用户语音 → 评测 → 拼进提示词 → agent 生成 → 整段 /say）；</li>
      *   <li>{@link LlmOwnerEnum#OPENTALKING} —— 把音频交给上游一条龙，行为与迁移前一致。</li>
      * </ul>
      *

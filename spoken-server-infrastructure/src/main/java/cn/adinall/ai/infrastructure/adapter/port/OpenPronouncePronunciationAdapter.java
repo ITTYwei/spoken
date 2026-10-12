@@ -1,14 +1,14 @@
 package cn.adinall.ai.infrastructure.adapter.port;
 
-import cn.adinall.ai.domain.conversation.adapter.port.IPronunciationPort;
-import cn.adinall.ai.domain.conversation.model.entity.AssessPronunciationCommandEntity;
-import cn.adinall.ai.domain.conversation.model.valobj.PhonemesVO;
-import cn.adinall.ai.domain.conversation.model.valobj.PronunciationErrorVO;
-import cn.adinall.ai.domain.conversation.model.valobj.PronunciationLanguageVO;
-import cn.adinall.ai.domain.conversation.model.valobj.PronunciationLanguagesVO;
-import cn.adinall.ai.domain.conversation.model.valobj.PronunciationPhoneVO;
-import cn.adinall.ai.domain.conversation.model.valobj.PronunciationProsodyVO;
-import cn.adinall.ai.domain.conversation.model.valobj.PronunciationResultVO;
+import cn.adinall.ai.domain.pronunciation.adapter.port.IPronunciationPort;
+import cn.adinall.ai.domain.pronunciation.model.entity.AssessPronunciationCommandEntity;
+import cn.adinall.ai.domain.pronunciation.model.valobj.PhonemesVO;
+import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationErrorVO;
+import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationLanguageVO;
+import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationLanguagesVO;
+import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationPhoneVO;
+import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationProsodyVO;
+import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationResultVO;
 import cn.adinall.ai.infrastructure.config.OpenPronounceProperties;
 import cn.adinall.ai.infrastructure.gateway.OpenPronounceGateway;
 import cn.adinall.ai.types.enums.ResponseCodeEnum;

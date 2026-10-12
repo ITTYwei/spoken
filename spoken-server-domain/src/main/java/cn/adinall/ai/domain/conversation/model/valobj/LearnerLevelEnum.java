@@ -39,7 +39,10 @@ package cn.adinall.ai.domain.conversation.model.valobj;
  *   <li>档位不等于评价：它**只影响我方怎么说话**，绝不下发给 App 展示，
  *       否则就变成「系统在给我打等级」——与「零评判」这条准入要求冲突。</li>
  *   <li>不设 DEFAULT/UNKNOWN：三档已经覆盖「说不出来 / 能说简单句 / 能自然对话」，
- *       再加一档只会让提示词分支变多而收益为零。初始档位由场景难度推，见 {@code ConversationServiceImpl}。</li>
+ *       再加一档只会让提示词分支变多而收益为零。</li>
+ *   <li>初始档位：<b>有历史就用长期水平</b>（长期 LOW → 开场就用中文接住他），
+ *       没历史才从场景难度推、且只往高推 —— 见 {@code ConversationServiceImpl#initialLevel}
+ *       与 docs/wiki/product-design.md §3.4。</li>
  * </ul>
  */
 public enum LearnerLevelEnum {

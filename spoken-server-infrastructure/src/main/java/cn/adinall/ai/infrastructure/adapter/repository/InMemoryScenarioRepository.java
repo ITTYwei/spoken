@@ -1,7 +1,7 @@
 package cn.adinall.ai.infrastructure.adapter.repository;
 
-import cn.adinall.ai.domain.conversation.adapter.repository.IScenarioRepository;
-import cn.adinall.ai.domain.conversation.model.valobj.ScenarioVO;
+import cn.adinall.ai.domain.scenario.adapter.repository.IScenarioRepository;
+import cn.adinall.ai.domain.scenario.model.valobj.ScenarioVO;
 
 import java.util.List;
 
@@ -77,21 +77,26 @@ import java.util.List;
 public class InMemoryScenarioRepository implements IScenarioRepository {
 
     /**
-     * 两个场景都是「英语口语陪练」，所以提示词都必须**强硬地锁死英语**：
-     * 只写「reply in English」压不住中文用户 —— 用户一说中文，模型很容易跟着切。
-     * 所以要显式写上「绝不切中文 / 不要翻译」。
+     * 编写场景内容时容易踩的三件事：
      *
-     * 音色同理必须是英文音色：英文文本用中文音色念，发音会很怪。
-     * 音色作用在 TTS 阶段，**脚本轨的开场白和 LLM 生成的回复都受它影响**。
+     * 1) 人设（systemPromptHint）**只写「我是谁、什么风格」，不写语言规则**。
+     *    语言策略（中英比例）已经交给智能体契约按学员档位逐轮下发；在这里写死
+     *    「Never switch to Chinese」会和它直接打架 —— 低水平学员需要中文陪练时，
+     *    模型会在这两条互斥指令之间随机选一条。
      *
-     * 现在用的是**阿里云百炼 Qwen TTS** 的英文音色（Cherry / Ethan），
-     * 由 {@code spoken-ai.provider.opentalking.default-tts-provider: dashscope} 配套下发。
-     * 注意音色名是按引擎命名空间命名的 —— **换音色必须同时换 default-tts-provider**，
-     * 只换名字不换引擎，上游解不出这个音色。
+     * 2) 音色必须是英文音色，且与 TTS 引擎**配套**：英文文本用中文音色念，发音会很怪。
+     *    音色作用在 TTS 阶段，**脚本轨的开场白和 LLM 生成的回复都受它影响**。
+     *    现在用的是**阿里云百炼 Qwen TTS** 的英文音色（Cherry / Ethan），
+     *    由 {@code spoken-ai.provider.opentalking.default-tts-provider: dashscope} 配套下发。
+     *    音色名按引擎命名空间命名 —— **换音色必须同时换 default-tts-provider**，
+     *    只换名字不换引擎，上游解不出这个音色。
      *
-     * systemPromptHint 现在只写「我是谁、什么风格」：语言策略（中英比例）已经交给智能体契约
-     * 按学员档位逐轮下发，这里再写死「Never switch to Chinese」会和它直接打架 ——
-     * 低水平学员需要中文陪练时，模型会在这两条互斥指令之间随机选一条。
+     * 3) ⚠️ **待办：openingLine 要按档位分文本**。开场白走脚本轨（/say，不经 LLM），
+     *    提示词管不到它，所以它自己没法适配档位 —— 一个长期 LOW 的学员本该听到中文开场，
+     *    现在却只能照念这句英文。需要按档位各存一句（LOW 档：主要中文 + 一句 3~6 词英文示范
+     *    + 中文邀请跟读），取值优先级「档位专属 → 默认 openingLine → 不自动开场」。
+     *    规则见 docs/wiki/product-design.md §3.4；DDL 已就绪
+     *    （{@code conversation_scenario.opening_line_low/mid/high}）。
      */
     private static final List<ScenarioVO> SCENARIOS = List.of(
             new ScenarioVO("free", "自由对话", "随便聊，练开口的胆量",

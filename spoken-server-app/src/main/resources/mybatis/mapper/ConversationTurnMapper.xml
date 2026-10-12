@@ -9,25 +9,25 @@
 
     <insert id="insert" parameterType="cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO"
             useGeneratedKeys="true" keyProperty="id">
-        insert into conversation_turn (session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at)
-        values (#{sessionId}, #{seq}, #{userText}, #{assistantText}, #{audioPath}, #{latencyMs}, #{createdAt})
+        insert into conversation_turn (session_id, seq, user_text, assistant_text, audio_path, latency_ms)
+        values (#{sessionId}, #{seq}, #{userText}, #{assistantText}, #{audioPath}, #{latencyMs})
     </insert>
 
     <select id="selectById" resultType="cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO">
-        select id, session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at
+        select id, session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at, updated_at
         from conversation_turn
         where id = #{id}
     </select>
 
     <select id="selectBySessionIdOrderBySeqAsc" resultType="cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO">
-        select id, session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at
+        select id, session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at, updated_at
         from conversation_turn
         where session_id = #{sessionId}
         order by seq asc
     </select>
 
     <select id="selectLastBySessionId" resultType="cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO">
-        select id, session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at
+        select id, session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at, updated_at
         from conversation_turn
         where session_id = #{sessionId}
         order by seq desc
