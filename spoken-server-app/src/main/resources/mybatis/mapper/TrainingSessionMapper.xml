@@ -9,12 +9,12 @@
 <mapper namespace="cn.adinall.ai.infrastructure.dao.ITrainingSessionDao">
 
     <insert id="insert" parameterType="cn.adinall.ai.infrastructure.dao.po.TrainingSessionPO">
-        insert into training_session (id, device_id, avatar_id, model, voice, scenario_id, status, started_at, ended_at, error_message)
-        values (#{id}, #{deviceId}, #{avatarId}, #{model}, #{voice}, #{scenarioId}, #{status}, #{startedAt}, #{endedAt}, #{errorMessage})
+        insert into training_session (id, device_id, avatar_id, model, voice, scenario_id, status, started_at, ended_at, error_message, opening_decision_json)
+        values (#{id}, #{deviceId}, #{avatarId}, #{model}, #{voice}, #{scenarioId}, #{status}, #{startedAt}, #{endedAt}, #{errorMessage}, #{openingDecisionJson})
     </insert>
 
     <select id="selectById" resultType="cn.adinall.ai.infrastructure.dao.po.TrainingSessionPO">
-        select id, device_id, avatar_id, model, voice, scenario_id, status, started_at, ended_at, error_message, created_at, updated_at
+        select id, device_id, avatar_id, model, voice, scenario_id, status, started_at, ended_at, error_message, opening_decision_json, created_at, updated_at
         from training_session
         where id = #{id}
     </select>
@@ -27,6 +27,7 @@
             status = #{status},
             <if test="errorMessage != null">error_message = #{errorMessage},</if>
             <if test="endedAt != null">ended_at = #{endedAt},</if>
+            <if test="openingDecisionJson != null">opening_decision_json = #{openingDecisionJson},</if>
         </set>
         where id = #{id}
     </update>

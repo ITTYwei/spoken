@@ -1,0 +1,92 @@
+--- a/start_flashtalk_stack.sh
++++ b/start_flashtalk_stack.sh
+@@ -13,10 +13,10 @@
+ #   2. OmniRT avatar WS proxy        0.0.0.0:8765   (this is what OpenTalking gets via --omnirt)
+ #   3. FlashHead WebSocket renderer  0.0.0.0:8766   (conda env "flashhead", SoulX-FlashHead-1.3B)
+ #
+-# Default startup uses FlashHead 1.3B Lite and keeps the 14B renderer disabled.
+-# The previous CPU-offloaded 14B process used ~14 GiB VRAM on this server.
+-# OpenTalking now defaults to flashhead; its renderer connects directly to port 8766.
+-# The legacy 14B startup switches below are explicit opt-in only.
++# Default startup uses Fast-FlashTalk INT8 through the flashtalk protocol.
++# FlashHead is disabled to release GPU memory for the quantized renderer.
++# OpenTalking defaults to flashtalk with a direct_ws connection to port 18766.
++# FLASHTALK_IMPLEMENTATION=soulx explicitly selects the previous original backend.
+ #
+ # OpenTalking itself is started separately, e.g.
+ #   bash scripts/quickstart/start_all.sh --omnirt http://127.0.0.1:8765 --api-port 8001 --web-port 5173
+@@ -34,9 +34,13 @@
+ RUN_DIR="${RUN_DIR:-/home/nm/develop/code/run}"
+ FT_PORT="${FLASHTALK_PORT:-18766}"
+ OMNIRT_PORT="${OMNIRT_PORT:-8765}"
+-START_FLASHTALK="${START_FLASHTALK:-0}"   # 0 => FlashHead + OmniRT proxy only
+-FLASHHEAD_ENABLED="${FLASHHEAD_ENABLED:-1}"   # 0 => FlashTalk + OmniRT proxy only
++START_FLASHTALK="${START_FLASHTALK:-1}"   # Fast-FlashTalk enabled by default
++FLASHHEAD_ENABLED="${FLASHHEAD_ENABLED:-0}"   # release GPU memory for Fast-FlashTalk
+ FT_LOG="$LOG_DIR/omnirt-flashtalk-ws.log"
++FLASHTALK_IMPLEMENTATION="${FLASHTALK_IMPLEMENTATION:-fast}"
++FAST_FLASHTALK_ROOT="${FAST_FLASHTALK_ROOT:-/home/nm/develop/code/experiments/fast-flashtalk-20261012}"
++FAST_PID="$RUN_DIR/fast-flashtalk-ws.pid"
++if [[ "$FLASHTALK_IMPLEMENTATION" == "fast" ]]; then FT_LOG="$LOG_DIR/fast-flashtalk-ws.log"; fi
+ OMNIRT_LOG="$LOG_DIR/omnirt-avatar-ws.log"
+ FT_PID="$RUN_DIR/omnirt-flashtalk-ws.pid"
+ 
+@@ -84,6 +88,10 @@
+     echo "FlashTalk WS already listening on $FT_PORT"
+   else
+     echo "Starting FlashTalk WS renderer on $FT_PORT ..."
++    if [[ "$FLASHTALK_IMPLEMENTATION" == "fast" ]]; then
++      setsid nohup bash "$FAST_FLASHTALK_ROOT/start_fast_flashtalk.sh" >>"$FT_LOG" 2>&1 </dev/null &
++      echo $! > "$FAST_PID"
++    elif [[ "$FLASHTALK_IMPLEMENTATION" == "soulx" ]]; then
+     (
+       cd "$OMNIRT_DIR"
+       flashtalk_env
+@@ -91,6 +99,10 @@
+       setsid nohup bash scripts/start_flashtalk_ws.sh --background \
+         >"$LOG_DIR/omnirt-flashtalk-start.log" 2>&1 </dev/null &
+     )
++    else
++      echo "Unsupported FLASHTALK_IMPLEMENTATION=$FLASHTALK_IMPLEMENTATION" >&2
++      exit 2
++    fi
+     if wait_port "$FT_PORT" 240; then
+       echo "  ok: FlashTalk WS up (log: $FT_LOG)"
+     else
+@@ -152,7 +164,19 @@
+   fi
+ }
+ 
++stop_fast_flashtalk() {
++  if [[ -f "$FAST_PID" ]]; then
++    local fast_pid
++    fast_pid="$(cat "$FAST_PID")"
++    if [[ "$fast_pid" =~ ^[0-9]+$ ]] && [[ -r "/proc/$fast_pid/cmdline" ]] &&
++       tr '\0' '\n' <"/proc/$fast_pid/cmdline" | grep -Fxq -- "$FAST_FLASHTALK_ROOT/ws_server.py"; then
++      kill "$fast_pid" && echo "stopped Fast-FlashTalk WS" || true
++    fi
++  fi
++}
++
+ stop() {
++  stop_fast_flashtalk
+   pkill -f "omnirt.cli.main serve-avatar-ws" 2>/dev/null && echo "stopped OmniRT avatar proxy" || true
+   pkill -f "flashtalk_ws.py" 2>/dev/null && echo "stopped FlashTalk WS" || true
+   pkill -f "flashhead_server.py" 2>/dev/null && echo "stopped FlashHead WS" || true
+@@ -160,6 +184,7 @@
+ }
+ 
+ stop_flashtalk() {
++  stop_fast_flashtalk
+   pkill -f "flashtalk_ws.py" 2>/dev/null && echo "stopped 14B FlashTalk WS (freed its VRAM)" || echo "14B FlashTalk was not running"
+   sleep 1
+ }
+@@ -188,7 +213,7 @@
+   restart) stop; start ;;
+   stop-flashtalk) stop_flashtalk ;;
+   stop-flashhead) stop_flashhead ;;
+-  --only-flashhead|--no-flashtalk) START_FLASHTALK=0; start ;;
++  --only-flashhead|--no-flashtalk) START_FLASHTALK=0; FLASHHEAD_ENABLED=1; start ;;
+   --only-flashtalk|--no-flashhead) START_FLASHTALK=1; FLASHHEAD_ENABLED=0; start ;;
+   --with-flashtalk|--both) START_FLASHTALK=1; FLASHHEAD_ENABLED=1; start ;;
+   status) status ;;

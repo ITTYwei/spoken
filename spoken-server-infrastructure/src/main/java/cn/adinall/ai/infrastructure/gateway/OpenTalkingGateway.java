@@ -117,6 +117,12 @@ import java.util.stream.Stream;
  * </ul>
  */
 public class OpenTalkingGateway {
+    /** 外部文本统一协议与渲染模型无关；模型已经在会话创建时固定。 */
+    public reactor.core.publisher.Mono<Void> streamReply(String providerSessionId, String replyId,
+                                                         String voice, Flux<String> text) {
+        URI uri = URI.create(base.replaceFirst("^http", "ws") + "/sessions/" + providerSessionId + "/text_stream");
+        return OpenTalkingTextSocket.play(http, uri, replyId, voice, props.getDefaultTtsProvider(), text);
+    }
 
     private static final Logger log = LoggerFactory.getLogger(OpenTalkingGateway.class);
 

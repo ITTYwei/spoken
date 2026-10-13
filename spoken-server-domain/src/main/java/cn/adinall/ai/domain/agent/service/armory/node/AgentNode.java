@@ -64,11 +64,18 @@ import java.util.List;
  *       按 module.agentWorkflows 组装，职责分开。</li>
  *   <li>LlmAgent 的模型走 MySpringAI 适配：ADK 只认 BaseLlm，Spring AI 的 ChatModel
  *       必须包一层，顺带在适配层里处理消息转换。</li>
+ *   <li>module.chat-model.log-llm-payload 在这里转交给适配器（setLogLlmPayload）：
+ *       开关是「这台模型要不要把发给它的内容打进日志」的部署决策，属于模型配置，
+ *       不该让运行期的对话代码去关心。</li>
  * </ul>
  */
 @Slf4j
 @Service
 public class AgentNode extends AbstractArmorySupport {
+
+    /** 教学模型请求的保守输入预算，和context reducer保持同一配置。 */
+    @org.springframework.beans.factory.annotation.Value("${spoken-ai.context.input-budget:6000}")
+    private int preparedInputBudget = 6000;
 
     @Resource
     private AgentWorkflowNode agentWorkflowNode;
@@ -82,11 +89,23 @@ public class AgentNode extends AbstractArmorySupport {
         AiAgentConfigTableVO aiAgentConfigTableVO = requestParameter.getAiAgentConfigTableVO();
         List<AiAgentConfigTableVO.Module.Agent> agents = aiAgentConfigTableVO.getModule().getAgents();
 
+        // 是否打印「发给 LLM 的内容」：调试开关，逐个模型适配器设置（每个 agent 一个 MySpringAI）。
+        boolean logLlmPayload = null != aiAgentConfigTableVO.getModule().getChatModel()
+                && aiAgentConfigTableVO.getModule().getChatModel().isLogLlmPayload();
+
         for (AiAgentConfigTableVO.Module.Agent agentConfig : agents) {
+            // 使用真实配置模型名，避免日志和 ADK 标识退化为 OpenAiChatModel 类名。
+            String modelName = aiAgentConfigTableVO.getModule().getChatModel() == null ? null
+                    : aiAgentConfigTableVO.getModule().getChatModel().getModel();
+            MySpringAI model = modelName == null || modelName.isBlank()
+                    ? new MySpringAI(chatModel) : new MySpringAI(chatModel, modelName);
+            model.setLogLlmPayload(logLlmPayload);
+            model.setPreparedInputBudget(preparedInputBudget);
+
             LlmAgent llmAgent = LlmAgent.builder()
                     .name(agentConfig.getName())
                     .description(agentConfig.getDescription())
-                    .model(new MySpringAI(chatModel))
+                    .model(model)
                     .instruction(agentConfig.getInstruction())
                     .outputKey(agentConfig.getOutputKey())
                     .build();

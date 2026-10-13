@@ -4,6 +4,7 @@ import cn.adinall.ai.domain.agent.model.entity.ChatCommandEntity;
 import cn.adinall.ai.domain.agent.model.valobj.AiAgentConfigTableVO;
 import com.google.adk.events.Event;
 import io.reactivex.rxjava3.core.Flowable;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -11,18 +12,19 @@ import java.util.List;
  * 对话服务接口（agent 能力的对外端口）
  * <p>
  * 功能：声明「列出可用智能体 / 建会话 / 发消息（同步与流式）」这四类能力，
- * 实现是 ChatService；调用方（AgentServiceController）只依赖本接口。
+ * 实现是 ChatService；调用方（Controller / case）只依赖本接口。
  * <pre>
  *   queryAiAgentConfigList()                             列出配置里的全部智能体
  *   createSession(agentId, userId)                       按 userId 建/复用 ADK 会话，返回 sessionId
  *   handleMessage(agentId, userId, message)              建会话后发消息，返回多段文本
  *   handleMessage(agentId, userId, sessionId, message)    在指定会话里发消息
  *   handleMessageStream(agentId, userId, sessionId, msg)  流式发消息，返回 Flowable&lt;Event&gt;
+ *   handleTextStream(agentId, userId, sessionId, msg)     纯文本流，Agent 内过滤回显与重复汇总
  *   handleMessage(ChatCommandEntity)                      复合入参：文本 + 文件 + 内联数据
  * </pre>
  * 体系架构（调用方 -> 接口 -> 实现 -> 装配产物）：
  * <pre>
- *   AgentServiceController（HTTP）
+ *   AgentServiceController（HTTP） / ConversationCaseImpl（用例）
  *        |
  *        v
  *   IChatService   <-- 本接口
@@ -35,7 +37,7 @@ import java.util.List;
  *        |  runner.sessionService().createSession(appName, userId)
  *        |  runner.runAsync(userId, sessionId, Content.fromParts(...))
  *        v
- *   List&lt;String&gt; / Flowable&lt;Event&gt;
+ *   List&lt;String&gt; / Flowable&lt;Event&gt; / Flux&lt;String&gt;
  * </pre>
  * 案例：
  * <pre>
@@ -153,5 +155,21 @@ public interface IChatService {
      * @throws cn.adinall.ai.types.exception.AppException agentId 未装配时抛 E0001
      */
     List<String> handleMessage(ChatCommandEntity chatCommandEntity);
+
+    /**
+     * 生成纯文本增量。ADK 回显过滤、错误传播和汇总去重由 Agent 领域完成。
+     * <p>调用方先通过 createSession 建立上下文，再订阅本方法返回的流。
+     * @return 纯文本增量；每次订阅独立转换，保留原始事件流接口用于工具事件展示
+     */
+    Flux<String> handleTextStream(String agentId, String userId, String sessionId, String message);
+
+    /**
+     * 在短生命周期 ADK 会话中消费已裁剪上下文；结束、失败和取消均释放会话。
+     * 业务历史由 context provider 提供，ADK 不再隐式追加旧控制提示词。
+     */
+    Flux<String> handlePreparedTextStream(String agentId, String userId, String preparedMessage);
+
+    /** 关闭通用对话接口的缓存会话，不能跨 agentId 删除其他会话。 */
+    void closeSession(String agentId, String userId);
 
 }

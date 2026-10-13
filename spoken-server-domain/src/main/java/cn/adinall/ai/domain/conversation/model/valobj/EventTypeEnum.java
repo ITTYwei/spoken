@@ -53,6 +53,8 @@ public enum EventTypeEnum {
     /** 数字人回复的流式文本增量 */
     ASSISTANT_DELTA("assistant.delta"),
     ASSISTANT_DONE("assistant.done"),
+    /** LLM 文本生成结束，不能据此认定音视频已播放完。 */
+    TEXT_GENERATION_DONE("assistant.text_done"),
     /** 发音评测完成（data 是评测结果的对外形状） */
     ASSESSMENT_DONE("assessment.done"),
     /** 开始播放某段语音 */

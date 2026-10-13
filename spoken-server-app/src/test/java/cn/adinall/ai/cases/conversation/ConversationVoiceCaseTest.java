@@ -19,12 +19,32 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import cn.adinall.ai.domain.agent.service.IChatService;
+import cn.adinall.ai.domain.learner.service.level.LearnerLevelService;
+import cn.adinall.ai.domain.conversation.model.entity.SayCommandEntity;
+import reactor.core.publisher.Flux;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/** 验证跨域编排迁移后，评分降级、教学反馈与旧链路契约保持一致。 */
+/**
+ * 跨领域语音回复编排测试。
+ * <p>功能：验证 case 调用 Agent 接口、整段播放、错误降级与旧链路隔离。
+ * <p>体系架构 / 运行过程：
+ * <pre>
+ *   Mock 识别 / 评测 / Agent -> case -> 提示词、say、错误事件断言
+ * </pre>
+ * 案例：
+ * <pre>
+ *   输入：模型增量 Hi + there -> 输出：say 一次，文本为 Hi there。
+ * </pre>
+ * 设计要点：
+ * <ul>
+ *   <li>等待异步完成信号后断言，不访问真实模型。</li>
+ *   <li>覆盖建会话、生成、播放失败和无输出。</li>
+ * </ul>
+ */
 public class ConversationVoiceCaseTest {
     private final IConversationService conversation = mock(IConversationService.class);
     private final IAppConfigPort config = mock(IAppConfigPort.class);
@@ -32,13 +52,19 @@ public class ConversationVoiceCaseTest {
     private final IPronunciationService pronunciation = mock(IPronunciationService.class);
     private final IAudioFormatPort audio = mock(IAudioFormatPort.class);
     private final IConversationEventBusPort events = mock(IConversationEventBusPort.class);
+    private final IChatService chat = mock(IChatService.class);
     private final byte[] pcm = {1, 2};
     private final byte[] wav = {3, 4};
     private ConversationCaseImpl useCase;
 
     @Before
     public void setUp() {
-        useCase = new ConversationCaseImpl(conversation, config, scenarios, pronunciation, audio, events);
+        useCase = new ConversationCaseImpl(conversation, config, scenarios, pronunciation, audio, events,
+                mock(cn.adinall.ai.cases.conversation.impl.OpeningPreparation.class), chat, new LearnerLevelService(), "100003");
+        org.springframework.test.util.ReflectionTestUtils.setField(useCase, "streamingEnabled", false);
+        org.springframework.test.util.ReflectionTestUtils.setField(useCase, "teaching", TeachingTestFixture.create());
+        when(chat.handlePreparedTextStream(eq("100003"), eq("s1"), anyString()))
+                .thenReturn(Flux.just("Hi ", "there?"));
         when(config.llmOwner()).thenReturn(LlmOwnerEnum.AGENT);
         when(conversation.requireSession("s1")).thenReturn(new ConversationSessionAggregate(
                 "s1", "provider1", "device1", null, null, null, "advanced", SessionStatusEnum.ACTIVE));
@@ -68,13 +94,15 @@ public class ConversationVoiceCaseTest {
         ArgumentCaptor<AssessPronunciationCommandEntity> command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
         verify(pronunciation).assess(eq("s1"), eq(42L), command.capture());
         assertSame(wav, command.getValue().audio());
-        assertEquals("Read this", command.getValue().expectedText());
-        ArgumentCaptor<PronunciationFeedbackVO> feedback = ArgumentCaptor.forClass(PronunciationFeedbackVO.class);
-        verify(conversation).replyForTurn(eq("s1"), eq(42L), eq("Hello"), feedback.capture(), eq(LearnerLevelEnum.HIGH), eq("Be Amy"));
-        assertEquals(Double.valueOf(86), feedback.getValue().score());
-        assertEquals("hello", feedback.getValue().errors().get(0).word());
+        assertEquals("Hello", command.getValue().expectedText()); // 客户端不能改服务端任务。
+        String prompt = generatedPrompt();
+        assertFalse(prompt.contains("86.0/100"));
+        assertFalse(prompt.contains("həˈloʊ"));
+        assertTrue(prompt.contains("Learner product level: L2"));
+        assertTrue(prompt.contains("Be Amy"));
+        assertPlayedOnce();
         ArgumentCaptor<ConversationEventVO> event = ArgumentCaptor.forClass(ConversationEventVO.class);
-        verify(events).publish(eq("s1"), event.capture());
+        verify(events, atLeastOnce()).publish(eq("s1"), event.capture());
         assertNotNull(event.getValue());
     }
 
@@ -83,11 +111,12 @@ public class ConversationVoiceCaseTest {
         when(pronunciation.assess(eq("s1"), eq(42L), any())).thenThrow(new IllegalStateException("provider down"));
         var response = useCase.voice("s1", pcm, 16000, null);
         assertNull(response.assessment());
-        verify(conversation).replyForTurn("s1", 42L, "Hello", null, LearnerLevelEnum.HIGH, "Be Amy");
+        assertTrue(generatedPrompt().contains("Sole action: QUESTION"));
+        assertPlayedOnce();
         ArgumentCaptor<AssessPronunciationCommandEntity> command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
         verify(pronunciation).assess(eq("s1"), eq(42L), command.capture());
         assertEquals("Hello", command.getValue().expectedText());
-        verifyNoInteractions(events);
+        verify(events, never()).publish(anyString(), argThat(e -> e.type() == EventTypeEnum.ERROR || e.type() == EventTypeEnum.ASSESSMENT_DONE));
     }
 
     @Test
@@ -96,7 +125,8 @@ public class ConversationVoiceCaseTest {
         when(scenarios.findById("advanced")).thenReturn(null);
         assertNull(useCase.voice("s1", pcm, 16000, " ").assessment());
         verifyNoInteractions(pronunciation);
-        verify(conversation).replyForTurn("s1", 42L, "", null, LearnerLevelEnum.MID, null);
+        verifyNoInteractions(chat);
+        verify(conversation, timeout(3000)).say(eq("s1"), argThat(c -> c.text().contains("不用急")));
     }
 
     @Test
@@ -108,6 +138,95 @@ public class ConversationVoiceCaseTest {
         assertNull(response.turnId());
         assertNull(response.assessment());
         verifyNoInteractions(audio, pronunciation, events);
-        verify(conversation, never()).replyForTurn(anyString(), any(), any(), any(), any(), any());
+        verifyNoInteractions(chat);
     }
+
+    /** 等待异步调用完成并捕获传给 Agent 的业务提示词。 */
+    private String generatedPrompt() {
+        ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
+        verify(chat, timeout(3000)).handlePreparedTextStream(eq("100003"), eq("s1"), prompt.capture());
+        return prompt.getValue();
+    }
+
+    /** 模型产生两段增量仍只下发一次完整文本。 */
+    private void assertPlayedOnce() {
+        ArgumentCaptor<SayCommandEntity> command = ArgumentCaptor.forClass(SayCommandEntity.class);
+        verify(conversation, timeout(3000)).say(eq("s1"), command.capture());
+        assertEquals("Hi there?", command.getValue().text());
+        assertTrue(command.getValue().commandId().startsWith("s1:reply:42:"));
+    }
+
+    @Test
+    public void modelFailurePublishesErrorWithoutPlayingOrClosing() {
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString()))
+                .thenReturn(Flux.concat(Flux.just("partial"), Flux.error(new IllegalStateException("model down"))));
+        useCase.voice("s1", pcm, 16000, null);
+        verify(events, timeout(3000)).publish(eq("s1"), argThat(e -> e.type() == EventTypeEnum.ERROR));
+        verify(conversation, never()).say(anyString(), any());
+        verify(conversation, never()).closeSession(anyString());
+    }
+
+    @Test
+    public void sessionCreationFailureUsesAsyncErrorChannel() {
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString())).thenThrow(new IllegalStateException("agent unavailable"));
+        useCase.voice("s1", pcm, 16000, null);
+        verify(events, timeout(3000)).publish(eq("s1"), argThat(e -> e.type() == EventTypeEnum.ERROR));
+        verify(chat, never()).handleTextStream(anyString(), anyString(), anyString(), anyString());
+        verify(conversation, never()).say(anyString(), any());
+    }
+
+    @Test
+    public void emptyModelOutputUsesOneSafeQuestion() throws Exception {
+        java.util.concurrent.CountDownLatch completed = new java.util.concurrent.CountDownLatch(1);
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString()))
+                .thenReturn(Flux.<String>empty().doFinally(signal -> completed.countDown()));
+        useCase.voice("s1", pcm, 16000, null);
+        assertTrue(completed.await(3, java.util.concurrent.TimeUnit.SECONDS));
+        verify(conversation, timeout(3000)).say(eq("s1"), argThat(c -> c.text().equals("你今天做了什么？")));
+        verify(events, never()).publish(anyString(), argThat(e -> e.type() == EventTypeEnum.ERROR || e.type() == EventTypeEnum.ASSESSMENT_DONE));
+    }
+
+    @Test
+    public void playbackFailurePublishesErrorWithoutClosing() {
+        doThrow(new IllegalStateException("say down")).when(conversation).say(anyString(), any());
+        useCase.voice("s1", pcm, 16000, null);
+        verify(events, timeout(3000)).publish(eq("s1"), argThat(e -> e.type() == EventTypeEnum.ERROR));
+        verify(conversation, never()).closeSession(anyString());
+    }
+    @Test
+    public void streamsBeforeCompletionAndInterruptCancelsAgent() throws Exception {
+        org.springframework.test.util.ReflectionTestUtils.setField(useCase, "streamingEnabled", true);
+        var source = reactor.core.publisher.Sinks.many().unicast().<String>onBackpressureBuffer();
+        var received = new java.util.concurrent.CopyOnWriteArrayList<String>();
+        var cancelled = new java.util.concurrent.CountDownLatch(1);
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString()))
+                .thenReturn(source.asFlux().doOnCancel(cancelled::countDown));
+        when(conversation.streamReply(eq("s1"), anyString(), any())).thenAnswer(inv -> {
+            Flux<String> text = inv.getArgument(2);
+            return text.doOnNext(received::add).then();
+        });
+        useCase.voice("s1", pcm, 16000, null);
+        source.tryEmitNext("First sentence.");
+        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(3);
+        while (received.isEmpty() && System.nanoTime() < deadline) Thread.sleep(10);
+        assertEquals(List.of("First sentence. "), received);
+        verify(conversation, never()).say(anyString(), any());
+        verify(events, never()).publish(anyString(), argThat(e -> e.type() == EventTypeEnum.TEXT_GENERATION_DONE));
+        useCase.interrupt("s1");
+        assertTrue(cancelled.await(3, java.util.concurrent.TimeUnit.SECONDS));
+        source.tryEmitNext("Late old reply.");
+        assertEquals(1, received.size());
+    }
+
+    @Test
+    public void interruptDuringAssessmentPreventsLateReplyStart() {
+        when(pronunciation.assess(eq("s1"), eq(42L), any())).thenAnswer(inv -> {
+            useCase.interrupt("s1");
+            return null;
+        });
+        useCase.voice("s1", pcm, 16000, null);
+        verify(chat, never()).handlePreparedTextStream(anyString(), anyString(), anyString());
+        verify(conversation, never()).streamReply(anyString(), anyString(), any());
+    }
+
 }

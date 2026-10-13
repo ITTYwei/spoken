@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.adinall.ai.infrastructure.dao.IOpeningFactsDao">
+    <!-- 匿名入口只读取官方公开场景；不按客户端传入编码泄露私有剧本。 -->
+    <select id="scenarios" resultType="cn.adinall.ai.infrastructure.dao.po.OpeningScenarioPO">
+        select scenario_code, title, goal, persona_prompt, level_hint, opening_line, voice,
+               opening_line_low, opening_line_mid, opening_line_high
+        from conversation_scenario where owner_user_id is null and visibility=1 and status=1 and deleted_at is null
+        order by id
+    </select>
+    <!-- 有效历史必须有用户非空发言；纯开场与空会话不算。账号历史由可信主体查询。 -->
+    <select id="history" resultType="cn.adinall.ai.infrastructure.dao.po.OpeningHistorySessionPO">
+        select s.id, s.scenario_id, s.status, s.started_at, s.ended_at,
+               s.resume_topic_zh, s.resume_topic_en, s.resume_evidence, s.resume_state,
+               (select t.user_text from conversation_turn t join conversation_teaching_reply r on r.turn_id=t.id
+                where t.id=s.resume_source_turn_id and t.session_id=s.id and r.completed=1
+                and r.practice_input=0
+                and t.id &gt; COALESCE((select p.context_reset_turn from learner_profile p
+                    where p.subject_key=IF(s.user_id is null,CONCAT('device:',s.device_id),CONCAT('user:',s.user_id))),0)) resume_source_text
+        from training_session s
+        where
+        <choose>
+            <when test="userId != null">s.user_id=#{userId}</when>
+            <otherwise>s.device_id=#{deviceId} and s.user_id is null</otherwise>
+        </choose>
+        and s.started_at is not null
+        and exists (select 1 from conversation_turn t where t.session_id=s.id and char_length(trim(t.user_text)) &gt; 0)
+        order by s.started_at desc, s.id desc
+    </select>
+    <!-- 一次批量读取最近十场，评测只取该回合最新一份，避免多次评测放大会话权重。 -->
+    <select id="turns" resultType="cn.adinall.ai.infrastructure.dao.po.OpeningHistoryTurnPO">
+        select t.session_id, t.user_text,
+               (select a.score from pronunciation_assessment a where a.turn_id=t.id and a.score between 0 and 100 order by a.id desc limit 1) score
+        from conversation_turn t where t.session_id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        and char_length(trim(t.user_text)) &gt; 0
+        order by t.session_id, t.seq
+    </select>
+    <!-- scheduled_date 是明确今天要练的日期，不能拿 due_date 截止日当日程。 -->
+    <select id="plan" resultType="cn.adinall.ai.infrastructure.dao.po.OpeningPlanPO">
+        select i.id, i.opening_topic_zh, i.opening_topic_en
+        from user_practice_plan_item i join user_practice_plan p on p.id=i.plan_id and p.user_id=i.user_id
+        left join conversation_scenario s on s.id=i.scenario_id
+        where i.user_id=#{userId} and i.scheduled_date=#{today} and i.status in (0,1)
+          and p.status=1 and p.deleted_at is null
+          and (p.start_date is null or p.start_date &lt;=#{today}) and (p.end_date is null or p.end_date &gt;=#{today})
+          and (i.target_count is null or i.done_count &lt; i.target_count)
+          and (i.scenario_id is null or (s.scenario_code=#{scenarioId} and s.status=1 and s.deleted_at is null))
+          and (nullif(trim(i.opening_topic_zh),'') is not null or nullif(trim(i.opening_topic_en),'') is not null)
+        order by i.seq, i.id limit 1
+    </select>
+    <!-- 供会话流程保存明确的待聊事实，不从问号或 topics 标签推断。 -->
+    <update id="saveResume">
+        update training_session set resume_topic_zh=#{zh}, resume_topic_en=#{en}, resume_evidence=#{evidence}
+        where id=#{sessionId}
+    </update>
+    <update id="verifiedResume">
+        update training_session s set resume_topic_zh=#{zh},resume_topic_en=#{en},resume_evidence='USER_DEFERRED',
+            resume_source_turn_id=#{turn},resume_state='OPEN'
+        where s.id=#{session} and exists(select 1 from conversation_turn t where t.id=#{turn} and t.session_id=s.id)
+          and (s.resume_source_turn_id is null or s.resume_source_turn_id &lt; #{turn}
+               or (s.resume_source_turn_id=#{turn} and s.resume_state='OPEN'))
+    </update>
+    <update id="finishTopic">
+        update training_session s set resume_state='CLOSED',resume_source_turn_id=#{turn}
+        where s.id=#{session} and (s.resume_source_turn_id is null or s.resume_source_turn_id &lt;=#{turn})
+          and exists(select 1 from conversation_turn t where t.id=#{turn} and t.session_id=s.id)
+    </update>
+    <select id="encounter" resultType="map">
+        select first_introduced_at AS introducedAt,last_avatar_id AS avatarId,last_avatar_name AS avatarName
+        from conversation_opening_encounter where subject_key=#{subject}
+    </select>
+    <insert id="shown">
+        insert into conversation_opening_encounter(subject_key,first_introduced_at,last_session_id,last_avatar_id,last_avatar_name,last_shown_at)
+        values(#{subject},IF(#{intro},#{at},NULL),#{session},#{avatar},#{name},#{at})
+        on duplicate key update first_introduced_at=COALESCE(first_introduced_at,VALUES(first_introduced_at)),
+            last_session_id=IF(VALUES(last_shown_at)>=last_shown_at,VALUES(last_session_id),last_session_id),
+            last_avatar_id=IF(VALUES(last_shown_at)>=last_shown_at,VALUES(last_avatar_id),last_avatar_id),
+            last_avatar_name=IF(VALUES(last_shown_at)>=last_shown_at,VALUES(last_avatar_name),last_avatar_name),
+            last_shown_at=GREATEST(last_shown_at,VALUES(last_shown_at))
+    </insert>
+</mapper>

@@ -71,6 +71,10 @@ public class TrainingSessionPO {
     private Long startedAt;
     private Long endedAt;
     private String errorMessage;
+    /** V11 首句决策 JSON：持久化档位、情境、模板版本及最终文案。 */
+    private String openingDecisionJson;
+    public String getOpeningDecisionJson() { return openingDecisionJson; }
+    public void setOpeningDecisionJson(String value) { openingDecisionJson = value; }
     /** V10 补齐的审计时间，由数据库生成。 */
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

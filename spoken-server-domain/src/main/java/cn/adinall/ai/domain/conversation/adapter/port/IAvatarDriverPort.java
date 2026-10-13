@@ -72,6 +72,11 @@ import java.util.List;
  * </ul>
  */
 public interface IAvatarDriverPort {
+    /** 一次播报消费整条增量流；完成表示上游媒体发送结束，取消订阅必须停止播报。 */
+    default reactor.core.publisher.Mono<Void> streamReply(String providerSessionId, String replyId,
+                                                         String voice, Flux<String> text) {
+        return reactor.core.publisher.Mono.error(new UnsupportedOperationException("stream_reply_unsupported"));
+    }
 
     /** 实现标识，与配置项 spoken-ai.provider.avatar 对应。 */
     String id();

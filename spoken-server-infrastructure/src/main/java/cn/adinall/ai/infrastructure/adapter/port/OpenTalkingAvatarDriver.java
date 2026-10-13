@@ -128,6 +128,11 @@ import java.util.stream.Collectors;
  * </ul>
  */
 public class OpenTalkingAvatarDriver implements IAvatarDriverPort {
+    @Override
+    public reactor.core.publisher.Mono<Void> streamReply(String providerSessionId, String replyId,
+            String voice, Flux<String> text) {
+        return gateway.streamReply(providerSessionId, replyId, voice, text);
+    }
 
     private static final Logger log = LoggerFactory.getLogger(OpenTalkingAvatarDriver.class);
 
@@ -281,21 +286,21 @@ public class OpenTalkingAvatarDriver implements IAvatarDriverPort {
 
     /**
      * 给模型 id 配一个给人看的名字（flashhead -> FlashHead 1.3B（实时），
-     * flashtalk -> FlashTalk 14B（高画质，慢）），认不出来就原样返回 id。
+     * flashtalk -> Fast-FlashTalk 14B（INT8）），认不出来就原样返回 id。
      */
     private static String label(String modelId) {
         return switch (modelId) {
             case "flashhead" -> "FlashHead 1.3B（实时）";
-            case "flashtalk" -> "FlashTalk 14B（高画质，慢）";
+            case "flashtalk" -> "Fast-FlashTalk 14B（INT8）";
             default -> modelId;
         };
     }
 
-    /** 给 UI 的粗略提示：这两个数字来自实测（见排查文档）。 */
+    /** 给 UI 的粗略提示：Fast-FlashTalk 为 192×320、2 步配置预热后的 28 帧耗时，不包含首次编译和 TTS。 */
     private static Long estimateChunkMs(String modelId) {
         return switch (modelId) {
             case "flashhead" -> 300L;
-            case "flashtalk" -> 110_000L;
+            case "flashtalk" -> 900L;
             default -> null;
         };
     }

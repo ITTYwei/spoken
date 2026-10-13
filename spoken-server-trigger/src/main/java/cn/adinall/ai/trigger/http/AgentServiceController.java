@@ -190,9 +190,14 @@ public class AgentServiceController implements IAgentService {
     @Override
     public ResponseBodyEmitter chatStream(@RequestBody ChatRequestDTO requestDTO) {
         ResponseBodyEmitter emitter = new ResponseBodyEmitter(3 * 60 * 1000L);
+        // 客户端断线、超时与正常完成都要释放模型订阅。
+        var subscription = reactor.core.Disposables.swap();
+        emitter.onCompletion(subscription::dispose);
+        emitter.onTimeout(subscription::dispose);
+        emitter.onError(error -> subscription.dispose());
         try {
             log.info("流式对话 agentId:{} userId:{} sessionId:{} message:{}", requestDTO.getAgentId(), requestDTO.getUserId(), requestDTO.getSessionId(), requestDTO.getMessage());
-            chatService.handleMessageStream(requestDTO.getAgentId(), requestDTO.getUserId(), requestDTO.getSessionId(), requestDTO.getMessage())
+            var running = chatService.handleMessageStream(requestDTO.getAgentId(), requestDTO.getUserId(), requestDTO.getSessionId(), requestDTO.getMessage())
                     .subscribe(
                             event -> {
                                 try {
@@ -200,11 +205,13 @@ public class AgentServiceController implements IAgentService {
                                 } catch (Exception e) {
                                     log.error("流式对话发送失败", e);
                                     emitter.completeWithError(e);
+                                    subscription.dispose();
                                 }
                             },
                             emitter::completeWithError,
                             emitter::complete
                     );
+            subscription.update(running::dispose);
         } catch (Exception e) {
             log.error("流式对话失败", e);
             emitter.completeWithError(e);

@@ -58,6 +58,7 @@ import java.util.List;
  *        | (4) OpenAiChatModel.builder()
  *        |        .openAiApi(openAiApi)
  *        |        .defaultOptions(OpenAiChatOptions.model(...).toolCallbacks(toolCallbackList))
+ *        |            +-- module.chatModel.reasoningEffort 非空时再挂一个 reasoningEffort（如 none 关掉思考）
  *        |        v
  *        |     dynamicContext.setChatModel(chatModel)
  *        v
@@ -81,6 +82,9 @@ import java.util.List;
  *   <li>toolMcp 三种参数都不匹配时直接抛 NOT_FOUND_METHOD：配置写错在启动期就暴露，
  *       不会造出一个「没有工具但看起来正常」的智能体。</li>
  *   <li>MCP / Skills 的回调都平铺进同一个列表：对模型来说工具来源无差别，只看回调名字。</li>
+ *   <li>reasoningEffort 挂在模型默认参数上而不是每轮请求上：思考开关是「这个模型怎么用」的部署决策，
+ *       运行期（ChatService.handleTextStream）拿到的 Prompt 不带 options，靠默认参数兜底；
+ *       留空不下发，保证换回非推理模型时这里不需要改代码。</li>
  * </ul>
  */
 @Slf4j
@@ -129,12 +133,19 @@ public class ChatModelNode extends AbstractArmorySupport {
         }
 
         // 构建对话模型
+        OpenAiChatOptions.Builder defaultOptions = OpenAiChatOptions.builder()
+                .model(chatModelConfig.getModel())
+                .toolCallbacks(toolCallbackList);
+
+        // 推理强度留空就不下发这个字段：不发时行为与改造前完全一致，别的模型/服务端不会被它影响。
+        String reasoningEffort = chatModelConfig.getReasoningEffort();
+        if (null != reasoningEffort && !reasoningEffort.isBlank()) {
+            defaultOptions.reasoningEffort(reasoningEffort);
+        }
+
         ChatModel chatModel = OpenAiChatModel.builder()
                 .openAiApi(openAiApi)
-                .defaultOptions(OpenAiChatOptions.builder()
-                        .model(chatModelConfig.getModel())
-                        .toolCallbacks(toolCallbackList)
-                        .build())
+                .defaultOptions(defaultOptions.build())
                 .build();
 
         dynamicContext.setChatModel(chatModel);

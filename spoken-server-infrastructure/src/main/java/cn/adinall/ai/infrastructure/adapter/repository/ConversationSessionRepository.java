@@ -97,6 +97,9 @@ public class ConversationSessionRepository implements IConversationSessionReposi
     private final Map<String, String> sessionIdByDevice = new ConcurrentHashMap<>();
 
     private final ITrainingSessionDao sessionDao;
+    /** 使用独立序列化器，不改变对外 API 的序列化设置。 */
+    private final com.fasterxml.jackson.databind.ObjectMapper openingMapper = new com.fasterxml.jackson.databind.ObjectMapper()
+            .findAndRegisterModules().disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     public ConversationSessionRepository(ITrainingSessionDao sessionDao) {
         this.sessionDao = sessionDao;
@@ -125,6 +128,7 @@ public class ConversationSessionRepository implements IConversationSessionReposi
         TrainingSessionPO po = new TrainingSessionPO();
         po.setId(aggregate.getSessionId());
         po.setStatus(aggregate.getStatus().name());
+        po.setOpeningDecisionJson(openingJson(aggregate));
         po.setErrorMessage(aggregate.getErrorMessage());
         if (aggregate.getStatus() == SessionStatusEnum.CLOSED || aggregate.getStatus() == SessionStatusEnum.ERROR) {
             po.setEndedAt(System.currentTimeMillis());
@@ -170,7 +174,7 @@ public class ConversationSessionRepository implements IConversationSessionReposi
     }
 
     /** 聚合 -> PO（列清单与 Flyway 建表语句一致）。 */
-    private static TrainingSessionPO toPO(ConversationSessionAggregate aggregate) {
+    private TrainingSessionPO toPO(ConversationSessionAggregate aggregate) {
         TrainingSessionPO po = new TrainingSessionPO();
         po.setId(aggregate.getSessionId());
         po.setDeviceId(aggregate.getDeviceId());
@@ -181,6 +185,12 @@ public class ConversationSessionRepository implements IConversationSessionReposi
         po.setStatus(aggregate.getStatus().name());
         po.setStartedAt(aggregate.getCreatedAt());
         po.setErrorMessage(aggregate.getErrorMessage());
+        po.setOpeningDecisionJson(openingJson(aggregate));
         return po;
+    }
+    private String openingJson(ConversationSessionAggregate aggregate) {
+        if (aggregate.getOpeningDecision() == null) return null;
+        try { return openingMapper.writeValueAsString(aggregate.getOpeningDecision()); }
+        catch (com.fasterxml.jackson.core.JsonProcessingException e) { throw new IllegalStateException("Cannot persist opening decision", e); }
     }
 }

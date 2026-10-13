@@ -1,0 +1,31 @@
+diff --git a/src/fast_flashtalk/gemlite/helper.py b/src/fast_flashtalk/gemlite/helper.py
+index 1f3487d..c2c7092 100644
+--- a/src/fast_flashtalk/gemlite/helper.py
++++ b/src/fast_flashtalk/gemlite/helper.py
+@@ -1,3 +1,4 @@
++import os
+ # SPDX-License-Identifier: Apache-2.0
+ # Written by Dr. Hicham Badri @Mobius Labs GmbH - 2025
+ 
+@@ -90,7 +91,10 @@ def patch_model(
+     def _patch_linearlayers(model, fct, device, skip_modules):
+         for name, layer in model.named_children():
+             if isinstance(layer, (torch.nn.Linear, HQQLinear)):
+-                setattr(model, name, fct(layer, device, skip_modules))
++                converted = fct(layer, device, skip_modules)
++                if os.environ.get("FAST_FLASHTALK_QUANT_CPU_STAGING") == "1":
++                    converted = converted.cpu()
++                setattr(model, name, converted)
+             else:
+                 _patch_linearlayers(layer, fct, device, skip_modules)
+ 
+@@ -98,7 +102,8 @@ def patch_model(
+     _patch_linearlayers(model, _patching_fct, device, skip_modules)
+ 
+     # Clean-up
+-    model = model.to(device=device)
++    target_device = "cpu" if os.environ.get("FAST_FLASHTALK_QUANT_CPU_STAGING") == "1" else device
++    model = model.to(device=target_device)
+     torch.cuda.empty_cache()
+     gc.collect()
+ 

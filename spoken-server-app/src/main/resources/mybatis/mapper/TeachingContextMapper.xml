@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.adinall.ai.infrastructure.dao.ITeachingContextDao">
+    <insert id="ensureProfile">INSERT IGNORE INTO learner_profile(subject_key) VALUES(#{subject})</insert>
+    <select id="level" resultType="string">SELECT english_level FROM learner_profile WHERE subject_key=#{subject}</select>
+    <update id="promote">
+        UPDATE learner_profile SET english_level=#{to},last_promoted_session=#{session},last_promoted_at=CURRENT_TIMESTAMP(3)
+        WHERE subject_key=#{subject} AND english_level=#{from}
+          AND (last_promoted_session IS NULL OR last_promoted_session != #{session})
+    </update>
+    <insert id="evidence">
+        INSERT INTO learner_answer_evidence(turn_id,subject_key,session_id,outcome,candidate_level,confidence,eligible,observed_at)
+        VALUES(#{turn},#{subject},#{session},#{outcome},#{candidate},#{confidence},#{eligible},#{at})
+        ON DUPLICATE KEY UPDATE turn_id=turn_id
+    </insert>
+    <select id="evidenceSince" resultType="map">
+        SELECT e.turn_id AS turnId,e.subject_key AS subjectKey,e.session_id AS sessionId,e.outcome,
+               e.candidate_level AS candidate,e.confidence,e.eligible,UNIX_TIMESTAMP(e.observed_at)*1000 AS observedAt
+        FROM learner_answer_evidence e JOIN training_session s ON s.id=e.session_id
+        JOIN learner_profile p ON p.subject_key=e.subject_key
+        WHERE e.subject_key=#{subject} AND s.status='CLOSED' AND e.observed_at >= #{since}
+          AND (p.last_promoted_at IS NULL OR e.observed_at > p.last_promoted_at)
+        ORDER BY e.observed_at DESC LIMIT 500
+    </select>
+    <insert id="beginReply">
+        INSERT INTO conversation_teaching_reply(turn_id,subject_key,session_id,reply_id,english_level,action,target_text,outcome,practice_input,reliable_assessment)
+        VALUES(#{turn},#{subject},#{session},#{reply},#{level},#{action},#{target},#{outcome},#{practice},#{reliable})
+    </insert>
+    <update id="completeReply">
+        UPDATE conversation_teaching_reply SET completed=1,spoken_text=#{text}
+        WHERE turn_id=#{turn} AND reply_id=#{reply} AND completed=0
+    </update>
+    <select id="history" resultType="map">
+        SELECT t.id AS turnId,t.user_text AS userText,r.spoken_text AS assistantText,
+               (r.practice_input=1 OR COALESCE(s.scenario_id,'free') != 'free') AS practiceInput
+        FROM conversation_turn t JOIN conversation_teaching_reply r ON r.turn_id=t.id
+        JOIN training_session s ON s.id=t.session_id
+        JOIN learner_profile p ON p.subject_key=r.subject_key
+        WHERE r.subject_key=#{subject} AND r.session_id=#{session} AND r.completed=1
+          AND IF(s.user_id IS NULL,CONCAT('device:',s.device_id),CONCAT('user:',s.user_id))=#{subject}
+          AND t.user_text IS NOT NULL AND t.user_text != '' AND r.spoken_text IS NOT NULL AND r.spoken_text != ''
+          AND t.id > p.context_reset_turn
+        ORDER BY t.seq DESC LIMIT 32
+    </select>
+    <insert id="saveMemory">
+        INSERT INTO agent_long_term_memory(subject_key,memory_key,memory_type,content,source_session,source_turn,confirmation,confirmed_at,expires_at)
+        SELECT #{subject},#{key},#{type},#{content},#{session},#{turn},#{confirmation},#{confirmed},#{expires}
+        FROM learner_profile WHERE subject_key=#{subject} AND context_reset_turn &lt; #{turn}
+        ON DUPLICATE KEY UPDATE memory_type=IF(VALUES(source_turn)>=source_turn,VALUES(memory_type),memory_type),
+            content=IF(VALUES(source_turn)>=source_turn,VALUES(content),content),
+            source_session=IF(VALUES(source_turn)>=source_turn,VALUES(source_session),source_session),
+            confirmation=IF(VALUES(source_turn)>=source_turn,VALUES(confirmation),confirmation),
+            confirmed_at=IF(VALUES(source_turn)>=source_turn,VALUES(confirmed_at),confirmed_at),
+            expires_at=IF(VALUES(source_turn)>=source_turn,VALUES(expires_at),expires_at),
+            source_turn=GREATEST(source_turn,VALUES(source_turn))
+    </insert>
+    <select id="memories" resultType="map">
+        SELECT subject_key AS subjectKey,memory_key AS memoryKey,memory_type AS memoryType,content,source_session AS sourceSession,
+               source_turn AS sourceTurn,confirmation,UNIX_TIMESTAMP(confirmed_at)*1000 AS confirmedAt,UNIX_TIMESTAMP(expires_at)*1000 AS expiresAt
+        FROM agent_long_term_memory WHERE subject_key=#{subject} AND expires_at > #{now}
+        ORDER BY confirmed_at DESC LIMIT 120
+    </select>
+    <delete id="forget">DELETE FROM agent_long_term_memory WHERE subject_key=#{subject} AND memory_key=#{key}</delete>
+    <delete id="forgetAll">DELETE FROM agent_long_term_memory WHERE subject_key=#{subject}</delete>
+    <delete id="forgetMatching">DELETE FROM agent_long_term_memory WHERE subject_key=#{subject} AND LOCATE(#{topic},LOWER(content)) > 0</delete>
+    <update id="forgetHistoryBefore">
+        UPDATE learner_profile SET context_reset_turn=GREATEST(context_reset_turn,#{turn}) WHERE subject_key=#{subject}
+    </update>
+</mapper>

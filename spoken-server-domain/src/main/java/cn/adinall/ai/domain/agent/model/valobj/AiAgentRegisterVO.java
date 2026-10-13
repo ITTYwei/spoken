@@ -90,4 +90,7 @@ public class AiAgentRegisterVO {
      */
     private InMemoryRunner runner;
 
+    /** 装配后的模型，仅 Agent 内部后台能力观察使用，业务层不直接调用。 */
+    private org.springframework.ai.chat.model.ChatModel chatModel;
+
 }

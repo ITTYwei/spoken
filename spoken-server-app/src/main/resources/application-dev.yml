@@ -82,7 +82,7 @@ spoken-ai:
     opentalking:
       base-url: http://172.18.0.102:8001
       default-avatar-id: anchor
-      # flashhead = 1.3B 实时（演示用）
+      # 当前服务器运行 FlashHead Lite；创建会话时可选择已连接的渲染后端。
       default-model: flashhead
       # TTS 引擎。音色与引擎必须配套：上游音色按引擎命名空间命名
       # （dashscope 的 Cherry/Ethan、edge 的 en-US-AriaNeural、xiaomi_mimo 的 Mia ...）。
@@ -125,8 +125,14 @@ spoken-ai:
   # 以及进程环境里有 LK888_API_KEY（用户级环境变量已配，若新进程读不到需 export）。
   llm-owner: agent
   reply:
+    # false 回退为 Agent 收齐文本后整段 /say；新轮次生效。
+    streaming-enabled: true
     # 走 agent 时用哪个智能体（对应 agent/spoken-server.yml 里的 agent.agent-id）
     agent-id: "100003"
+
+  context:
+    # 保守UTF-8字节预算含2500系统指令预留；超预算只裁剪可选资料。
+    input-budget: 6000
 
   # 建会话后最多在 HTTP 请求里等多久（超时返回 QUEUED，让 App 轮询/等 SSE）
   ready-wait-ms: 15000

@@ -134,6 +134,33 @@ public class AiAgentConfigTableVO {
 
             private String model;
 
+            /**
+             * 推理强度：非空时原样作为 {@code reasoning_effort} 下发给模型；留空 = 不发这个字段。
+             *
+             * <p>为什么需要它：本项目实际跑的 {@code bonsai-2-27b}（Ternary-Bonsai-2-27B）是推理模型，
+             * 默认整段只吐 {@code reasoning_content}，{@code delta.content} 一直是 null —— Spring AI 取不到文本，
+             * ADK 会把每一块思考当成一个空事件抛出来（实测约 85 条/秒），一轮回复要 16~70 秒才出第一个字，
+             * 数字人这段时间没有任何文本可念（OpenTalking 45 秒收不到文本就整轮失败）。
+             * llama.cpp 收到 {@code none} 会走 {@code <think></think>} 空思考块，首块正文 0.5 秒内到达。</p>
+             *
+             * <p>取值随服务端而变：{@code none} 是 llama.cpp 的特例；OpenAI 官方接口只认
+             * minimal/low/medium/high，写错会被对方直接拒绝（llama.cpp 下非 none 的未知值会在 Jinja 模板里抛错）。
+             * 留空则沿用模型/服务端默认行为，不受本项影响。</p>
+             */
+            private String reasoningEffort;
+
+            /**
+             * 是否把「这一轮发给 LLM 的内容」逐条打进日志（默认 false = 不打）。
+             *
+             * <p>打开后由 {@code MySpringAI} 在调用模型前打印：一行请求头（stream / model / messages 条数），
+             * 之后每条 message 一行（角色 + 完整文本），也就是 ADK 拼出来的 SystemMessage（系统指令）
+             * 与历史消息 —— 排查「模型到底看到了什么」时不必再去猜提示词。</p>
+             *
+             * <p>注意这是**调试开关**：内容里含学员原话（系统指令约 3 KB，多轮后历史更长），
+             * 生产环境按需打开、排查完关掉。</p>
+             */
+            private boolean logLlmPayload;
+
             private List<ToolMcp> toolMcpList;
 
             private List<ToolSkills> toolSkillsList;

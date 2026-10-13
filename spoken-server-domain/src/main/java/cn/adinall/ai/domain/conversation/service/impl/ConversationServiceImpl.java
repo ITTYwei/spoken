@@ -2,27 +2,21 @@ package cn.adinall.ai.domain.conversation.service.impl;
 
 import cn.adinall.ai.domain.conversation.adapter.port.IAvatarDriverPort;
 import cn.adinall.ai.domain.conversation.adapter.port.IConversationEventBusPort;
-import cn.adinall.ai.domain.conversation.adapter.port.IReplyGeneratorPort;
 import cn.adinall.ai.domain.conversation.adapter.repository.IConversationSessionRepository;
 import cn.adinall.ai.domain.conversation.adapter.repository.IConversationTurnRepository;
 import cn.adinall.ai.domain.conversation.model.aggregate.ConversationSessionAggregate;
 import cn.adinall.ai.domain.conversation.model.aggregate.ConversationTurnAggregate;
 import cn.adinall.ai.domain.conversation.model.entity.CreateSessionCommandEntity;
-import cn.adinall.ai.domain.conversation.model.entity.GenerateReplyCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.SayCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.SpeakCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.StartConversationCommandEntity;
 import cn.adinall.ai.domain.conversation.model.valobj.ConversationEventVO;
 import cn.adinall.ai.domain.conversation.model.valobj.EventTypeEnum;
 import cn.adinall.ai.domain.conversation.model.valobj.IceServerVO;
-import cn.adinall.ai.domain.conversation.model.valobj.LearnerLevelEnum;
 import cn.adinall.ai.domain.conversation.model.valobj.UserUtteranceVO;
-import cn.adinall.ai.domain.conversation.model.valobj.PronunciationFeedbackVO;
 import cn.adinall.ai.domain.conversation.model.valobj.SessionHandleVO;
 import cn.adinall.ai.domain.conversation.model.valobj.SessionStatusEnum;
 import cn.adinall.ai.domain.conversation.service.IConversationService;
-import cn.adinall.ai.domain.conversation.service.level.LearnerLevelTracker;
-import cn.adinall.ai.domain.conversation.service.reply.ReplyPromptBuilder;
 import cn.adinall.ai.types.enums.ResponseCodeEnum;
 import cn.adinall.ai.types.exception.AppException;
 import org.slf4j.Logger;
@@ -34,8 +28,6 @@ import reactor.core.scheduler.Schedulers;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 会话领域服务实现（「会话编排」的心脏，只做业务、不做等待）
@@ -115,33 +107,66 @@ import java.util.concurrent.atomic.AtomicReference;
 @Service
 public class ConversationServiceImpl implements IConversationService {
 
+    /** 媒体结束后提交教学回复，整段模式不把/say受理当播放结束。 */
+    @jakarta.annotation.Resource
+    private cn.adinall.ai.domain.conversation.adapter.repository.ITeachingReplyRepository teachingReplies;
+    /** 开场正常完成后保存主体介绍记录，纯创建与请求受理不算完成。 */
+    @jakarta.annotation.Resource
+    private cn.adinall.ai.domain.conversation.adapter.repository.IOpeningEncounterRepository openingEncounters;
+    /** 每个会话当前播报的订阅；会话关闭和用户打断都会取消整条生产链。 */
+    private final java.util.concurrent.ConcurrentMap<String, reactor.core.Disposable.Swap> playback =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    @Override
+    public reactor.core.publisher.Mono<Void> streamReply(String sessionId, String replyId, Flux<String> text) {
+        return reactor.core.publisher.Mono.defer(() -> {
+            var session = requireSession(sessionId);
+            session.requireOpen();
+            var control = reactor.core.Disposables.swap();
+            var previous = playback.put(sessionId, control);
+            if (previous != null) previous.dispose();
+            session.beginReply(replyId);
+            return avatarDriver.streamReply(session.getProviderSessionId(), replyId, session.getVoice(), text)
+                    .doOnSubscribe(subscription -> control.update(subscription::cancel))
+                    .doOnCancel(() -> {
+                        if (session.acceptsReply(replyId)) session.invalidateReply();
+                    })
+                    .doFinally(signal -> playback.remove(sessionId, control));
+        });
+    }
+
+    @Override
+    public UserUtteranceVO recordUserText(String sessionId, String text) {
+        var session = requireSession(sessionId);
+        session.requireOpen();
+        if (text == null || text.isBlank()) throw new IllegalArgumentException("empty_user_text");
+        session.noteUserSpeechEnded();
+        session.lastUserText(text);
+        Long turnId = appendUserTurn(sessionId, text).getId();
+        eventBus.publish(sessionId, ConversationEventVO.of(EventTypeEnum.STT_FINAL,
+                Map.<String, Object>of("text", text, "turnId", turnId)));
+        return new UserUtteranceVO(text, turnId);
+    }
+
+    private void cancelPlayback(String sessionId) {
+        var current = playback.remove(sessionId);
+        if (current != null) current.dispose();
+    }
+
     private static final Logger log = LoggerFactory.getLogger(ConversationServiceImpl.class);
 
     private final IAvatarDriverPort avatarDriver;
     private final IConversationSessionRepository sessionRepository;
     private final IConversationTurnRepository turnRepository;
     private final IConversationEventBusPort eventBus;
-    /** 回复生成（Java 接管 LLM 时用它产出数字人要说的话）。 */
-    private final IReplyGeneratorPort replyGenerator;
-
-    /**
-     * 每个会话一个「学习者水平」跟踪器。
-     *
-     * 放在内存里而不是聚合上：聚合是每次请求从库里重建的，装不住跨轮状态。
-     * 丢了也不致命 —— 会话本身就是短生命周期的，进程重启时上游会话也已失效。
-     */
-    private final Map<String, LearnerLevelTracker> levelTrackers = new ConcurrentHashMap<>();
-
     public ConversationServiceImpl(IAvatarDriverPort avatarDriver,
                                    IConversationSessionRepository sessionRepository,
                                    IConversationTurnRepository turnRepository,
-                                   IConversationEventBusPort eventBus,
-                                   IReplyGeneratorPort replyGenerator) {
+                                   IConversationEventBusPort eventBus) {
         this.avatarDriver = avatarDriver;
         this.sessionRepository = sessionRepository;
         this.turnRepository = turnRepository;
         this.eventBus = eventBus;
-        this.replyGenerator = replyGenerator;
     }
 
     // ------------------------------------------------------------------ 建会话
@@ -160,10 +185,18 @@ public class ConversationServiceImpl implements IConversationService {
                 ConversationSessionAggregate.newSessionId(), handle.providerSessionId(), command.deviceId(),
                 command.avatarId(), command.model(), command.voice(), command.scenarioId(), handle.status());
 
+        if (command.openingDecision() != null) session.freezeOpening(command.openingDecision());
         sessionRepository.save(session);
         log.info("会话 {} 创建完成 provider={} status={}",
                 session.getSessionId(), handle.providerSessionId(), session.getStatus());
         return session;
+    }
+
+    @Override
+    public void saveOpeningDecision(String sessionId, cn.adinall.ai.domain.conversation.model.valobj.OpeningDecisionVO decision) {
+        var session = requireSession(sessionId);
+        session.freezeOpening(decision);
+        sessionRepository.update(session);
     }
 
     // ------------------------------------------------------------------ 查询
@@ -281,6 +314,7 @@ public class ConversationServiceImpl implements IConversationService {
     @Override
     public void say(String sessionId, SayCommandEntity command) {
         ConversationSessionAggregate session = requireSession(sessionId);
+        if (command.commandId() != null) session.beginReply(command.commandId());
         avatarDriver.say(session.getProviderSessionId(), withSessionVoice(command, session));
     }
 
@@ -319,6 +353,8 @@ public class ConversationServiceImpl implements IConversationService {
     @Override
     public void interrupt(String sessionId) {
         ConversationSessionAggregate session = requireSession(sessionId);
+        session.invalidateReply();
+        cancelPlayback(sessionId);
         avatarDriver.interrupt(session.getProviderSessionId());
         session.touch();
         eventBus.publish(sessionId, ConversationEventVO.of(EventTypeEnum.INTERRUPTED, Map.of()));
@@ -373,110 +409,6 @@ public class ConversationServiceImpl implements IConversationService {
         return new UserUtteranceVO(text, turnId);
     }
 
-    @Override
-    public void replyForTurn(String sessionId, Long turnId, String userText,
-                             PronunciationFeedbackVO feedback, LearnerLevelEnum initialLevel, String persona) {
-        ConversationSessionAggregate session = requireSession(sessionId);
-        session.requireOpen();
-        LearnerLevelEnum level = learnerLevel(session, userText, feedback, initialLevel);
-        startReply(session, turnId, userText, feedback, level, persona);
-    }
-
-    /**
-     * 取（并按本轮证据更新）本会话的学习者档位。
-     *
-     * 流程：没有跟踪器就建一个（起点由用例层传入）
-     * -> 用本轮识别文本与评测分判瞬时信号 -> 收进跟踪器得到稳定档位。
-     * 信号为 null（既没文本也没评测）时档位保持不变。
-     */
-    private LearnerLevelEnum learnerLevel(ConversationSessionAggregate session, String userText,
-                                          PronunciationFeedbackVO assessment, LearnerLevelEnum initialLevel) {
-        Double score = assessment == null ? null : assessment.score();
-        LearnerLevelEnum signal = LearnerLevelTracker.judge(userText, score);
-        LearnerLevelTracker tracker = levelTrackers.computeIfAbsent(session.getSessionId(),
-                id -> new LearnerLevelTracker(initialLevel == null ? LearnerLevelEnum.MID : initialLevel));
-        LearnerLevelEnum level = tracker.accept(signal);
-        if (signal != null) {
-            log.info("学员档位 session={} 本轮信号={} 生效档位={} 识别字数={} 评测分={}",
-                    session.getSessionId(), signal, level,
-                    userText == null ? 0 : userText.length(), score);
-        }
-        return level;
-    }
-
-    /**
-     * 异步跑智能体生成回复，拿到整段后一次性交给上游脚本轨（/say）念出来。
-     *
-     * 为什么是「整段一次 /say」，而不是按句边生成边下发：
-     * 上游每收到一次 /say 就会发一轮 speech.started / subtitle.chunk / speech.ended，
-     * 而 App 的字幕与「正在播放」状态全挂在这套事件上。逐句下发会造成三个后果：
-     *   1. 字幕被上游复述一遍（和我方增量重复，App 会把回复显示两遍）；
-     *   2. 播放状态每句闪一次；
-     *   3. 回合落库只留最后一句（每次 speech.ended 都会覆盖 assistantText）。
-     * 所以这里只做「取文本 + 一次下发」，字幕仍由上游驱动 —— 与迁移前的行为一致。
-     *
-     * 代价：首句音频要等模型写完整段（比逐句下发慢）。要追这个延迟得先把上面三个问题
-     * 在上游事件协议层面解决掉，不是用例层能绕开的。
-     */
-    private void startReply(ConversationSessionAggregate session, Long turnId, String userText,
-                            PronunciationFeedbackVO assessment, LearnerLevelEnum level, String persona) {
-        String sessionId = session.getSessionId();
-        String prompt = ReplyPromptBuilder.build(userText, assessment, level, persona);
-        StringBuilder full = new StringBuilder();
-        AtomicReference<Long> firstDeltaLatencyMs = new AtomicReference<>();
-
-        replyGenerator.generate(new GenerateReplyCommandEntity(sessionId, prompt))
-                .publishOn(Schedulers.boundedElastic())  // /say 是阻塞 HTTP，别占 SSE 事件线程
-                .subscribe(
-                        delta -> onReplyDelta(session, delta, full, firstDeltaLatencyMs),
-                        error -> onReplyFailed(sessionId, turnId, error),
-                        () -> onReplyDone(session, turnId, full, firstDeltaLatencyMs));
-    }
-
-    private void onReplyDelta(ConversationSessionAggregate session, String delta, StringBuilder full,
-                              AtomicReference<Long> firstDeltaLatencyMs) {
-        if (delta == null || delta.isEmpty()) {
-            return;
-        }
-        if (firstDeltaLatencyMs.get() == null) {
-            // 首字延迟：从用户说完到模型吐出第一个字，这是「听得快不快」的真实体感。
-            firstDeltaLatencyMs.set(session.responseLatencyMs());
-        }
-        full.append(delta);
-    }
-
-    /** 模型写完了：整段下发给上游念；字幕、播放状态与回合落库都交给上游那套事件。 */
-    private void onReplyDone(ConversationSessionAggregate session, Long turnId, StringBuilder full,
-                             AtomicReference<Long> firstDeltaLatencyMs) {
-        String text = full.toString().trim();
-        if (text.isEmpty()) {
-            // 模型一个字都没回（例如被内容策略拦了）：什么都不下发，别让数字人念空气。
-            log.warn("智能体没有产出文本，本轮不下发 session={} turnId={}", session.getSessionId(), turnId);
-            return;
-        }
-        try {
-            avatarDriver.say(session.getProviderSessionId(),
-                    new SayCommandEntity(text, session.getVoice(),
-                            session.getSessionId() + ":reply:" + turnId));
-        } catch (Exception e) {
-            log.warn("下发回复失败 session={} turnId={}: {}", session.getSessionId(), turnId, e.toString());
-            eventBus.publish(session.getSessionId(), ConversationEventVO.of(EventTypeEnum.ERROR,
-                    Map.<String, Object>of("message", "下发回复失败: " + e.getMessage())));
-            return;
-        }
-        // 把回复原文也打进日志：人格契约（零评判 / 必追问 / 分级）是否被遵守，只能看原文判断。
-        // 回复只有一两句，日志体积可忽略；这也是这个功能唯一的线上可观测手段。
-        log.info("回复已下发 session={} turnId={} chars={} firstDeltaMs={} text={}",
-                session.getSessionId(), turnId, text.length(), firstDeltaLatencyMs.get(), text);
-    }
-
-    private void onReplyFailed(String sessionId, Long turnId, Throwable error) {
-        // 只推一条 error 事件告知客户端，不把会话打成 ERROR：一次回复失败不等于会话不可用。
-        log.error("生成回复失败 session={} turnId={}", sessionId, turnId, error);
-        eventBus.publish(sessionId, ConversationEventVO.of(EventTypeEnum.ERROR,
-                Map.<String, Object>of("message", "生成回复失败: " + error.getMessage())));
-    }
-
     /**
      * 结束会话并释放上游资源。
      * 流程：从仓储取会话（不在就什么都不做，重复调用安全）-> 调驱动端口 close（上游若报已关闭会被适配器吞掉）
@@ -484,6 +416,7 @@ public class ConversationServiceImpl implements IConversationService {
      */
     @Override
     public void closeSession(String sessionId) {
+        cancelPlayback(sessionId);
         sessionRepository.findById(sessionId).ifPresent(session -> {
             try {
                 avatarDriver.close(session.getProviderSessionId());
@@ -494,8 +427,6 @@ public class ConversationServiceImpl implements IConversationService {
             sessionRepository.update(session);
             sessionRepository.remove(sessionId);
             eventBus.remove(sessionId);
-            // 档位跟踪器是纯内存状态，会话没了就一起丢，避免 Map 随会话数无限长大
-            levelTrackers.remove(sessionId);
         });
     }
 
@@ -510,7 +441,14 @@ public class ConversationServiceImpl implements IConversationService {
     public Flux<ConversationEventVO> streamDriverEvents(ConversationSessionAggregate session) {
         return Flux.defer(() -> avatarDriver.events(session.getProviderSessionId()))
                 .subscribeOn(Schedulers.boundedElastic())
-                .map(event -> applyDriverEvent(session, event));
+                .handle((event, sink) -> {
+                    // 轮次校验与回合落库必须原子执行，不能被新用户回合插入打断。
+                    synchronized (session) {
+                        if (event.data() instanceof Map<?, ?> data && data.get("replyId") != null
+                                && !session.acceptsReply(String.valueOf(data.get("replyId")))) return;
+                        sink.next(applyDriverEvent(session, event));
+                    }
+                });
     }
 
     @Override
@@ -559,6 +497,29 @@ public class ConversationServiceImpl implements IConversationService {
                             session.getSessionId());
                 }
                 completeAssistantTurn(session.getSessionId(), text, session.responseLatencyMs());
+                var opening=session.getOpeningDecision();
+                if(opening!=null && session.isOpeningSpoken() && event.data() instanceof java.util.Map<?,?> data
+                        && (session.getSessionId()+":opening").equals(data.get("replyId"))
+                        && text!=null && !text.isBlank()) {
+                    session.teaching().commit(cn.adinall.ai.domain.conversation.model.valobj.TeachingTaskVO.question(
+                            lastOpeningQuestion(text)));
+                    try {
+                        openingEncounters.recordShown(session.teachingSubject(),session.getSessionId(),opening.avatarId(),opening.avatarName(),
+                                "FIRST".equals(opening.context()) && cn.adinall.ai.domain.conversation.service.opening.OpeningTextPolicy.valid(text,"FIRST"),
+                                java.time.Instant.now());
+                    } catch(RuntimeException e) { log.warn("开场完成记录降级 type={}",e.getClass().getSimpleName()); }
+                }
+                var pending=session.pendingTeaching();
+                if(pending!=null && session.acceptsReply(pending.replyId()) && text!=null && !text.isBlank()) {
+                    teachingReplies.complete(pending.turnId(),pending.replyId(),text);
+                    var task=pending.decision().nextTask();
+                    if(!task.reading()) {
+                        var question=java.util.regex.Pattern.compile("[^.!?。！？]*[?？]").matcher(text);
+                        String last=""; while(question.find()) last=question.group().trim();
+                        task=cn.adinall.ai.domain.conversation.model.valobj.TeachingTaskVO.question(last);
+                    }
+                    session.teaching().commit(task);
+                }
                 // 我们对 App 承诺 assistant.done 的 data 就是「整段文本」。
                 // 但上游不一定守约：mock 在 done 里只给最后一块增量，
                 // 直接透传会让 App 把已经累积好的整句字幕覆盖成最后两个字。
@@ -569,7 +530,16 @@ public class ConversationServiceImpl implements IConversationService {
                 // 其余事件只转发，不落库
             }
         }
+        if (event.type() == EventTypeEnum.ASSISTANT_DELTA) {
+            return ConversationEventVO.of(event.type(), asText(event.data()));
+        }
         return ConversationEventVO.of(event.type(), event.data());
+    }
+
+    /** 首次开始动作没有问句，不能把用户的招呼误判为没有回答问题。 */
+    private static String lastOpeningQuestion(String text) {
+        var matcher=java.util.regex.Pattern.compile("[^.!?。！？]*[?？]").matcher(text);
+        String question=""; while(matcher.find()) question=matcher.group().trim(); return question;
     }
 
     // ------------------------------------------------------------------ 回合落库
@@ -582,10 +552,12 @@ public class ConversationServiceImpl implements IConversationService {
 
     /** 用户说完一句：先建一条只有 userText 的回合，等数字人回完再补 assistantText。 */
     private ConversationTurnAggregate appendUserTurn(String sessionId, String userText) {
-        int nextSeq = turnRepository.findLastBySessionId(sessionId)
-                .map(t -> t.getSeq() + 1)
-                .orElse(0);
-        return turnRepository.append(ConversationTurnAggregate.create(sessionId, nextSeq, userText));
+        synchronized (requireSession(sessionId)) {
+            int nextSeq = turnRepository.findLastBySessionId(sessionId)
+                    .map(t -> t.getSeq() + 1)
+                    .orElse(0);
+            return turnRepository.append(ConversationTurnAggregate.create(sessionId, nextSeq, userText));
+        }
     }
 
     /**

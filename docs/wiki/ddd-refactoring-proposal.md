@@ -62,9 +62,9 @@ app/                                      # 启动、环境配置、mapper 与�
 | 当前代码 | 建议归属 | 理由 |
 | --- | --- | --- |
 | domain/agent 中 ADK Runner、ChatService、MCP、插件、Spring AI patch | 保留原路径与实现 | 用户明确要求 Agent 恢复原始层次 |
-| AgentReplyGenerator | 保留原 infrastructure/adapter/port 实现 | 通过 conversation 的 IReplyGeneratorPort 接入独立 agent 领域 |
+| AgentReplyGenerator（已移除） | case 直接调用 IChatService；事件转换归 agent/service/chat/AgentTextStream | Agent 是模型对话领域，跨域编排放 case |
 | ReplyPromptBuilder | conversation/service/reply | 教学语气、提问与反馈规则属于陪练业务 |
-| LearnerLevelTracker | 临时会话推断留 conversation/service/level | 当前会话证据不应直接覆盖长期学习水平；后续由 learner 接收长期证据 |
+| LearnerLevelTracker | learner/service/level，通过 ILearnerLevelService 提供会话档位能力 | 会话滞后跟踪与近期历史推断都归 Learner，case 负责传入初始档位与生命周期通知 |
 | PronunciationServiceImpl、评测聚合/命令/结果/仓储/端口 | domain/pronunciation 对应目录 | 已完成领域提取 |
 | ScenarioVO、IScenarioRepository | domain/scenario 对应目录 | 场景定义有独立的内容生命周期 |
 | ConversationCaseImpl、PronunciationCaseImpl、CatalogCaseImpl | 各自 cases/{name}/impl | 遵循 Case 实现目录约定 |
@@ -92,3 +92,7 @@ Case 编排：检查会话 → 语音识别 → 记录用户消息 → 发音评
 已确认 learner 与 practice 分开：learner 描述“用户当前学得怎样”，practice 描述“接下来练什么、何时练、怎样算完成”。这两个领域已有数据设计与完整包骨架，具体业务实现仍待后续功能开发。
 
 已有 Java 代码已完成 pronunciation/scenario 分包、Case 实现与装配器移入 impl、会话语音跨域编排迁入 Case、教学反馈使用会话自己的摘要模型、WAV 编码移到基础设施。会话教学规则分别放入 service/reply 和 service/level。Agent 原目录与实现恢复，保留原 Maven 依赖。
+
+## 2026-10-12：Agent 调用边界调整
+
+已参考 walissh-server 的 IChatService 入口，完成 case 直接编排 Agent 对话；详见 [验证记录](agent-case-boundary-verification-2026-10-12.md)。

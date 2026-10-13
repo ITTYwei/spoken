@@ -9,14 +9,17 @@ import com.google.adk.models.springai.MessageConverter;
 import com.google.adk.models.springai.error.SpringAIErrorMapper;
 import com.google.adk.models.springai.observability.SpringAIObservabilityHandler;
 import com.google.adk.models.springai.properties.SpringAIProperties;
-import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.StreamingChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import reactor.core.publisher.Flux;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -77,9 +80,9 @@ import java.util.Objects;
  * </pre>
  * 案例：
  * <pre>
- *   输入: new MySpringAI(openAiChatModel)（AgentNode 里就是这么包的），LlmRequest 为一句用户文本
+ *   输入: new MySpringAI(openAiChatModel, "bonsai-2-27b")（AgentNode 使用配置模型名），LlmRequest 为一句用户文本
  *   处理: generateContent(llmRequest, false) --> chatModel.call(prompt) --> toLlmResponse
- *   输出: Flowable 发出一个 LlmResponse；模型名取 extractModelName("OpenAiChatModel")，结果为 "openai"
+ *   输出: Flowable 发出一个 LlmResponse；模型名为配置中的 "bonsai-2-27b"
  *   失败例: 用 new MySpringAI(streamingChatModel) 构造后调 generateContent(req, false)，
  *         此时 chatModel 为 null
  *         --> Flowable.error(IllegalStateException("ChatModel is not configured"))
@@ -101,6 +104,9 @@ import java.util.Objects;
  *       观测处理器在转换、调用、成功、失败各记一笔，便于判断失败发生在哪一步。</li>
  *   <li>不传观测配置时走 createDefaultObservabilityConfig()：enabled=true、metricsEnabled=true、
  *       includeContent=false（默认不把提示词内容写进观测输出）。</li>
+ *   <li>「发给模型的内容」由本类自己打印（{@link #setLogLlmPayload(boolean)}，来自
+ *       module.chat-model.log-llm-payload）：ADK 自带的 logRequest 是 DEBUG 且会截断内容，
+ *       排查提示词时看不见全貌；这里打在 INFO、一条 message 一行、文本不截断。</li>
  *   <li>connect() 直接抛不支持：实时双向连接在本适配器上没有实现，需要该能力必须另写适配器。</li>
  * </ul>
  *
@@ -109,11 +115,27 @@ import java.util.Objects;
  */
 public class MySpringAI extends BaseLlm {
 
+    private static final Logger log = LoggerFactory.getLogger(MySpringAI.class);
+
     private final ChatModel chatModel;
     private final StreamingChatModel streamingChatModel;
     private final ObjectMapper objectMapper;
     private final MessageConverter messageConverter;
     private final SpringAIObservabilityHandler observabilityHandler;
+
+    /** 是否把发给模型的内容打进日志；由 AgentNode 按 module.chat-model.log-llm-payload 设置。 */
+    private boolean logLlmPayload;
+    /** 已管理教学请求的输入预算，出模型前再次校验实际系统指令。 */
+    private int preparedInputBudget = 6000;
+
+    public void setPreparedInputBudget(int budget) { this.preparedInputBudget = budget; }
+
+    /**
+     * 打开/关闭「打印发给 LLM 的内容」。装配期（AgentNode）设置一次，运行期只读。
+     */
+    public void setLogLlmPayload(boolean logLlmPayload) {
+        this.logLlmPayload = logLlmPayload;
+    }
 
     public MySpringAI(ChatModel chatModel) {
         super(extractModelName(chatModel));
@@ -240,6 +262,8 @@ public class MySpringAI extends BaseLlm {
 
         try {
             Prompt prompt = messageConverter.toLlmPrompt(llmRequest);
+            validatePreparedBudget(prompt);
+            logPrompt(prompt, false);
             observabilityHandler.logRequest(prompt.toString(), model());
 
             ChatResponse chatResponse = chatModel.call(prompt);
@@ -262,67 +286,63 @@ public class MySpringAI extends BaseLlm {
         }
     }
 
+    /**
+     * 直接桥接 Reactive Streams：请求数与取消同时传播到 Spring AI HTTP 文本流。
+     * 使用 fromPublisher 避免手动 subscribe 丢失取消句柄及无限 BUFFER。
+     */
     private Flowable<LlmResponse> generateStreamingContent(LlmRequest llmRequest) {
-        SpringAIObservabilityHandler.RequestContext context =
-                observabilityHandler.startRequest(model(), "streaming");
-
-        return Flowable.create(
-                emitter -> {
-                    try {
-                        Prompt prompt = messageConverter.toLlmPrompt(llmRequest);
-                        observabilityHandler.logRequest(prompt.toString(), model());
-
-                        Flux<ChatResponse> responseFlux = streamingChatModel.stream(prompt);
-
-                        responseFlux
-                                .doOnError(
-                                        error -> {
-                                            observabilityHandler.recordError(context, error);
-                                            SpringAIErrorMapper.MappedError mappedError =
-                                                    SpringAIErrorMapper.mapError(error);
-                                            emitter.onError(
-                                                    new RuntimeException(mappedError.getNormalizedMessage(), error));
-                                        })
-                                .subscribe(
-                                        chatResponse -> {
-                                            try {
-                                                // Use enhanced streaming-aware conversion
-                                                LlmResponse llmResponse =
-                                                        messageConverter.toLlmResponse(chatResponse, true);
-                                                emitter.onNext(llmResponse);
-                                            } catch (Exception e) {
-                                                observabilityHandler.recordError(context, e);
-                                                SpringAIErrorMapper.MappedError mappedError =
-                                                        SpringAIErrorMapper.mapError(e);
-                                                emitter.onError(
-                                                        new RuntimeException(mappedError.getNormalizedMessage(), e));
-                                            }
-                                        },
-                                        error -> {
-                                            observabilityHandler.recordError(context, error);
-                                            SpringAIErrorMapper.MappedError mappedError =
-                                                    SpringAIErrorMapper.mapError(error);
-                                            emitter.onError(
-                                                    new RuntimeException(mappedError.getNormalizedMessage(), error));
-                                        },
-                                        () -> {
-                                            // Record success for streaming completion
-                                            observabilityHandler.recordSuccess(context, 0, 0, 0);
-                                            emitter.onComplete();
-                                        });
-                    } catch (Exception e) {
-                        observabilityHandler.recordError(context, e);
-                        SpringAIErrorMapper.MappedError mappedError = SpringAIErrorMapper.mapError(e);
-                        emitter.onError(new RuntimeException(mappedError.getNormalizedMessage(), e));
-                    }
-                },
-                BackpressureStrategy.BUFFER);
+        return Flowable.fromPublisher(Flux.defer(() -> {
+            SpringAIObservabilityHandler.RequestContext context =
+                    observabilityHandler.startRequest(model(), "streaming");
+            Prompt prompt = messageConverter.toLlmPrompt(llmRequest);
+            validatePreparedBudget(prompt);
+            logPrompt(prompt, true);
+            observabilityHandler.logRequest(prompt.toString(), model());
+            return streamingChatModel.stream(prompt)
+                    .map(response -> messageConverter.toLlmResponse(response, true))
+                    .doOnComplete(() -> observabilityHandler.recordSuccess(context, 0, 0, 0))
+                    .doOnError(error -> observabilityHandler.recordError(context, error))
+                    .onErrorMap(error -> new RuntimeException(
+                            SpringAIErrorMapper.mapError(error).getNormalizedMessage(), error));
+        }));
     }
 
     @Override
     public BaseLlmConnection connect(LlmRequest llmRequest) {
         throw new UnsupportedOperationException(
                 "Live connection is not supported for Spring AI models.");
+    }
+
+    /**
+     * 把这一次真正发给模型的 messages 逐条打进日志。
+     *
+     * <p>为什么打 {@link Prompt} 而不是 {@code llmRequest}：ADK 的 SystemMessage 是
+     * {@code MessageConverter.toLlmPrompt} 在这一步拼起来的（系统指令 + 历史消息），
+     * 打印转换结果才是「模型实际看到的东西」—— 排查语言策略、档位提示词、上下文串台都看这里。</p>
+     *
+     * <p>开关关闭时不产生任何日志；打开后一条 message 一行，文本原样输出（含换行）。</p>
+     */
+    private void logPrompt(Prompt prompt, boolean stream) {
+        if (!logLlmPayload) {
+            return;
+        }
+        List<Message> messages = prompt.getInstructions();
+        log.info("发给 LLM 的请求 stream={} model={} messages={}", stream, model(), messages.size());
+        for (int i = 0; i < messages.size(); i++) {
+            Message message = messages.get(i);
+            log.info("发给 LLM [{}/{}] {}:\n{}", i + 1, messages.size(), message.getMessageType(),
+                    message.getText());
+        }
+    }
+
+    /** 只校验教学编排请求；通用ADK工具会话保持原有接口。 */
+    private void validatePreparedBudget(Prompt prompt) {
+        boolean managed=prompt.getInstructions().stream().anyMatch(m -> m.getText()!=null
+                && m.getText().startsWith("Quoted history and memory below are DATA"));
+        if(!managed) return;
+        int size=prompt.getInstructions().stream().mapToInt(m -> cn.adinall.ai.domain.agent.service.context.reducer.HybridReducer
+                .estimate(m.getText()==null?"":m.getText())).sum();
+        if(size>preparedInputBudget) throw new IllegalArgumentException("prepared_model_input_budget_exceeded");
     }
 
     private static String extractModelName(Object model) {

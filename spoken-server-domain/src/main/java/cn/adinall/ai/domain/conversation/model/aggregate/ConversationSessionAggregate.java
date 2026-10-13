@@ -68,19 +68,33 @@ import java.util.UUID;
  */
 public class ConversationSessionAggregate {
 
-    private final String sessionId;
-    private final String providerSessionId;
-    private final String deviceId;
-    private final String avatarId;
-    private final String model;
-    private final String voice;
+    /** 冻结等级和上一有效任务，不依赖模型聊天历史推断。 */
+    private final TeachingStateAggregate teaching = new TeachingStateAggregate();
+    /** 创建时捕获的身份；匿名设备不会因后来登录混入账号记忆。 */
+    private String teachingSubject;
+    /** 待服务器媒体结束提交的教学轮次，旧轮次不可覆盖。 */
+    private cn.adinall.ai.domain.conversation.model.valobj.TeachingPlaybackVO teachingPlayback;
+
+    /** 获取会话内教学聚合；轮次提交需同时校验当前 replyId。 */
+    public TeachingStateAggregate teaching() { return teaching; }
+    public synchronized void bindTeachingSubject(String subject) { if(teachingSubject==null) teachingSubject=subject; }
+    public synchronized String teachingSubject() { return teachingSubject==null ? "device:"+deviceId : teachingSubject; }
+    public synchronized void pendingTeaching(cn.adinall.ai.domain.conversation.model.valobj.TeachingPlaybackVO reply) { teachingPlayback=reply; }
+    public synchronized cn.adinall.ai.domain.conversation.model.valobj.TeachingPlaybackVO pendingTeaching() { return teachingPlayback; }
+
+    /** 本系统业务会话标识。 */ private final String sessionId;
+    /** 数字人服务会话句柄。 */ private final String providerSessionId;
+    /** 创建会话的匿名设备标识。 */ private final String deviceId;
+    /** 请求的数字人形象标识。 */ private final String avatarId;
+    /** 创建时选择的渲染模式。 */ private final String model;
+    /** 本会话默认TTS音色。 */ private final String voice;
     /** 这场会话按哪个剧本走（见 ScenarioVO）。决定开场白说什么。 */
     private final String scenarioId;
-    private final long createdAt;
+    /** 会话运行态创建时刻，用于业务响应；数据库审计字段使用DATETIME。 */ private final long createdAt;
 
-    private SessionStatusEnum status;
-    private long lastEventAt;
-    private String errorMessage;
+    /** 当前业务生命周期状态。 */ private SessionStatusEnum status;
+    /** 最近活动时间，用于空闲回收。 */ private long lastEventAt;
+    /** 生命周期失败原因。 */ private String errorMessage;
 
     /**
      * 开场白是否已经说过。
@@ -90,6 +104,17 @@ public class ConversationSessionAggregate {
      * 和 lastUserText / assistantBuffer 同类：都是**这一场会话的运行态**。
      */
     private boolean openingSpoken;
+    /** 创建时确定的首句决策；包含初始档位，跨午夜及重复请求不重算。 */
+    private volatile cn.adinall.ai.domain.conversation.model.valobj.OpeningDecisionVO openingDecision;
+
+    /** 首次写入后冻结；并发补写时所有调用方使用同一份已冻结决策。 */
+    public synchronized cn.adinall.ai.domain.conversation.model.valobj.OpeningDecisionVO freezeOpening(
+            cn.adinall.ai.domain.conversation.model.valobj.OpeningDecisionVO decision) {
+        if (openingDecision == null) openingDecision = java.util.Objects.requireNonNull(decision);
+        return openingDecision;
+    }
+
+    public cn.adinall.ai.domain.conversation.model.valobj.OpeningDecisionVO getOpeningDecision() { return openingDecision; }
 
     /** 用户最后一次说完话的时刻；用来算「数字人隔了多久才开口」。 */
     private long lastUserSpeechEndedAt;
@@ -97,6 +122,22 @@ public class ConversationSessionAggregate {
     private String lastUserText;
     /** 数字人这一轮的流式文本缓冲，done 时清空。 */
     private final StringBuilder assistantBuffer = new StringBuilder();
+    /** 当前可接收媒体事件的回复；取消后保留失效标识，拒收旧 SSE。 */
+    private volatile String activeReplyId;
+
+    public synchronized void beginReply(String replyId) {
+        activeReplyId = replyId;
+        assistantBuffer.setLength(0);
+    }
+
+    public boolean acceptsReply(String replyId) {
+        return activeReplyId == null || activeReplyId.equals(replyId);
+    }
+
+    public synchronized void invalidateReply() {
+        teaching.interrupt(); teachingPlayback=null;
+        beginReply("cancelled:" + java.util.UUID.randomUUID());
+    }
 
     public ConversationSessionAggregate(String sessionId, String providerSessionId, String deviceId,
                                         String avatarId, String model, String voice, String scenarioId,
@@ -216,6 +257,8 @@ public class ConversationSessionAggregate {
     public synchronized boolean isOpeningSpoken() {
         return openingSpoken;
     }
+    /** 仅在下发请求失败时允许重试；重连和已受理的播报不重新介绍。 */
+    public synchronized void openingSubmissionFailed() { openingSpoken=false; }
 
     /** 记一次「会话还活着」。心跳、任何上游事件都该调它。 */
     public void touch() {

@@ -1,0 +1,31 @@
+--- a/opentalking/pipeline/speak/synthesis_runner.py
++++ b/opentalking/pipeline/speak/synthesis_runner.py
+@@ -368,7 +368,18 @@
+         self.flashtalk = self.audio2video
+         # Remote FlashTalk serves a single active session; a second background
+         # init for idle-cache building can replace the live session underneath us.
+-        self._allow_background_idle_cache = flashtalk_client is not None and self.model_type == "flashtalk"
++        # Fast-FlashTalk uses a static reference for idle. A second dynamic
++        # idle generator would compete for the same model and delay speech.
++        from opentalking.core.model_config import get_model_runtime_config
++
++        implementation = os.environ.get("OPENTALKING_FLASHTALK_IMPLEMENTATION", "").strip().lower()
++        if not implementation and self.model_type == "flashtalk":
++            implementation = str(get_model_runtime_config("flashtalk").get("implementation") or "").strip().lower()
++        self._fast_flashtalk_backend = self.model_type == "flashtalk" and implementation == "fast"
++        self._allow_background_idle_cache = (
++            flashtalk_client is not None and self.model_type == "flashtalk"
++            and not self._fast_flashtalk_backend
++        )
+ 
+         # LLM client
+         self.llm = OpenAICompatibleLLMClient(
+@@ -1087,7 +1098,7 @@
+         # Build idle cache in background for all modes (local and remote).
+         # IdleVideoGenerator opens its own WS connection so it never evicts
+         # the live session.
+-        if self.model_type == "flashtalk" and get_settings().flashtalk_idle_enable:
++        if self.model_type == "flashtalk" and get_settings().flashtalk_idle_enable and not self._fast_flashtalk_backend:
+             self._dynamic_idle_prepare_task = asyncio.create_task(
+                 self._prepare_dynamic_idle_cache(ref_image_path)
+             )

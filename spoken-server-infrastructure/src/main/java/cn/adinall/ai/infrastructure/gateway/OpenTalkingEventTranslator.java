@@ -130,6 +130,8 @@ public final class OpenTalkingEventTranslator {
      * is_final=true 才是这一句的定稿。
      */
     private static EventTypeEnum resolve(String name, JsonNode payload) {
+        // 任务启动与实际媒体出队不是同一时刻；只由 media_started 驱动播放状态。
+        if ("speech.started".equals(name)) return null;
         if ("subtitle.chunk".equals(name)) {
             return OpenTalkingJson.bool(payload, "is_final", false)
                     ? EventTypeEnum.ASSISTANT_DONE
@@ -207,7 +209,16 @@ public final class OpenTalkingEventTranslator {
             log.debug("unmapped OpenTalking event: {}", name);
             return null;
         }
-        return ConversationEventVO.of(type, extractData(type, payload));
+        Object data = extractData(type, payload);
+        String replyId = OpenTalkingJson.text(payload, "utterance_id", "replyId");
+        if (replyId != null) {
+            Map<String, Object> scoped = new HashMap<>();
+            if (data instanceof Map<?, ?> fields) fields.forEach((key, value) -> scoped.put(String.valueOf(key), value));
+            else scoped.put("text", data == null ? "" : data);
+            scoped.put("replyId", replyId);
+            data = scoped;
+        }
+        return ConversationEventVO.of(type, data);
     }
 
     /**

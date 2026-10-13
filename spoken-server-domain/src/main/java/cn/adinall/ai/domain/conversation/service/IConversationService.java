@@ -7,8 +7,6 @@ import cn.adinall.ai.domain.conversation.model.entity.SpeakCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.StartConversationCommandEntity;
 import cn.adinall.ai.domain.conversation.model.valobj.ConversationEventVO;
 import cn.adinall.ai.domain.conversation.model.valobj.UserUtteranceVO;
-import cn.adinall.ai.domain.conversation.model.valobj.PronunciationFeedbackVO;
-import cn.adinall.ai.domain.conversation.model.valobj.LearnerLevelEnum;
 import cn.adinall.ai.domain.conversation.model.valobj.IceServerVO;
 import reactor.core.publisher.Flux;
 
@@ -73,6 +71,13 @@ import java.util.List;
  * </ul>
  */
 public interface IConversationService {
+    /** 会话内开启唯一回复轮次；文本结束后仍等待播报结束，取消会关闭驱动文本流。 */
+    reactor.core.publisher.Mono<Void> streamReply(String sessionId, String replyId, Flux<String> text);
+
+    /** 记录文字输入，供 Agent 用例与语音输入共用回复编排。 */
+    UserUtteranceVO recordUserText(String sessionId, String text);
+    /** 保存当前会话首句快照，供兼容旧建会话调用路径时补写。 */
+    void saveOpeningDecision(String sessionId, cn.adinall.ai.domain.conversation.model.valobj.OpeningDecisionVO decision);
 
     /**
      * 建一场会话：调驱动端口拿句柄，组装聚合并登记（内存运行态 + 会话档案）。
@@ -129,10 +134,6 @@ public interface IConversationService {
 
     /** 上传文件识别并记录用户轮次，不编排发音评测。 */
     UserUtteranceVO transcribeUploadedAndRecord(String sessionId, byte[] wav);
-
-    /** 根据本轮教学输入生成回复；场景和评测数据由用例层映射。 */
-    void replyForTurn(String sessionId, Long turnId, String userText,
-                      PronunciationFeedbackVO feedback, LearnerLevelEnum initialLevel, String persona);
 
     /** 结束会话并释放上游资源；重复调用安全。 */
     void closeSession(String sessionId);

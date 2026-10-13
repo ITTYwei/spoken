@@ -29,7 +29,7 @@ import java.util.List;
  *       avatar: opentalking          # 选哪个 IAvatarDriverPort 实现
  *       opentalking:
  *         base-url: http://127.0.0.1:8001
- *         default-model: flashhead   # 演示用 1.3B，实时；flashtalk 是 14B，画质好但单块约 100s
+ *         default-model: flashhead   # SoulX-FlashHead Lite
  *         default-avatar-id: anchor
  *        |
  *        v
@@ -47,10 +47,10 @@ import java.util.List;
  *   输入(yml): spoken-ai.provider.opentalking.default-model=flashtalk
  *             spoken-ai.provider.opentalking.drop-stun=true
  *   处理: Spring 松绑定调用 setDefaultModel("flashtalk") / setDropStun(true)
- *   输出: createSession 未指定模型时用 flashtalk（estimatedChunkMs=110000）；
+ *   输出: createSession 未指定模型时用 flashtalk；
  *         iceServers() 返回的列表里不再有 stun: / stuns: 条目
  *   缺省: 一项都不配时 baseUrl="http://127.0.0.1:8001"、defaultModel="flashhead"、
- *         defaultAvatarId="anchor"、readyTimeoutMs=180000、exposeModels=["flashhead","flashtalk"]
+ *         defaultAvatarId="anchor"、readyTimeoutMs=180000、exposeModels=["flashhead", "flashtalk"]
  * </pre>
  * 设计要点：
  * <ul>
@@ -118,7 +118,7 @@ public class OpenTalkingProperties {
     /** /avatars 拉不到时的兜底形象列表（避免后端重启后前端空白）。 */
     private List<String> fallbackAvatarIds = new ArrayList<>(List.of("anchor"));
 
-    /** 只暴露这些模型给 App；留空表示全部暴露。 */
+    /** 只暴露这些模型给 App；默认仅提供 Fast-FlashTalk；留空表示全部暴露。 */
     private List<String> exposeModels = new ArrayList<>(List.of("flashhead", "flashtalk"));
 
     /**
