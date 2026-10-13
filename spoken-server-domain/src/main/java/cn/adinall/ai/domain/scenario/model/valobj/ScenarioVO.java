@@ -44,6 +44,11 @@ public record ScenarioVO(
         /** HIGH 档开场文案，使用英文。 */
         String openingLineHigh
 ) {
+    /** 兼容旧场景编码；这两个入口统一采用口语教练，不再下发专属角色或面试提示。 */
+    public ScenarioVO {
+        if ("free".equals(id) || "interview".equals(id)) systemPromptHint = null;
+    }
+
     /** 保留现有调用方构造契约；数据库读取链路使用完整十字段构造。 */
     public ScenarioVO(String id, String title, String goal, String systemPromptHint, String level,
                       String openingLine, String voice) {

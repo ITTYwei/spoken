@@ -153,17 +153,21 @@
 - **第②层 会追问**：每轮回复必须以**一个基于学员刚说的具体细节**的问句收尾；禁止 "And you?" 这类万能追问，
   禁止复述学员原句。**追问率才是这套产品的质量指标**，不是「答对了」。
 
-职责切分（改行为先看这里）：
+职责切分（2026-10-13 更新）：
 
 ```
-agent/spoken-server.yml 的 instruction       不变量：人格契约（零评判 / 必追问 / 三档行为 / TTS 格式）
-domain/.../ReplyPromptBuilder                每轮变量：场景人设 + 档位 + 语言策略 + 本轮数据
-domain/.../LearnerLevelTracker               档位判定与滞后
-infrastructure/.../InMemoryScenarioRepository 场景人设（只写「我是谁」，不写语言规则）
+agent/spoken-server.yml 的 instruction       SYSTEM 基础契约 + {turn_policy?}
+ReplyPromptBuilder.buildSystemPolicy        本轮六级语言规则 / 唯一任务 / 命中结果 -> SYSTEM
+ReplyPromptBuilder.buildManaged             当前用户原话 / 上轮任务数据 -> USER
+ChatContextService                          历史与记忆裁剪，预留静态和动态 SYSTEM 容量
+ChatService.handlePreparedTextStream        独立短会话 state 注入规则；结束、失败、取消均删除
+ScenarioVO                                  free/interview 不再带 Amy/Alex 专属提示词
 ```
 
-**为什么语言策略不能写进 instruction**：早先写死 "Always reply in English only"，与「低水平学员用中文陪」
-互斥 —— 模型会二选一，行为不可控。现在语言策略按档位**逐轮下发**。
+语言策略按冻结的 L1～L6 逐轮生成，通过 ADK state 注入 SYSTEM；场景与旧英文历史不能覆盖。
+L1/L2 使用简短中文支持和对应难度的英文；L3 简单英文配必要中文；L4 英文优先且允许中文；
+L5/L6 自然或丰富但简洁的英文，求助时追加中文解释。全英文是否合适取决于等级与本轮需要，
+没有统一的全英文禁令。下表是旧三档背景，生产回复以六级策略为准。
 
 | 档位 | 语言策略 |
 |---|---|

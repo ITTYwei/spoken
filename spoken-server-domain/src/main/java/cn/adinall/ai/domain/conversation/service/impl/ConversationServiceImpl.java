@@ -512,13 +512,9 @@ public class ConversationServiceImpl implements IConversationService {
                 var pending=session.pendingTeaching();
                 if(pending!=null && session.acceptsReply(pending.replyId()) && text!=null && !text.isBlank()) {
                     teachingReplies.complete(pending.turnId(),pending.replyId(),text);
-                    var task=pending.decision().nextTask();
-                    if(!task.reading()) {
-                        var question=java.util.regex.Pattern.compile("[^.!?。！？]*[?？]").matcher(text);
-                        String last=""; while(question.find()) last=question.group().trim();
-                        task=cn.adinall.ai.domain.conversation.model.valobj.TeachingTaskVO.question(last);
-                    }
-                    session.teaching().commit(task);
+                    // 整段播报回调与流式回调采用同一核验规则，避免把未说出的跟读任务提交。
+                    session.teaching().commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(
+                            pending.decision().nextTask(), text));
                 }
                 // 我们对 App 承诺 assistant.done 的 data 就是「整段文本」。
                 // 但上游不一定守约：mock 在 done 里只给最后一块增量，

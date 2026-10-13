@@ -22,6 +22,8 @@ public class HistoryProvider implements ContextProvider {
     /** 以 JSON 引号明确区分数据和指令。 */ private final ObjectMapper json = new ObjectMapper();
     public HistoryProvider(IChatHistoryRepository history) { this.history=history; }
     @Override public List<ContextSectionVO> provide(ChatContextRequestVO request) {
+        // 每轮从业务库重建历史（ADK 不累积）；只留最近 6 组原文 ——
+        // 旧 assistant 文本含旧控制段，重注入等于复活失效规则。
         var all=history.recent(request.subjectKey(),request.sessionId());
         var result=new ArrayList<ContextSectionVO>();
         int start=Math.max(0,all.size()-6);
@@ -37,6 +39,7 @@ public class HistoryProvider implements ContextProvider {
         }
         return result;
     }
+    /** JSON 引号包裹用户与助手原话：在模型眼里是「被引用的数据」而非指令；practiceInput 标记这是练习素材、不是个人事实。 */
     private String quote(DialogMessageVO turn) {
         try { return json.writeValueAsString(Map.of("user",turn.userText(),"assistant",turn.assistantText(),
                 "practiceInput",turn.practiceInput(),"meaning",turn.practiceInput()?"exercise data, not personal facts":"conversation content")); }

@@ -149,6 +149,9 @@ public class AiAgentConfigTableVO {
              */
             private String reasoningEffort;
 
+            /** 生成采样温度；为空时沿用服务端默认，教学模型使用低温度提高规则遵循稳定性。 */
+            private Double temperature;
+
             /**
              * 是否把「这一轮发给 LLM 的内容」逐条打进日志（默认 false = 不打）。
              *
@@ -225,6 +228,11 @@ public class AiAgentConfigTableVO {
         @Data
         public static class Agent {
             private String name;
+
+            /**
+             * 系统基础契约，装配期固化；本轮可信策略通过 {turn_policy?} 注入，
+             * 原话、人设与历史保留在 USER。{var} 缺值失败，{var?} 缺值替换为空串。
+             */
             private String instruction;
             private String description;
             private String outputKey;

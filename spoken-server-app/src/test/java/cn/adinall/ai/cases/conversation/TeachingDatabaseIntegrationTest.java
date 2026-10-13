@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 import static org.junit.Assert.*;
 
 /**
- * 功能：在随机临时库验证V12、身份隔离、升级证据消耗和有效回复查询。
+ * 功能：在随机临时库验证迁移、统一教练提示、身份隔离、升级证据消耗和有效回复查询。
  * <p>体系架构 / 运行过程：</p>
  * <pre>explicit flag -> random DB -> Flyway -> actual MyBatis repositories -> drop test DB</pre>
  * <p>案例：completed=false的回复不召回；遗忘边界过滤旧原文。</p>
@@ -55,6 +55,20 @@ public class TeachingDatabaseIntegrationTest {
     private void exec(String statement,Object...params) throws Exception {
         try(var p=admin.prepareStatement("USE `"+schema+"`")) {p.execute();}
         try(var p=admin.prepareStatement(statement)) {for(int i=0;i<params.length;i++) p.setObject(i+1,params[i]); p.execute();}
+    }
+    @Test public void unifiedOfficialCoachHasNoPersonaOrStagePrompt() throws Exception {
+        try (var statement = admin.createStatement();
+             var rows = statement.executeQuery("SELECT COUNT(*) FROM `" + schema + "`.conversation_scenario "
+                     + "WHERE owner_user_id IS NULL AND scenario_code IN ('free','interview') AND persona_prompt IS NULL")) {
+            assertTrue(rows.next()); assertEquals(2, rows.getInt(1));
+        }
+        try (var statement = admin.createStatement();
+             var rows = statement.executeQuery("SELECT COUNT(*) FROM `" + schema + "`.conversation_scenario_stage stage "
+                     + "JOIN `" + schema + "`.conversation_scenario scenario ON scenario.id=stage.scenario_id "
+                     + "WHERE scenario.owner_user_id IS NULL AND scenario.scenario_code IN ('free','interview') "
+                     + "AND (stage.prompt_hint IS NOT NULL OR stage.advance_condition IS NOT NULL)")) {
+            assertTrue(rows.next()); assertEquals(0, rows.getInt(1));
+        }
     }
     @Test public void scopedMemoryCorrectionAndForget() {
         var repository=new LongTermMemoryRepository(dao); var now=Instant.now();

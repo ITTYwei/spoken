@@ -22,6 +22,7 @@ public class LongTermMemoryProvider implements ContextProvider {
     /** 引用数据序列化器。 */ private final ObjectMapper json=new ObjectMapper();
     public LongTermMemoryProvider(ILongTermMemoryService memory) { this.memory=memory; }
     @Override public List<ContextSectionVO> provide(ChatContextRequestVO request) {
+        // 按话题相关性召回而非全量灌入；每条带来源 —— 记忆是数据，不能覆盖当前教学规则。
         var data=memory.recall(request.subjectKey(),request.userText(),Instant.now());
         var result=new ArrayList<ContextSectionVO>();
         for(var m:data) try {

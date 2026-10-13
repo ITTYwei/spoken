@@ -67,10 +67,10 @@ Amy / Alex                比场景设定更重要              脚本轨管「�
 
 | 契约 | 落点 | 性质 |
 |---|---|---|
-| 零评判 / 必追问 / 三档行为 / TTS 格式 | `spoken-server-app/src/main/resources/agent/spoken-server.yml` 的 `instruction` | **不变量**：跨轮稳定，只发一次给模型 |
-| 场景人设 + 本轮档位 + 本轮语言策略 + 本轮识别文本与评测结论 | `spoken-server-domain/src/main/java/cn/adinall/ai/domain/conversation/service/impl/ReplyPromptBuilder.java` | **每轮变量**：跟着消息走 |
+| 零评判 / 单任务 / TTS 格式 | `spoken-server-app/src/main/resources/agent/spoken-server.yml` 的 `instruction` | **不变量**：每个短会话的 SYSTEM 基础指令 |
+| 六级档位、语言策略、唯一任务与本轮结果；用户原话与历史分开传入 | `spoken-server-domain/src/main/java/cn/adinall/ai/domain/conversation/service/reply/ReplyPromptBuilder.java` | `buildSystemPolicy` → SYSTEM；`buildManaged` → USER |
 
-> **为什么必须切开：** 早先把「Always reply in English only」写死在系统指令里，与「低水平学员用中文陪他说」互斥 —— 模型会二选一，行为不可控。**语言策略是按档位逐轮下发的，不能进 instruction。**
+> **当前实现（2026-10-13）：** 等级语言规则通过短会话 state 的 `turn_policy` 注入 SYSTEM，优先于历史。用户原话、场景和记忆留在 USER；历史裁剪会预留动态系统规则的容量。理解求助（例如“你说的是什么？”）优先于纯中文跟读，不改冻结等级。
 
 ### 2.1 第 ① 层：零评判
 
@@ -178,7 +178,7 @@ Amy / Alex                比场景设定更重要              脚本轨管「�
 
 | 字段 | 用途 |
 |---|---|
-| `systemPromptHint` | 场景人设（我是谁、什么风格），进 `ReplyPromptBuilder` |
+| `systemPromptHint` | `free` / `interview` 的专属提示已移除，两者统一用口语教练；其他场景字段保留为兼容扩展 |
 | `openingLine`（+ `openingLineLow/Mid/High`） | 开场白，走**脚本轨**（不经 LLM）。**必须按档位存多份** —— 否则低档学员也只能听英文开场（见 §3.4）；优先级 `档位专属 → openingLine → 不自动开场` |
 | `voice` | TTS 音色（脚本轨与生成轨共用） |
 | `level` | **只在用户没有历史时**用于推初始档位；有历史则以长期水平为准（见 §3.4） |
@@ -187,15 +187,19 @@ Amy / Alex                比场景设定更重要              脚本轨管「�
 
 | id | 标题 | 人设 | 音色 |
 |---|---|---|---|
-| `free` | 自由对话 | **Amy** — 二十多岁、温暖好奇的美国朋友，聊吃的、音乐、周末、宠物，对一个学习者无限耐心 | `Cherry` |
-| `interview` | 英文面试 | **Alex** — 友好的招聘经理，主持一场轻松的模拟面试，一次只问一个问题，先回应候选人真正说的内容 | `Ethan` |
+| `free` | 自由对话 | 统一 SpokenCoach，无专属人设 | `Cherry` |
+| `interview` | 英文面试 | 统一 SpokenCoach，无专属人设 | `Ethan` |
 
-### 4.1 人设的写法边界（踩过的坑）
+### 4.1 当前提示词入口
 
-- 人设**只写「我是谁、什么风格」，不写语言规则**。
-- 早先人设里写死 `Never switch to Chinese`，与「低水平学员需要中文陪练」直接打架 —— 模型会在这两条互斥指令之间随机选一条。现在统一改为 `Default to English, but always follow the language policy given in each turn.`
-- 人设必须由场景提供，**否则换个场景数字人还是同一个性格**。此前这段人设只发给了我们用不到的上游 LLM，等于白写。
-- 场景查不到 id 时回退到第一个场景（`free`）而不是报错：**宁可给一个能用的场景，也不要让用户拿到空**。
+- `free` / `interview` 不再区分生成规则，不再传 Amy / Alex 或英语优先人设。
+- `ScenarioVO` 屏蔽这两个旧入口的专属提示；V14 清理数据库官方场景的人设和阶段指令，旧迁移保持不变。
+- 语言与任务规则只有一个本轮入口：`ReplyPromptBuilder.buildSystemPolicy` → case → `IChatService` → ADK state → SYSTEM。
+- 当前输入独立标识为 `CURRENT USER UTTERANCE`；历史、上一轮练习目标不是用户本轮实际说出的内容。
+- 请求“你说的是什么？”时先解释实际上一轮内容，再给一个简单问题；普通中文陈述仍遵循已有跟读策略。
+- 场景编码和目录暂保留，以兼容现有客户端；数字人名称以当前形象配置为准。
+- 教学模型温度设为 `0.1`，减少采样造成的语言与任务波动；同一输入、同一历史重试相同回复是允许的。
+- 流式修复：HTTP 非空正文块都是真实增量，不能按 `.!?` 判断为汇总；正常结束后只给 ADK 一份完整汇总，播放端去重。引用中的问号不算另一个待回答任务，避免中文解释吞掉后续英文问题。
 
 ---
 

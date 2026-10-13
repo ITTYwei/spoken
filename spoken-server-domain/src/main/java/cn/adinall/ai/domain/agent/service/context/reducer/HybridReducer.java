@@ -20,6 +20,7 @@ public final class HybridReducer {
     public static List<ContextSectionVO> reduce(List<ContextSectionVO> source,int budget) {
         List<ContextSectionVO> kept=new ArrayList<>();
         int remaining=budget;
+        // 装不下就整组丢弃而非截断 —— 半句话会让模型把残句当完整事实。
         for(var section:source.stream().sorted(Comparator.comparingInt(ContextSectionVO::priority)).toList()) {
             int size=estimate(section.text())+estimate(section.name());
             if(size<=remaining) { kept.add(section); remaining-=size; }

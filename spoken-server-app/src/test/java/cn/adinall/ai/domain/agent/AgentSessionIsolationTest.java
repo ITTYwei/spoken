@@ -41,7 +41,7 @@ public class AgentSessionIsolationTest {
     @Test public void preparedStreamReleasesSessionAfterCompletion() {
         var factory=mock(DefaultArmoryFactory.class); var runner=mock(InMemoryRunner.class); var sessions=mock(BaseSessionService.class);
         when(factory.getAiAgentRegisterVO("a")).thenReturn(register(runner)); when(runner.sessionService()).thenReturn(sessions);
-        when(sessions.createSession("app","u")).thenReturn(Single.just(Session.builder("app").id("short").build()));
+        when(sessions.createSession(eq("app"),eq("u"),any(),isNull())).thenReturn(Single.just(Session.builder("app").id("short").build()));
         when(sessions.deleteSession("app","u","short")).thenReturn(Completable.complete());
         when(runner.runAsync(eq("u"),eq("short"),any(Content.class),any())).thenReturn(Flowable.empty());
         service(factory).handlePreparedTextStream("a","u","CURRENT L2").collectList().block();
@@ -50,7 +50,7 @@ public class AgentSessionIsolationTest {
     @Test public void cancellationDisposesModelAndDeletesShortSession() throws Exception {
         var factory=mock(DefaultArmoryFactory.class); var runner=mock(InMemoryRunner.class); var sessions=mock(BaseSessionService.class);
         when(factory.getAiAgentRegisterVO("a")).thenReturn(register(runner)); when(runner.sessionService()).thenReturn(sessions);
-        when(sessions.createSession("app","u")).thenReturn(Single.just(Session.builder("app").id("short").build()));
+        when(sessions.createSession(eq("app"),eq("u"),any(),isNull())).thenReturn(Single.just(Session.builder("app").id("short").build()));
         when(sessions.deleteSession("app","u","short")).thenReturn(Completable.complete());
         var started=new java.util.concurrent.CountDownLatch(1); var cancelled=new java.util.concurrent.CountDownLatch(1);
         when(runner.runAsync(eq("u"),eq("short"),any(Content.class),any())).thenReturn(Flowable.<Event>never().doOnSubscribe(s -> started.countDown()).doOnCancel(cancelled::countDown));

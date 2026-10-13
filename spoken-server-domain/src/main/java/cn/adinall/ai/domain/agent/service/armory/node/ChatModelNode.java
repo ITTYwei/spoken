@@ -142,6 +142,8 @@ public class ChatModelNode extends AbstractArmorySupport {
         if (null != reasoningEffort && !reasoningEffort.isBlank()) {
             defaultOptions.reasoningEffort(reasoningEffort);
         }
+        // 教学链路优先稳定执行本轮语言/任务规则；未配置时不改其他模型的采样行为。
+        if (chatModelConfig.getTemperature() != null) defaultOptions.temperature(chatModelConfig.getTemperature());
 
         ChatModel chatModel = OpenAiChatModel.builder()
                 .openAiApi(openAiApi)

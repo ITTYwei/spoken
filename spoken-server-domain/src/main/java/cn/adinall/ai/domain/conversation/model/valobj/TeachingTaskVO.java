@@ -9,12 +9,25 @@ package cn.adinall.ai.domain.conversation.model.valobj;
  * <ul><li>问题和跟读目标分开保存。</li><li>播报被取消时不提交新任务。</li></ul>
  */
 public record TeachingTaskVO(
-        /** QUESTION / READ / CORRECT / CLARIFY。 */ String action,
-        /** 服务端确定的跟读目标；提问时为空。 */ String target,
-        /** 已实际进入完整播报流程的问题；非提问任务为空。 */ String question,
-        /** 当前同一目标的尝试次数，不重复累计能力证据。 */ int attempts) {
-    /** 是否需要对照固定目标评测。 */
-    public boolean reading() { return "READ".equals(action) || "CORRECT".equals(action); }
-    /** 开场没有可用原文时也明确属于问答任务。 */
-    public static TeachingTaskVO question(String text) { return new TeachingTaskVO("QUESTION", "", text, 0); }
+        /** QUESTION / READ / CORRECT / CLARIFY。 */
+        String action,
+        /** 已确认播出的跟读目标；新跟读尚待模型生成或提问时为空。 */
+        String target,
+        /** 已实际进入完整播报流程的问题；非提问任务为空。 */
+        String question,
+        /** 当前同一目标的尝试次数，不重复累计能力证据。 */
+        int attempts) {
+    /**
+     * 是否需要对照固定目标评测。
+     */
+    public boolean reading() {
+        return "READ".equals(action) || "CORRECT".equals(action);
+    }
+
+    /**
+     * 开场没有可用原文时也明确属于问答任务。
+     */
+    public static TeachingTaskVO question(String text) {
+        return new TeachingTaskVO("QUESTION", "", text, 0);
+    }
 }

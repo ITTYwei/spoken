@@ -11,6 +11,7 @@ import cn.adinall.ai.domain.learner.service.level.LearnerProgressService;
 import cn.adinall.ai.domain.learner.model.valobj.*;
 import org.springframework.stereotype.Component;
 import org.slf4j.*;
+
 import java.time.Instant;
 
 /**
@@ -25,93 +26,172 @@ import java.time.Instant;
  */
 @Component
 public class TeachingPreparation {
-    /** 明确待聊事实的仓储，来源仅为真实用户回合。 */
-    @jakarta.annotation.Resource private cn.adinall.ai.domain.conversation.adapter.repository.IOpeningHistoryRepository openingHistory;
-    /** 可信身份入口。 */ private final IOpeningIdentityPort identity;
-    /** 稳定等级与近期证据。 */ private final LearnerProgressService progress;
-    /** Agent上下文编排。 */ private final IChatContextService context;
-    /** 明确事实记忆。 */ private final ILongTermMemoryService memory;
-    /** 后台模型观察，仅Agent负责模型调用。 */ private final IAbilityEvidenceService ability;
-    /** 有效播报内容存储。 */ private final ITeachingReplyRepository replies;
-    /** 降级日志。 */ private static final Logger log=LoggerFactory.getLogger(TeachingPreparation.class);
-    public TeachingPreparation(IOpeningIdentityPort identity,LearnerProgressService progress,IChatContextService context,
-                               ILongTermMemoryService memory,IAbilityEvidenceService ability,ITeachingReplyRepository replies) {
-        this.identity=identity; this.progress=progress; this.context=context; this.memory=memory; this.ability=ability; this.replies=replies;
+    /**
+     * 明确待聊事实的仓储，来源仅为真实用户回合。
+     */
+    @jakarta.annotation.Resource
+    private cn.adinall.ai.domain.conversation.adapter.repository.IOpeningHistoryRepository openingHistory;
+    /**
+     * 可信身份入口。
+     */
+    private final IOpeningIdentityPort identity;
+    /**
+     * 稳定等级与近期证据。
+     */
+    private final LearnerProgressService progress;
+    /**
+     * Agent上下文编排。
+     */
+    private final IChatContextService context;
+    /**
+     * 明确事实记忆。
+     */
+    private final ILongTermMemoryService memory;
+    /**
+     * 后台模型观察，仅Agent负责模型调用。
+     */
+    private final IAbilityEvidenceService ability;
+    /**
+     * 有效播报内容存储。
+     */
+    private final ITeachingReplyRepository replies;
+    /**
+     * 降级日志。
+     */
+    private static final Logger log = LoggerFactory.getLogger(TeachingPreparation.class);
+
+    public TeachingPreparation(IOpeningIdentityPort identity, LearnerProgressService progress, IChatContextService context,
+                               ILongTermMemoryService memory, IAbilityEvidenceService ability, ITeachingReplyRepository replies) {
+        this.identity = identity;
+        this.progress = progress;
+        this.context = context;
+        this.memory = memory;
+        this.ability = ability;
+        this.replies = replies;
     }
-    public String subject(ConversationSessionAggregate session) { return session.teachingSubject(); }
-    /** 创建时捕获身份，运行中登录变化不能把既有会话当成另一人的。 */
+
+    /**
+     * 教学主体标识（记忆/证据/历史都按它隔离）。
+     */
+    public String subject(ConversationSessionAggregate session) {
+        return session.teachingSubject();
+    }
+
+    /**
+     * 创建时捕获身份，运行中登录变化不能把既有会话当成另一人的。
+     */
     public void bind(ConversationSessionAggregate session) {
         session.bindTeachingSubject(identity.currentSubject(session.getDeviceId()).rotationKey());
-        if(session.getOpeningDecision()!=null && session.getOpeningDecision().teachingLevel()!=null)
+        if (session.getOpeningDecision() != null && session.getOpeningDecision().teachingLevel() != null)
             session.teaching().initialize(session.getOpeningDecision().teachingLevel());
         level(session);
     }
-    public EnglishLevelEnum initial(String deviceId,String newSession) {
-        return progress.begin(identity.currentSubject(deviceId).rotationKey(),newSession,Instant.now());
+
+    /**
+     * 开新会话时的初始档位：取稳定水平，不因单次表现跳档。
+     */
+    public EnglishLevelEnum initial(String deviceId, String newSession) {
+        return progress.begin(identity.currentSubject(deviceId).rotationKey(), newSession, Instant.now());
     }
+
+    /**
+     * 档位懒初始化：会话内只定一次，之后复用（六级稳定水平）。
+     */
     public EnglishLevelEnum level(ConversationSessionAggregate session) {
-        synchronized(session.teaching()) {
-            if(session.teaching().level()!=null) return session.teaching().level();
-            return session.teaching().initialize(progress.begin(subject(session),session.getSessionId(),Instant.now()));
+        synchronized (session.teaching()) {
+            if (session.teaching().level() != null) return session.teaching().level();
+            return session.teaching().initialize(progress.begin(subject(session), session.getSessionId(), Instant.now()));
         }
     }
-    public TeachingDecisionVO decide(ConversationSessionAggregate session,String text,PronunciationFeedbackVO feedback,boolean voice) {
-        var previous=session.teaching().pending();
-        Instant inputAt=session.getLastUserSpeechEndedAt()>0 ? Instant.ofEpochMilli(session.getLastUserSpeechEndedAt()) : Instant.now();
-        var decision=TeachingPolicy.decide(level(session),previous,text,feedback,voice);
-        boolean chinese=decision.chineseSupport() || memory.recall(subject(session),text,Instant.now()).stream().anyMatch(m -> "LANGUAGE".equals(m.type()));
-        return new TeachingDecisionVO(decision.level(),decision.nextTask(),decision.outcome(),chinese,decision.script(),decision.reliableAssessment(),decision.practiceInput(),previous,inputAt);
+
+    /**
+     * 本轮教学决策：唯一任务 + 语言策略 + 上轮结果。
+     */
+    public TeachingDecisionVO decide(ConversationSessionAggregate session, String text, PronunciationFeedbackVO feedback, boolean voice) {
+        var previous = session.teaching().pending();
+        // 证据时间戳取话音结束时刻，不是决策时刻
+        Instant inputAt = session.getLastUserSpeechEndedAt() > 0 ? Instant.ofEpochMilli(session.getLastUserSpeechEndedAt()) : Instant.now();
+        // 策略只决定下一步做什么，不产生数字人最终要说的台词。
+        var decision = TeachingPolicy.decide(level(session), previous, text, feedback, voice);
+        // 中文支援两个来源：低档/求援主动给，或长期记忆里有 LANGUAGE 偏好
+        boolean chinese = decision.chineseSupport() || memory.recall(subject(session), text, Instant.now()).stream().anyMatch(m -> "LANGUAGE".equals(m.type()));
+        return new TeachingDecisionVO(decision.level(), decision.nextTask(), decision.outcome(), chinese, decision.correctionHint(), decision.reliableAssessment(), decision.practiceInput(), previous, inputAt);
     }
-    public String prompt(ConversationSessionAggregate session,String text,TeachingDecisionVO decision,String persona) {
-        String current=ReplyPromptBuilder.buildManaged(text,decision,persona,decision.previousTask());
-        return context.build(new ChatContextRequestVO(subject(session),session.getSessionId(),text,current));
+
+    /**
+     * 运行轨总装点：本轮原话和状态摘要 + 裁剪历史/记忆 = USER；case 另将可信策略传入 SYSTEM。
+     */
+    public String prompt(ConversationSessionAggregate session, String text, TeachingDecisionVO decision, String persona) {
+        // 本轮原话、状态摘要和场景人设；执行规则由 buildSystemPolicy 单独提供。
+        String current = ReplyPromptBuilder.buildManaged(text, decision, persona, decision.previousTask());
+        // 历史和记忆作为 DATA 排在当前规则之前；裁剪时始终保留 current。
+        return context.build(new ChatContextRequestVO(subject(session), session.getSessionId(), text, current,
+                ReplyPromptBuilder.buildSystemPolicy(decision)));
     }
-    public void begin(ConversationSessionAggregate session,Long turn,String reply,TeachingDecisionVO decision,String text,String agentId) {
-        replies.begin(subject(session),session.getSessionId(),turn,reply,decision);
-        session.pendingTeaching(new TeachingPlaybackVO(turn,reply,decision));
+
+    /**
+     * 本轮教学播报落库 + 沉淀事实/历史 + 后台能力观察的总装点。
+     * <p>运行过程：</p>
+     * <pre>有效播报落库 -> 待播内容入会话 -> 事实记忆(仅自由对话) -> 待聊历史更新
+     *     ->(独立回答) 后台模型观察 -> 词数/中文门槛校准 -> 学习证据记录</pre>
+     * <p>要点：</p>
+     * <ul><li>先写有效播报与待播副本，再沉淀记忆，保证播报不因降级丢失。</li>
+     * <li>事实记忆只取真实自由对话，角色扮演与练习输入不当作现实偏好。</li>
+     * <li>能力观察为后台异步，任何写入失败只降级记日志，不阻塞本轮播报。</li></ul>
+     */
+    public void begin(ConversationSessionAggregate session, Long turn, String reply, TeachingDecisionVO decision, String text, String agentId) {
+        replies.begin(subject(session), session.getSessionId(), turn, reply, decision);
+        session.pendingTeaching(new TeachingPlaybackVO(turn, reply, decision));
         // 场景角色扮演中的陈述也不是用户现实偏好；首版仅自由对话提取事实。
-        memory.record(subject(session),session.getSessionId(),turn,text,
-                decision.practiceInput() || !"free".equals(session.getScenarioId()),Instant.now());
-        if(openingHistory!=null && !decision.practiceInput() && "free".equals(session.getScenarioId())) {
-            var topic=cn.adinall.ai.domain.conversation.service.opening.OpeningTopicPolicy.deferred(text,"turn:"+turn);
+        memory.record(subject(session), session.getSessionId(), turn, text,
+                decision.practiceInput() || !"free".equals(session.getScenarioId()), Instant.now());
+        // 仅自由对话维护待聊话题：练习或角色扮演不进入历史；写入失败降级不中断。
+        if (openingHistory != null && !decision.practiceInput() && "free".equals(session.getScenarioId())) {
+            var topic = cn.adinall.ai.domain.conversation.service.opening.OpeningTopicPolicy.deferred(text, "turn:" + turn);
             try {
-                if(cn.adinall.ai.domain.conversation.service.opening.OpeningTopicPolicy.closed(text)) openingHistory.finishTopic(session.getSessionId(),turn);
-                else if(topic!=null) openingHistory.remember(session.getSessionId(),turn,topic);
+                if (cn.adinall.ai.domain.conversation.service.opening.OpeningTopicPolicy.closed(text))
+                    openingHistory.finishTopic(session.getSessionId(), turn);
+                else if (topic != null) openingHistory.remember(session.getSessionId(), turn, topic);
+            } catch (RuntimeException e) {
+                log.warn("待聊事实写入降级 type={}", e.getClass().getSimpleName());
             }
-            catch(RuntimeException e) { log.warn("待聊事实写入降级 type={}",e.getClass().getSimpleName()); }
         }
-        var previous=decision.previousTask();
-        if(!decision.practiceInput() && "RESPONDED".equals(decision.outcome()) && previous!=null && previous.question()!=null
-                && !previous.question().isBlank() && text!=null && text.matches(".*[A-Za-z].*")) {
-            final Instant observedAt=decision.inputAt();
-            ability.observe(agentId,previous.question(),text).subscribe(observed -> {
-                boolean eligible=observed.independent() && "ANSWERED".equals(observed.outcome()) && observed.confidence()>=.85
-                        && text.trim().split("\\s+").length>=3;
-                var candidate=EnglishLevelEnum.valueOf(observed.candidate());
+        var previous = decision.previousTask();
+        // 仅对独立、真实回复触发后台能力观察：非练习、结果为已回应、上轮有待作答问题且回答含英文字符。
+        if (!decision.practiceInput() && "RESPONDED".equals(decision.outcome()) && previous != null && previous.question() != null
+                && !previous.question().isBlank() && text != null && text.matches(".*[A-Za-z].*")) {
+            final Instant observedAt = decision.inputAt();
+            ability.observe(agentId, previous.question(), text).subscribe(observed -> {
+                boolean eligible = observed.independent() && "ANSWERED".equals(observed.outcome()) && observed.confidence() >= .85
+                        && text.trim().split("\\s+").length >= 3;
+                var candidate = EnglishLevelEnum.valueOf(observed.candidate());
                 // 短答可能是正确答案，但不能单独证明高阶表达；词数只是证据上限，不是升档打分。
-                int words=text.trim().split("\\s+").length;
-                if(words<8 || cn.adinall.ai.domain.learner.service.level.LearnerLevelTracker.containsChinese(text)) {
-                    if(candidate.ordinal()>EnglishLevelEnum.L3.ordinal()) candidate=EnglishLevelEnum.L3;
-                } else if(words<16 && candidate.ordinal()>EnglishLevelEnum.L4.ordinal()) candidate=EnglishLevelEnum.L4;
-                try { progress.record(new LearningEvidenceVO(subject(session),session.getSessionId(),turn,observed.outcome(),
-                        candidate,observed.confidence(),eligible,observedAt)); }
-                catch(RuntimeException e) { log.warn("能力证据写入降级 type={}",e.getClass().getSimpleName()); }
-            },e -> log.warn("后台能力观察降级 type={}",e.getClass().getSimpleName()));
+                int words = text.trim().split("\\s+").length;
+                if (words < 8 || cn.adinall.ai.domain.learner.service.level.LearnerLevelTracker.containsChinese(text)) {
+                    if (candidate.ordinal() > EnglishLevelEnum.L3.ordinal()) candidate = EnglishLevelEnum.L3;
+                } else if (words < 16 && candidate.ordinal() > EnglishLevelEnum.L4.ordinal())
+                    candidate = EnglishLevelEnum.L4;
+                try {
+                    // 写入学习证据；失败仅降级记日志，不影响当轮播报。
+                    progress.record(new LearningEvidenceVO(subject(session), session.getSessionId(), turn, observed.outcome(),
+                            candidate, observed.confidence(), eligible, observedAt));
+                } catch (RuntimeException e) {
+                    log.warn("能力证据写入降级 type={}", e.getClass().getSimpleName());
+                }
+            }, e -> log.warn("后台能力观察降级 type={}", e.getClass().getSimpleName()));
         }
     }
-    public void complete(ConversationSessionAggregate session,Long turn,String reply,TeachingDecisionVO decision,String text) {
-        synchronized(session) {
-            if(!session.acceptsReply(reply) || session.isFinished()) return;
-            replies.complete(turn,reply,text);
-            var task=decision.nextTask();
-            if(!task.reading()) task=TeachingTaskVO.question(lastQuestion(text));
-            session.teaching().commit(task);
+
+    public void complete(ConversationSessionAggregate session, Long turn, String reply, TeachingDecisionVO decision, String text) {
+        synchronized (session) {
+            if (!session.acceptsReply(reply) || session.isFinished()) return;
+            replies.complete(turn, reply, text);
+            // 只有目标句和跟读邀请都实际播出，才把 READ/CORRECT 留给用户下一轮完成。
+            session.teaching().commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(), text));
         }
     }
+
     public static String lastQuestion(String text) {
-        if(text==null) return "";
-        var matcher=java.util.regex.Pattern.compile("[^.!?。！？]*[?？]").matcher(text);
-        String question=""; while(matcher.find()) question=matcher.group().trim();
-        return question;
+        return cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.lastQuestion(text);
     }
 }

@@ -189,12 +189,23 @@ public class ChatService implements IChatService {
 
     @Override
     public Flux<String> handlePreparedTextStream(String agentId, String userId, String preparedMessage) {
+        return handlePreparedTextStream(agentId, userId, preparedMessage, "");
+    }
+
+    @Override
+    public Flux<String> handlePreparedTextStream(String agentId, String userId, String preparedMessage, String systemPolicy) {
         return Flux.defer(() -> {
             var register = defaultArmoryFactory.getAiAgentRegisterVO(agentId);
             if (register == null) return Flux.error(new AppException(ResponseCode.E0001.getCode()));
             var runner = register.getRunner();
-            Mono<Session> resource = Mono.fromCallable(() -> runner.sessionService()
-                    .createSession(register.getAppName(), userId).blockingGet()).subscribeOn(Schedulers.boundedElastic());
+            // 每轮新建短生命周期会话：历史由 providers 重建进 preparedMessage，不靠 ADK 累积；
+            // spoken-server.yml 的 {turn_policy?} 由 ADK 从本轮会话 state 注入 SYSTEM，
+            // 不修改共享 Agent，避免并发学员的等级与任务串轮。
+            Mono<Session> resource = Mono.fromCallable(() -> {
+                var state = new java.util.concurrent.ConcurrentHashMap<String, Object>();
+                state.put("turn_policy", systemPolicy == null ? "" : systemPolicy);
+                return runner.sessionService().createSession(register.getAppName(), userId, state, null).blockingGet();
+            }).subscribeOn(Schedulers.boundedElastic());
             java.util.function.Function<Session, Mono<Void>> release = s -> Mono.fromRunnable(() ->
                     runner.sessionService().deleteSession(register.getAppName(),userId,s.id()).blockingAwait())
                     .subscribeOn(Schedulers.boundedElastic()).then();

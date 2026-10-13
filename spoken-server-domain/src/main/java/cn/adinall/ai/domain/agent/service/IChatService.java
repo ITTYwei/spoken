@@ -169,6 +169,12 @@ public interface IChatService {
      */
     Flux<String> handlePreparedTextStream(String agentId, String userId, String preparedMessage);
 
+    /**
+     * 在短会话中分别传入 USER 上下文与可信的 SYSTEM 本轮规则。
+     * systemPolicy 只能由服务端策略生成；用户原话、人设和记忆必须留在 preparedMessage。
+     */
+    Flux<String> handlePreparedTextStream(String agentId, String userId, String preparedMessage, String systemPolicy);
+
     /** 关闭通用对话接口的缓存会话，不能跨 agentId 删除其他会话。 */
     void closeSession(String agentId, String userId);
 

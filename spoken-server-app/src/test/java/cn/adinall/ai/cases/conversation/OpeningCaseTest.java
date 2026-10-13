@@ -95,12 +95,12 @@ public class OpeningCaseTest {
         when(service.transcribeUploadedAndRecord("s1",wav)).thenReturn(new UserUtteranceVO("Hi",1L));
         when(scenarios.findById("free")).thenReturn(new ScenarioVO("free","Free","Talk","Amy","advanced","Hi?","Cherry"));
         
-        when(chat.handlePreparedTextStream(anyString(),anyString(),anyString())).thenReturn(Flux.just("Hello?"));
+        when(chat.handlePreparedTextStream(anyString(),anyString(),anyString(),anyString())).thenReturn(Flux.just("Hello?"));
         useCase.voice("s1",pcm,16000,null);
         ArgumentCaptor<String> prompt=ArgumentCaptor.forClass(String.class);
-        verify(chat,timeout(3000)).handlePreparedTextStream(eq("100003"),eq("s1"),prompt.capture());
+        verify(chat,timeout(3000)).handlePreparedTextStream(eq("100003"),eq("s1"),prompt.capture(), anyString());
         assertTrue(prompt.getValue().contains("Learner product level: L2"));
-        assertTrue(prompt.getValue().contains("Amy"));
+        assertFalse(prompt.getValue().contains("Amy"));
         verify(service,timeout(3000)).say(eq("s1"),any());
     }
     @Test public void snapshotCannotChangeAcrossMidnightOrNewDecision() {

@@ -70,6 +70,17 @@ public class ContextMemoryTest {
         new ChatContextService(List.of(),6000).build(new ChatContextRequestVO("d","s","hello","x".repeat(7000)));
     }
     @Test public void chineseIsNotEstimatedAsCharactersDividedByFour() { assertTrue(HybridReducer.estimate("中文测试")>=12); }
+    @Test public void dynamicSystemPolicyReducesHistoryBudgetWithoutBecomingUserText() {
+        var provider = (cn.adinall.ai.domain.agent.service.context.provider.ContextProvider) request ->
+                List.of(new ContextSectionVO("history", 10, "h".repeat(2000)));
+        var context = new ChatContextService(List.of(provider), 6000);
+        String policy = "system-only-marker" + "x".repeat(1500);
+        String result = context.build(new ChatContextRequestVO("d", "s", "hello", "current", policy));
+        assertTrue(result.contains("current"));
+        assertFalse(result.contains("system-only-marker"));
+        assertFalse(result.contains("h".repeat(2000)));
+        assertTrue(context.build(new ChatContextRequestVO("d", "s", "hello", "current")).contains("h".repeat(2000)));
+    }
     @Test public void explicitForgetIsHonoredEvenDuringReading() {
         var repository=mock(ILongTermMemoryRepository.class); var service=new LongTermMemoryService(repository);
         service.record("device:d","s",1L,"忘掉所有记忆",true,Instant.now());

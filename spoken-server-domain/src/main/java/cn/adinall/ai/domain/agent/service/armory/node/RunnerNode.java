@@ -106,7 +106,7 @@ public class RunnerNode extends AbstractArmorySupport {
                 .chatModel(dynamicContext.getChatModel())
                 .build();
 
-        // 注册到 Spring 容器
+        // 运行期 ChatService 按 agentId 取回 Runner：一次装配多次对话，换 instruction 须重跑装配链。
         registerBean(agentId, AiAgentRegisterVO.class, aiAgentRegisterVO);
 
         return aiAgentRegisterVO;

@@ -63,7 +63,7 @@ public class ConversationVoiceCaseTest {
                 mock(cn.adinall.ai.cases.conversation.impl.OpeningPreparation.class), chat, new LearnerLevelService(), "100003");
         org.springframework.test.util.ReflectionTestUtils.setField(useCase, "streamingEnabled", false);
         org.springframework.test.util.ReflectionTestUtils.setField(useCase, "teaching", TeachingTestFixture.create());
-        when(chat.handlePreparedTextStream(eq("100003"), eq("s1"), anyString()))
+        when(chat.handlePreparedTextStream(eq("100003"), eq("s1"), anyString(), anyString()))
                 .thenReturn(Flux.just("Hi ", "there?"));
         when(config.llmOwner()).thenReturn(LlmOwnerEnum.AGENT);
         when(conversation.requireSession("s1")).thenReturn(new ConversationSessionAggregate(
@@ -111,7 +111,7 @@ public class ConversationVoiceCaseTest {
         when(pronunciation.assess(eq("s1"), eq(42L), any())).thenThrow(new IllegalStateException("provider down"));
         var response = useCase.voice("s1", pcm, 16000, null);
         assertNull(response.assessment());
-        assertTrue(generatedPrompt().contains("Sole action: QUESTION"));
+        assertTrue(generatedPrompt().contains("Sole action:"));
         assertPlayedOnce();
         ArgumentCaptor<AssessPronunciationCommandEntity> command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
         verify(pronunciation).assess(eq("s1"), eq(42L), command.capture());
@@ -125,8 +125,10 @@ public class ConversationVoiceCaseTest {
         when(scenarios.findById("advanced")).thenReturn(null);
         assertNull(useCase.voice("s1", pcm, 16000, " ").assessment());
         verifyNoInteractions(pronunciation);
-        verifyNoInteractions(chat);
-        verify(conversation, timeout(3000)).say(eq("s1"), argThat(c -> c.text().contains("不用急")));
+        ArgumentCaptor<String> system = ArgumentCaptor.forClass(String.class);
+        verify(chat, timeout(3000)).handlePreparedTextStream(eq("100003"), eq("s1"), anyString(), system.capture());
+        assertTrue(system.getValue().contains("NO_AUDIO"));
+        assertPlayedOnce();
     }
 
     @Test
@@ -144,7 +146,7 @@ public class ConversationVoiceCaseTest {
     /** 等待异步调用完成并捕获传给 Agent 的业务提示词。 */
     private String generatedPrompt() {
         ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
-        verify(chat, timeout(3000)).handlePreparedTextStream(eq("100003"), eq("s1"), prompt.capture());
+        verify(chat, timeout(3000)).handlePreparedTextStream(eq("100003"), eq("s1"), prompt.capture(), anyString());
         return prompt.getValue();
     }
 
@@ -158,7 +160,7 @@ public class ConversationVoiceCaseTest {
 
     @Test
     public void modelFailurePublishesErrorWithoutPlayingOrClosing() {
-        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString()))
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(Flux.concat(Flux.just("partial"), Flux.error(new IllegalStateException("model down"))));
         useCase.voice("s1", pcm, 16000, null);
         verify(events, timeout(3000)).publish(eq("s1"), argThat(e -> e.type() == EventTypeEnum.ERROR));
@@ -168,7 +170,7 @@ public class ConversationVoiceCaseTest {
 
     @Test
     public void sessionCreationFailureUsesAsyncErrorChannel() {
-        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString())).thenThrow(new IllegalStateException("agent unavailable"));
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString())).thenThrow(new IllegalStateException("agent unavailable"));
         useCase.voice("s1", pcm, 16000, null);
         verify(events, timeout(3000)).publish(eq("s1"), argThat(e -> e.type() == EventTypeEnum.ERROR));
         verify(chat, never()).handleTextStream(anyString(), anyString(), anyString(), anyString());
@@ -176,13 +178,13 @@ public class ConversationVoiceCaseTest {
     }
 
     @Test
-    public void emptyModelOutputUsesOneSafeQuestion() throws Exception {
+    public void emptyModelOutputDoesNotInsertCannedQuestion() throws Exception {
         java.util.concurrent.CountDownLatch completed = new java.util.concurrent.CountDownLatch(1);
-        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString()))
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(Flux.<String>empty().doFinally(signal -> completed.countDown()));
         useCase.voice("s1", pcm, 16000, null);
         assertTrue(completed.await(3, java.util.concurrent.TimeUnit.SECONDS));
-        verify(conversation, timeout(3000)).say(eq("s1"), argThat(c -> c.text().equals("你今天做了什么？")));
+        verify(conversation, never()).say(eq("s1"), any());
         verify(events, never()).publish(anyString(), argThat(e -> e.type() == EventTypeEnum.ERROR || e.type() == EventTypeEnum.ASSESSMENT_DONE));
     }
 
@@ -199,7 +201,7 @@ public class ConversationVoiceCaseTest {
         var source = reactor.core.publisher.Sinks.many().unicast().<String>onBackpressureBuffer();
         var received = new java.util.concurrent.CopyOnWriteArrayList<String>();
         var cancelled = new java.util.concurrent.CountDownLatch(1);
-        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString()))
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(source.asFlux().doOnCancel(cancelled::countDown));
         when(conversation.streamReply(eq("s1"), anyString(), any())).thenAnswer(inv -> {
             Flux<String> text = inv.getArgument(2);
@@ -209,7 +211,8 @@ public class ConversationVoiceCaseTest {
         source.tryEmitNext("First sentence.");
         long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(3);
         while (received.isEmpty() && System.nanoTime() < deadline) Thread.sleep(10);
-        assertEquals(List.of("First sentence. "), received);
+        // READ 直接透传增量，QUESTION 按句加分隔空格；两者都必须在完成前播出。
+        assertEquals("First sentence.", String.join("", received).trim());
         verify(conversation, never()).say(anyString(), any());
         verify(events, never()).publish(anyString(), argThat(e -> e.type() == EventTypeEnum.TEXT_GENERATION_DONE));
         useCase.interrupt("s1");
@@ -225,7 +228,7 @@ public class ConversationVoiceCaseTest {
             return null;
         });
         useCase.voice("s1", pcm, 16000, null);
-        verify(chat, never()).handlePreparedTextStream(anyString(), anyString(), anyString());
+        verify(chat, never()).handlePreparedTextStream(anyString(), anyString(), anyString(), anyString());
         verify(conversation, never()).streamReply(anyString(), anyString(), any());
     }
 

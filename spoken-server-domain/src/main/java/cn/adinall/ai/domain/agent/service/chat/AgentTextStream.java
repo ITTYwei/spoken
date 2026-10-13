@@ -35,6 +35,7 @@ public final class AgentTextStream {
 
     /** 每次订阅重新创建去重状态；错误事件即使标为 user 也必须暴露。 */
     public static Flux<String> from(Flux<Event> events) {
+        // 返回轨唯一转换点，挡在 TTS 前：滤回显防复述、滤汇总防念两遍。
         return Flux.defer(() -> {
             AtomicBoolean sawPartial = new AtomicBoolean(false);
             return events.flatMapIterable(event -> {

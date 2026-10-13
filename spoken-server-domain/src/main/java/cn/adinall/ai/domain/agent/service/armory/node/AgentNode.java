@@ -102,6 +102,8 @@ public class AgentNode extends AbstractArmorySupport {
             model.setLogLlmPayload(logLlmPayload);
             model.setPreparedInputBudget(preparedInputBudget);
 
+            // 系统提示词唯一入口：固化成 Instruction.Static 随 bean 常驻，运行期改配置不生效。
+            // 动态化三条路：{var} 占位符（session state 替换）/ Instruction.Provider 每轮现算 / 重跑装配链。
             LlmAgent llmAgent = LlmAgent.builder()
                     .name(agentConfig.getName())
                     .description(agentConfig.getDescription())

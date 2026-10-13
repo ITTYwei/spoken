@@ -7,8 +7,7 @@ import java.util.List;
 /**
  * 口语训练场景（剧本）目录仓储
  * <p>
- * 功能：给用例层提供「有哪些场景」「某个场景怎么练」；现在是进程内的写死列表
- * （InMemoryScenarioRepository），以后换成读配置或场景服务都行。
+ * 功能：给用例层提供场景目录、开场底座与音色；优先数据库，缺少实现时使用内置目录。
  * <pre>
  *   listAll()           场景目录，给 App 的场景选择界面
  *   findById(String)    按 id 取场景；实现侧查不到时回退到第一个场景，不返回 null
@@ -35,8 +34,8 @@ import java.util.List;
  *   处理: 在写死列表里按 id 匹配
  *   输出: ScenarioVO{id="interview", title="英文面试", level="intermediate",
  *         voice="en-US-JennyNeural", goal="练习自我介绍与常见面试问题",
- *         systemPromptHint="You are Alex, an interviewer ... Never switch to Chinese ...",
- *         openingLine="Hello! I'm Alex, and I'll be your interviewer today. ..."}
+ *         systemPromptHint=null（统一口语教练）,
+ *         openingLine="嗨，又见面啦！今天有什么想聊的，或者想练的？"}
  *   异常分支: findById("not-exist") 返回 id="free" 的自由对话场景 —— 不是 null，也不抛异常
  * </pre>
  * 设计要点：

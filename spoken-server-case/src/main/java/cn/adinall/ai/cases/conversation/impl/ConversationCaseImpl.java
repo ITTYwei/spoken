@@ -110,7 +110,7 @@ import java.util.Map;
  *         model=null, voice=null, scenarioId="interview"}
  *        场景: ScenarioVO{id="interview", voice="en-US-JennyNeural",
  *              openingLine="Hello! I'm Alex, and I'll be your interviewer today. ...",
- *              systemPromptHint="You are Alex, an interviewer ..."}
+ *              systemPromptHint=null（统一口语教练）}
  *   处理: 关掉 dev-001 的旧会话（返回 true）-> 睡 slotReleaseSettleMs（配置 800ms）->
  *         createSession(voice="en-US-JennyNeural") -> awaitReady 一次就拿到 READY
  *   输出: SessionResponseDTO{sessionId="s-3f2a9c8b1d4e6f70", status="READY",
@@ -226,10 +226,8 @@ public class ConversationCaseImpl implements IConversationCase {
 
         learnerLevelService.forgetDevice(deviceId);
 
-        // 场景决定两件事：
-        // 1) 发给 LLM 的系统提示词（只影响生成轨）；
-        // 2) 默认音色 —— 英文场景必须配英文音色，否则英文文本被中文嗓子念，很难听。
-        //    音色作用在 TTS 阶段，脚本轨和生成轨都受它影响，所以它才是"强制英语"里最容易被漏的旋钮。
+        // 场景提供开场底座和默认音色；free/interview 不再提供专属模型人设。
+        // 语言由稳定等级决定，音色须与中英双语 TTS 引擎配套。
         // App 如果显式指定了 voice，以 App 为准。
         ScenarioVO scenario = scenarioRepository.findById(request.scenarioId());
         String voice = request.voice() != null && !request.voice().isBlank()
@@ -388,7 +386,10 @@ public class ConversationCaseImpl implements IConversationCase {
         UserUtteranceVO utterance = conversationService.transcribeUploadedAndRecord(sessionId, wav);
         var previousTask = session.teaching().pending();
         // 客户端 expectedText 不能改写服务端任务；自由对话分仅作参考，不进入教学决策。
-        String serverTarget = previousTask.reading() ? previousTask.target() : null;
+        // 当前话语不像目标句时按自由发言评测，避免将中文招呼对照英文跟读句打分。
+        String serverTarget = previousTask.reading()
+                && cn.adinall.ai.domain.conversation.service.reply.ReadingAttemptPolicy.isAttempt(previousTask.target(), utterance.userText())
+                ? previousTask.target() : null;
         PronunciationAssessmentAggregate assessment = assessQuietly(sessionId, utterance.turnId(), wav,
                 utterance.userText(), serverTarget);
         ScenarioVO scenario = scenarioRepository.findById(session.getScenarioId());
@@ -419,10 +420,13 @@ public class ConversationCaseImpl implements IConversationCase {
         Flux<String> tokens = Flux.defer(() -> {
                     if (round.isDisposed()) return Flux.empty();
                     teaching.begin(session, turnId, replyId, decision, userText, replyAgentId);
-                    if (decision.script() != null && !decision.script().isBlank()) return Flux.just(decision.script());
+                    // 教学策略只给任务与证据；后续对话统一由 Agent 生成。
                     String prompt = teaching.prompt(session, userText, decision, persona);
-                    return chatService.handlePreparedTextStream(replyAgentId, sessionId, prompt);
+                    // 可信等级/任务进入 SYSTEM；原话、场景与裁剪历史保留在 USER。
+                    return chatService.handlePreparedTextStream(replyAgentId, sessionId, prompt,
+                            ReplyPromptBuilder.buildSystemPolicy(decision));
                 }).subscribeOn(Schedulers.boundedElastic())
+                // Agent 的原始增量先经过任务护栏，再交给数字人播报。
                 .transform(source -> TeachingReplyGuard.apply(source, decision))
                 .filter(delta -> delta != null && !delta.isEmpty())
                 .doOnNext(delta -> {
@@ -438,8 +442,10 @@ public class ConversationCaseImpl implements IConversationCase {
                 });
         reactor.core.publisher.Mono<Void> reply;
         if (streamingEnabled) {
+            // 文本边生成边发送；OpenTalking 负责切句、TTS 和数字人渲染。
             reply = conversationService.streamReply(sessionId, replyId, tokens);
         } else {
+            // 回退模式等待整段文本完成后再播报，仍使用同一套 Agent 提示词。
             reply = tokens.reduce(new StringBuilder(), (full, delta) -> {
                         if (full.length() + delta.length() > 32768) throw new IllegalStateException("reply_too_large");
                         return full.append(delta);

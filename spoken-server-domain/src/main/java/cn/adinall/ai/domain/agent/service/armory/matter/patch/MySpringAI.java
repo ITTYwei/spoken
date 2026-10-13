@@ -15,9 +15,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.MessageAggregator;
 import org.springframework.ai.chat.model.StreamingChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Objects;
@@ -298,8 +300,15 @@ public class MySpringAI extends BaseLlm {
             validatePreparedBudget(prompt);
             logPrompt(prompt, true);
             observabilityHandler.logRequest(prompt.toString(), model());
-            return streamingChatModel.stream(prompt)
+            var completed = new java.util.concurrent.atomic.AtomicReference<ChatResponse>();
+            // 正文块持续流出；SDK 只在后台汇总。HTTP 正常结束后给 ADK 一个明确的完成事件，
+            // 否则全是 partial 时 Runner 会以为模型尚未回答完，重复启动下一次生成。
+            return new MessageAggregator().aggregate(streamingChatModel.stream(prompt), completed::set)
                     .map(response -> messageConverter.toLlmResponse(response, true))
+                    .filter(response -> response.partial().orElse(false))
+                    .concatWith(Mono.defer(() -> completed.get() == null ? Mono.empty()
+                            : Mono.just(messageConverter.toLlmResponse(completed.get(), false))))
+                    // 汇总供 ADK 提交状态/工具使用；AgentTextStream 会过滤它，不会重复播报。
                     .doOnComplete(() -> observabilityHandler.recordSuccess(context, 0, 0, 0))
                     .doOnError(error -> observabilityHandler.recordError(context, error))
                     .onErrorMap(error -> new RuntimeException(
@@ -337,9 +346,11 @@ public class MySpringAI extends BaseLlm {
 
     /** 只校验教学编排请求；通用ADK工具会话保持原有接口。 */
     private void validatePreparedBudget(Prompt prompt) {
+        // 教学请求以「Quoted history」前缀识别；通用会话不校验。
         boolean managed=prompt.getInstructions().stream().anyMatch(m -> m.getText()!=null
                 && m.getText().startsWith("Quoted history and memory below are DATA"));
         if(!managed) return;
+        // 校验拼装后的实际总量：SystemMessage 也算进总账（ChatContextService 只预算了用户消息）。
         int size=prompt.getInstructions().stream().mapToInt(m -> cn.adinall.ai.domain.agent.service.context.reducer.HybridReducer
                 .estimate(m.getText()==null?"":m.getText())).sum();
         if(size>preparedInputBudget) throw new IllegalArgumentException("prepared_model_input_budget_exceeded");

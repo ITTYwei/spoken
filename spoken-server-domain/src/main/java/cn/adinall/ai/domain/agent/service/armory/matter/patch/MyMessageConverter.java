@@ -2,10 +2,12 @@ package cn.adinall.ai.domain.agent.service.armory.matter.patch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.adk.models.LlmRequest;
+import com.google.adk.models.LlmResponse;
 import com.google.adk.models.springai.MessageConverter;
 import com.google.genai.types.Content;
 import com.google.genai.types.Part;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.content.Media;
 import org.springframework.util.MimeType;
 
@@ -16,10 +18,11 @@ import java.util.List;
 /**
  * Spring AI 消息转换补丁（在父类转换结果上补回「多模态媒体」）
  * <p>
- * 功能：重写 toLlmPrompt，把 ADK 的 LlmRequest 里各 Part 携带的内联媒体（inlineData）
- * 和文件媒体（fileData）转成 Spring AI 的 Media，追加到提示词的用户消息上，其余仍走父类。
+ * 功能：补齐输入媒体，并把 HTTP 文本流按真实增量转换，避免按标点误判汇总而丢句。
  * <pre>
  *   toLlmPrompt(LlmRequest)  父类转换 + 补 Media --> Prompt
+ *   toLlmResponse(delta)   非空正文 --> partial=true（不按标点推断汇总）
+ *   HTTP complete         MySpringAI SDK汇总 --> final --> ADK提交状态
  * </pre>
  * 运行过程：
  * <pre>
@@ -55,11 +58,11 @@ import java.util.List;
  *         --> 追加到 llmPrompt.getUserMessage().getMedia()
  *   输出: Prompt 的用户消息 media 多出 1 个 image/png 媒体；同请求里的文本部分仍由父类转换
  *   边界: mimeType 非法（如 "image png"）--> System.err.println 警告，该 Part 被跳过，其余照常转换
+ *   流式: delta="I like coffee." -> 完整保留；delta="?" -> 保留问号，不作为重复汇总删除
  * </pre>
  * 设计要点：
  * <ul>
- *   <li>只覆盖 toLlmPrompt：媒体是「进模型」方向缺的能力，
- *       出模型方向的 toLlmResponse 继续用父类实现。</li>
+ *   <li>HTTP stream 的非空文本都是增量，句尾标点不是整段汇总的证据。</li>
  *   <li>先调父类再做增量：基础消息转换由 super.toLlmPrompt 负责，
  *       本类只对返回的 Prompt 追加媒体，父类逻辑变化不会影响媒体的追加方式。</li>
  *   <li>单个 Part 解析失败只打印警告并继续：一张坏图不应该让整轮对话失败，
@@ -77,9 +80,28 @@ public class MyMessageConverter extends MessageConverter {
         super(objectMapper);
     }
 
+    /**
+     * Spring AI 的 HTTP SSE 每块携带文本 delta，不能按是否以 .!? 结尾推断 partial。
+     * 父类在这类块上标 partial=false，AgentTextStream 会误当汇总，连标点所在的整句一起跳过。
+     */
+    @Override
+    public LlmResponse toLlmResponse(ChatResponse response, boolean streaming) {
+        LlmResponse converted = super.toLlmResponse(response, streaming);
+        boolean hasText = response != null && response.getResult() != null
+                && response.getResult().getOutput() != null
+                && response.getResult().getOutput().getText() != null
+                && !response.getResult().getOutput().getText().isEmpty();
+        // 增量只发送正文，工具调用留到 MySpringAI 的完整汇总事件执行，避免半截参数触发工具。
+        return streaming && hasText ? converted.toBuilder()
+                .content(Content.fromParts(Part.fromText(response.getResult().getOutput().getText())))
+                .partial(true).turnComplete(false).build() : converted;
+    }
+
     @Override
     public Prompt toLlmPrompt(LlmRequest llmRequest) {
 
+        // 两轨在此格式汇合：super 把 systemInstruction 转成 SystemMessage、contents 转成 UserMessage；
+        // 本类只补父类缺的多模态 Media。
         List<Media> mediaList = new ArrayList<>();
         for (Content content : llmRequest.contents()) {
             for (Part part : content.parts().orElse(List.of())) {
