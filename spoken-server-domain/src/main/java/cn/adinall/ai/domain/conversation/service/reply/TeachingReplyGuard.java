@@ -26,7 +26,7 @@ public final class TeachingReplyGuard {
         var safeSource = source.map(text -> text.replaceAll("[❌❎✘✗×☒✅✔✓☑\\uFE0F]", ""));
         if (decision.nextTask().reading()) return safeSource;
         return Flux.defer(() -> {
-            SentenceState state = new SentenceState(decision.level().ordinal() <= 1);
+            SentenceState state = new SentenceState(decision.level().ordinal() <= 1, decision.nextTask().explaining());
             return safeSource.concatMap(delta -> Flux.fromIterable(state.feed(delta)), 1)
                     .concatWith(Flux.defer(() -> Flux.fromIterable(state.finish(decision.chineseSupport()))));
         });
@@ -58,7 +58,13 @@ public final class TeachingReplyGuard {
         /** 已放行的问题后译意，防止翻译许可变成无限追加中文内容。 */
         private boolean explanationEmitted;
 
-        SentenceState(boolean explainAfterQuestion) { this.explainAfterQuestion = explainAfterQuestion; }
+        /** 知识解答需要保留规则及例句，不受普通问答两句陈述及问句后收尾规则截断。 */
+        private final boolean answeringEnglishQuestion;
+
+        SentenceState(boolean explainAfterQuestion, boolean answeringEnglishQuestion) {
+            this.explainAfterQuestion = explainAfterQuestion;
+            this.answeringEnglishQuestion = answeringEnglishQuestion;
+        }
 
         List<String> feed(String delta) {
             if (delta == null) return List.of();
@@ -97,6 +103,13 @@ public final class TeachingReplyGuard {
             String text = raw.trim().replaceAll("[*#`•]", "");
             if (text.isEmpty()) return;
             String lower = text.toLowerCase(Locale.ROOT);
+            if (answeringEnglishQuestion) {
+                // 不因解释含“跟读”一词就删除知识内容；只拒绝明确要求用户读的命令句。
+                // 最多保留六句说明，避免套普通聊天护栏后只剩译文而丢掉关键用法/例句。
+                if (lower.matches("(?s).*(请(?:再)?(?:跟读|跟我读|读一遍)|跟我读(?:一下|一次|一遍|这句)|repeat after me|please (?:repeat|read aloud)).*")) return;
+                if (statements < 6) { statements++; out.add(text + " "); }
+                return;
+            }
             for (String banned : List.of("跟读", "跟我读", "读一遍", "读这", "试着读", "试着说", "试试说", "试试读", "你可以说", "重复这", "repeat after", "read aloud", "read this", "read it", "try saying", "say it", "you can say", "you could say", "try to say",
                     "你说得很好", "说得很顺", "真厉害", "你的英语", "you are wrong", "incorrect", "mispronounced", "your score", "your english is"))
                 if (lower.contains(banned)) return;

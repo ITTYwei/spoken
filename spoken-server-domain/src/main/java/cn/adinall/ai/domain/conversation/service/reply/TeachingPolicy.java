@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * 功能：按上一任务和本轮明确证据安排一个动作，拒绝与困难分别处理。
  * <p>体系架构 / 运行过程：</p>
- * <pre>no audio -> decline -> help -> fixed-target reading -> Chinese input -> level sampling
+ * <pre>no audio -> English question -> decline -> help -> fixed-target reading -> Chinese input -> level sampling
  * reading: reliable issue -> one correction -> at most two tries -> easier task
  * decision -> Agent generates spoken wording</pre>
  * <p>案例：上一轮 READ，用户“不想读” -> DECLINED / QUESTION；Agent 委婉转入新话题。</p>
@@ -51,6 +51,7 @@ public final class TeachingPolicy {
      * 1. 参数校验            draw 非法 -> IllegalArgumentException
      * 2. 归一化输入          text=null -> ""；去首尾空白；转小写用于关键词匹配
      * 3. NO_AUDIO            空输入（未听到声音/识别为空）
+     * 3.1 ENGLISH_QUESTION   明确词义/语法/翻译/发音方法问题 -> EXPLAIN；绕过纠音和抽样
      * 4. DECLINED            明确拒绝：不想读 / 跳过 / skip
      * 5. HELP                明确求助：听不懂 / 用中文
      * 6. HELP + 降低难度     不会说 / 不会读：换更短目标或换话题起始句
@@ -100,7 +101,14 @@ public final class TeachingPolicy {
         //     reliable=false 表示没有可用证据，不能用于评分或升级。
         if (input.isBlank()) return result(level, TeachingTaskVO.question(""), TeachingOutcomeEnum.NO_AUDIO, true, "", false, reading);
 
-        // 【4】明确拒绝：最高优先级。拒绝不是能力证据，因此 chineseSupport 按水平照常给，
+        // 用户询问语言知识时，先回答问题；即使包含上轮目标的全部单词，也不能按词重合误纠音。
+        // 必须位于 HELP、“不会说”示范以及纯中文/低档位抽样之前，否则翻译和语法问题会被硬转跟读。
+        if (EnglishLearningQuestionPolicy.isQuestion(input, previous))
+            return result(level, TeachingTaskVO.explanation(), TeachingOutcomeEnum.ENGLISH_QUESTION,
+                    chinese || cn.adinall.ai.domain.learner.service.level.LearnerLevelTracker.containsChinese(input),
+                    "", false, false);
+
+        // 【4】明确拒绝：优先于练习分配。拒绝不是能力证据，因此 chineseSupport 按水平照常给，
         //     reliable=false 保证“不想读”不会被记成不会读。转回 QUESTION 让 Agent 委婉换话题。
         if (matches(lower, "不想", "不愿", "不聊", "跳过", "不读", "换个话题", "skip", "don't want", "do not want", "rather not")) {
             return result(level, TeachingTaskVO.question(""), TeachingOutcomeEnum.DECLINED, chinese, "", false, reading);
@@ -108,7 +116,7 @@ public final class TeachingPolicy {
 
         // 【5】明确求助（听不懂/要中文）：标记 chineseSupport=true，让 Agent 用中文解释或降低难度；
         //     同样不生成纠音线索，避免把“听不懂”误判为发音问题。
-        if (matches(lower, "不知道", "不清楚", "听不懂", "看不懂", "没听懂", "没看懂", "什么意思", "什么含义", "你说的是什么", "你说什么", "你在说什么", "用中文", "说中文", "don't know", "do not know", "don't understand", "do not understand", "what do you mean")) {
+        if (!EnglishLearningQuestionPolicy.isTargetRepeat(input, previous) && matches(lower, "不知道", "不清楚", "听不懂", "看不懂", "没听懂", "没看懂", "什么意思", "什么含义", "你说的是什么", "你说什么", "你在说什么", "用中文", "说中文", "don't know", "do not know", "don't understand", "do not understand", "what do you mean")) {
             return result(level, TeachingTaskVO.question(""), TeachingOutcomeEnum.HELP, true, "", false, reading);
         }
 
@@ -116,7 +124,7 @@ public final class TeachingPolicy {
         //     - 若上一轮已经在跟读且还没试满两次：把原目标截短到前 3 个词，降低难度；
         //     - 否则：目标留空，让模型结合本轮内容与上一轮话题生成示范句。
         //     attempts 在跟读中递增，用于限制同一目标的纠音次数。
-        if (matches(lower, "不会说", "不会读", "how do i say", "can't say", "cannot say")) {
+        if (!EnglishLearningQuestionPolicy.isTargetRepeat(input, previous) && matches(lower, "不会说", "不会读", "how do i say", "can't say", "cannot say")) {
             // 已有目标可简化；新目标留空，由模型根据本轮原话生成，避免反复使用固定例句。
             String target = reading && previous.attempts() < 2 ? shorten(previous.target()) : "";
             return result(level, new TeachingTaskVO("READ", target, "", reading ? previous.attempts() + 1 : 0),

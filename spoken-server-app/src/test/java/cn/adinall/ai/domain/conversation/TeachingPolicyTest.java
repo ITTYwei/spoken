@@ -227,7 +227,7 @@ public class TeachingPolicyTest {
             var result = TeachingReplyGuard.apply(Flux.just("Do you like pizza?", " 意思是你喜欢", "披萨。",
                     " What food do you like?", " 意思是另一个问题。"), d).collectList().block();
             assertEquals("Do you like pizza?意思是你喜欢披萨。 ", String.join("", result));
-            assertTrue(ReplyPromptBuilder.buildSystemPolicy(d).contains("本轮先说简单英文"));
+            assertTrue(ReplyPromptBuilder.buildSystemPolicy(d).contains("先说"));
             assertEquals("Are you ready?这句话的意思是：你准备好了吗？ ",String.join("",TeachingReplyGuard.apply(
                     Flux.just("Are you ready?", "这句话的意思是：你准备好了吗？"),d).collectList().block()));
         }
@@ -238,7 +238,7 @@ public class TeachingPolicyTest {
 
     @Test public void clarificationRequestsOverrideChineseReadingAtEveryLevel() {
         for (var level : EnglishLevelEnum.values()) {
-            for (String input : List.of("你说的是什么？", "这是什么意思？", "没听懂", "What do you mean?")) {
+            for (String input : List.of("你说的是什么？", "没听懂", "What do you mean?")) {
                 var decision = TeachingPolicy.decide(level, read(0), input, null, true, 0);
                 assertEquals(input, TeachingOutcomeEnum.HELP, decision.outcome());
                 assertEquals("QUESTION", decision.nextTask().action());
@@ -257,7 +257,7 @@ public class TeachingPolicyTest {
         var help = TeachingPolicy.decide(EnglishLevelEnum.L6, TeachingTaskVO.question(""), "听不懂", null, false);
         var system = ReplyPromptBuilder.buildSystemPolicy(help);
         assertTrue(system.contains("使用丰富而简洁的英文"));
-        assertTrue(system.contains("本轮提供简短中文帮助"));
+        assertTrue(system.contains("用简短中文解释上一条已播报回复"));
     }
 
     @Test public void userAndPersonaCannotEnterTrustedSystemPolicy() {

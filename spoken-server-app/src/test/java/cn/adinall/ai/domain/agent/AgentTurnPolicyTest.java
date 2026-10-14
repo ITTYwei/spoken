@@ -100,6 +100,43 @@ public class AgentTurnPolicyTest {
         }
     }
 
+    /** 当前配置模型与 ADK 链路验证：英语知识问题先解答，不变成跟读，播报护栏保留说明。 */
+    @Test public void configuredModelAnswersEnglishKnowledgeWithoutForcedReading() {
+        assumeTrue(Boolean.getBoolean("spoken.verify.english-question"));
+        String key=System.getenv("LK888_API_KEY");
+        assertNotNull("需要当前模型环境密钥",key);
+        var config=module(); var apiConfig=(Map<?,?>)config.get("ai-api"); var modelConfig=(Map<?,?>)config.get("chat-model");
+        var api=OpenAiApi.builder().baseUrl((String)apiConfig.get("base-url")).apiKey(key)
+                .completionsPath("/"+apiConfig.get("completions-path")).build();
+        var model=OpenAiChatModel.builder().openAiApi(api).defaultOptions(OpenAiChatOptions.builder()
+                .model((String)modelConfig.get("model")).temperature(((Number)modelConfig.get("temperature")).doubleValue())
+                .reasoningEffort((String)modelConfig.get("reasoning-effort"))
+                .toolChoice("none").internalToolExecutionEnabled(false).build()).build();
+        var service=service(runner(model));
+        var previous=new TeachingTaskVO("READ","I cooked dinner.","",0);
+        var feedback=new cn.adinall.ai.domain.conversation.model.valobj.PronunciationFeedbackVO(30.,List.of(
+                new cn.adinall.ai.domain.conversation.model.valobj.PronunciationFeedbackVO.IssueVO("cooked","kʊkt","kʊk",.95)));
+        int sample=0;
+        for(String input:List.of("apple 是什么意思？","I cooked dinner 这句话为什么用过去式？")) {
+            var decision=TeachingPolicy.decide(EnglishLevelEnum.L2,previous,input,feedback,true,0);
+            assertEquals(TeachingOutcomeEnum.ENGLISH_QUESTION,decision.outcome());
+            var chunks=service.handlePreparedTextStream("coach","english-question-test",
+                    ReplyPromptBuilder.buildManaged(input,decision,null,previous),ReplyPromptBuilder.buildSystemPolicy(decision))
+                    .collectList().block(Duration.ofSeconds(45));
+            String played=String.join("",cn.adinall.ai.domain.conversation.service.reply.TeachingReplyGuard
+                    .apply(Flux.fromIterable(chunks),decision).collectList().block());
+            System.out.println("LIVE_ENGLISH_QUESTION_UTF8 "+sample+" "+Base64.getEncoder()
+                    .encodeToString(played.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            assertFalse(played,played.isBlank());
+            for(String forced:List.of("请跟读","跟我读","读一遍","repeat after me","读错了","你错了","发音有问题"))
+                assertFalse(played,played.toLowerCase(Locale.ROOT).contains(forced));
+            assertTrue(played,sample==0 ? played.contains("苹果") : played.contains("过去"));
+            assertTrue(played,played.contains(sample==0 ? "apple" : "cooked"));
+            assertFalse(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(),played).reading());
+            sample++;
+        }
+    }
+
     /** 读取生产 Agent 配置，使测试与实际系统指令使用同一来源。 */
     @SuppressWarnings("unchecked")
     private Map<String, Object> module() {

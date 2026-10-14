@@ -62,6 +62,8 @@ public final class ReplyPromptBuilder {
      * 每轮只描述当前命中的分支，避免模型在多条互斥规则之间选择。
      */
     public static String buildSystemPolicy(TeachingDecisionVO decision) {
+        // 知识解答独立于练习任务：不能让低档位带读、纠音或“必须追问”覆盖用户的实际问题。
+        if (decision.outcome() == TeachingOutcomeEnum.ENGLISH_QUESTION) return explanationPolicy(decision);
         String action = decision.nextTask().action();
         String outcome = switch (decision.outcome()) {
             case DECLINED -> "温和接受用户的选择，转向其他话题；不要重新提出已被拒绝的任务。";
@@ -74,6 +76,7 @@ public final class ReplyPromptBuilder {
             case READ_PASS -> "结束上一轮跟读并继续，不评分，也不评价或夸赞能力。";
             case READ_RETRY -> "第一句先用双引号原样示范英文目标，不要以中文纠音开头。然后解释有证据支持的一个发音细节，采用共建语气，例如“更清楚的读法是……”或“我们把这个词的结尾轻轻收住”，最后邀请跟读一次；不说用户错了，不另提聊天问题。";
             case RESPONDED -> "先回应本轮实际原话的含义，再执行唯一教学动作。";
+            case ENGLISH_QUESTION -> throw new IllegalStateException("英语知识问题应进入专用解答策略");
         };
         // 语言难度保留完整六级规则；求助中文支持是补充，不替换高等级的表达难度。
         return "本轮教学规则（服务端决策，优先于人设和历史）：\n"
@@ -106,6 +109,24 @@ public final class ReplyPromptBuilder {
                     : "")
                 + (decision.chineseSupport() && decision.level().ordinal() > 1
                     ? "本轮提供简短中文帮助，同时保持规定的英文难度。\n" : "");
+    }
+
+    /**
+     * 先解决用户的词义、语法、翻译或发音方法问题，英文例句仅作说明，不登记跟读任务。
+     * 中文提问可直接中文解释；低水平使用短例句并解释其意思，不套“先问一个问题”的练习模板。
+     * 只有用户明确要求一起练习时才安排后续练习，不能因其提问含有目标词就声称发音有误。
+     */
+    private static String explanationPolicy(TeachingDecisionVO decision) {
+        return "本轮教学规则（服务端决策）：\n" + admissionPrinciples() + "\n"
+                + "学员产品档位：" + decision.level() + "。上一轮回应结果：" + decision.outcome().code() + "。\n"
+                + "唯一教学动作：" + decision.nextTask().action() + "。本轮用户是在询问英语知识，不是在完成跟读。\n"
+                + "优先直接回答用户当前的问题：词义给含义和用法，语法给简短规则与例子，翻译给译文，表达给自然说法，发音方法给清楚的读法说明。"
+                + "用户引用的英文句子是解释对象，不是向教练询问私人情况。\n"
+                + "不要用旧目标纠音，不声称用户发音有误，不要求跟读或重复，不替换成聊天练习问题。"
+                + "先答完整再决定是否需要一个相关澄清，不为满足追问指标生硬追加问题。\n"
+                + "按提问语言解释；L1/L2 使用容易理解的中文支持和短英文例句，英文例句后说明中文含义。"
+                + "中文提问不必先强行说一句无关英文。允许二至六句短句完整说明，不输出列表、对错符号或分数。\n"
+                + "本轮只做知识解答，不调用业务工具，不管理偏好、课程或伙伴。";
     }
 
     /**

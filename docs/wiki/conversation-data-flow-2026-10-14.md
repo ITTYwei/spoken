@@ -251,3 +251,9 @@ Agent 请求工具
 9. ConversationServiceImpl.streamReply、applyDriverEvent → cases/practice/PracticePlaybackCase：媒体下发和完成回执。
 
 这些类型分别位于原七个模块中，分工遵循入口 → Case 编排 → Domain 规则 → Infrastructure 适配。ADK 装配和框架实现本次未修改。
+
+## 补充：英语知识问题先解答
+
+用户问“这句话为什么用过去式”时，识别原话 → 明确知识请求 → 不对照旧跟读目标纠音 → EXPLAIN 中文策略 → Agent 生成解释与例句 → 完整播报。低水平抽样和纯中文跟读不会抢先覆盖提问。
+
+本轮不执行课程/偏好工具，也不把例句登记成下轮跟读任务。数字人要求读一句后，用户完整复述那个问句，仍然走跟读流程；额外问其含义时才进入解答。详见 [英语知识提问分流](english-question-routing-2026-10-14.md)。

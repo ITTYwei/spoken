@@ -50,7 +50,10 @@ public class AgentReplyPreparation {
                 "继续正常教学回复，不宣布保存、更新、工具调用或维护失败。" +
                 "只有明确要求管理设置时，才需要操作回执。" +
                 "跟读和角色扮演句子是练习素材，不是个人事实。\n";
+        // 知识解答是纯文本旁路：不把例句变成偏好，不让“怎么说/怎么用”触发课程或设置动作兜底。
+        if (decision.nextTask().explaining()) replyPolicy += cn.adinall.ai.domain.agent.service.tool.AgentToolContextRegistry.TEXT_ONLY_POLICY;
         var generated=chat.handlePreparedTextStream(agent,session.getSessionId(),prompt,replyPolicy,invocation);
+        if (decision.nextTask().explaining()) return generated;
         // 教学跟读仍可生成纠音或下一步反馈，但句子不是个人陈述，不进入任何业务动作兜底。
         if(invocation.practiceInput()) return generated;
         // 【返回速度与执行一致性】普通问答直接流出；需要确认业务动作的回合先收齐。

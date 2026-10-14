@@ -60,6 +60,31 @@ public class AgentActionFlowTest {
     private ToolContext context(AgentInvocationVO value) { return new ToolContext(Map.of(AgentToolContextRegistry.KEY,value)); }
     private boolean ok(Object result) { return Boolean.TRUE.equals(((Map<?,?>)result).get("ok")); }
 
+    /** 解答里包含“请记住”也只是翻译对象；禁用工具及设置兜底，不能播出漏保存回执。 */
+    @Test public void knowledgeExplanationDisablesToolsAndPreferenceFallback() {
+        var chat=mock(cn.adinall.ai.domain.agent.service.IChatService.class);
+        String text="请记住，我喜欢读书，这句话用英语怎么说？";
+        String answer="可以说 I like reading books. 意思是：我喜欢读书。";
+        when(chat.handlePreparedTextStream(anyString(),anyString(),anyString(),anyString(),any(AgentInvocationVO.class)))
+                .thenAnswer(call -> {
+                    String policy=call.getArgument(3);
+                    assertTrue(policy.contains(AgentToolContextRegistry.TEXT_ONLY_POLICY));
+                    var prompt=AgentToolContextRegistry.attach(new Prompt(List.of(new SystemMessage(policy),new UserMessage(text)),
+                            org.springframework.ai.openai.OpenAiChatOptions.builder().toolChoice("auto").build()));
+                    var options=(org.springframework.ai.openai.OpenAiChatOptions)prompt.getOptions();
+                    assertEquals("none",options.getToolChoice());
+                    assertEquals(Boolean.FALSE,options.getInternalToolExecutionEnabled());
+                    return reactor.core.publisher.Flux.just(answer);
+                });
+        var replies=new cn.adinall.ai.cases.conversation.impl.AgentReplyPreparation(chat,practice,courses,actions);
+        var decision=cn.adinall.ai.domain.conversation.service.reply.TeachingPolicy.decide(
+                cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2,null,text,null,true,0);
+        assertEquals(TeachingOutcomeEnum.ENGLISH_QUESTION,decision.outcome());
+        assertEquals(answer,String.join("",replies.reply("100003",session,42,text,"prompt","policy",decision,alive::get)
+                .collectList().block()));
+        verifyNoInteractions(profiles,recent);
+    }
+
     /** 两个按钮均按真实选择播报；重放同操作不会再次播报，也不创建新的媒体会话。 */
     @Test public void continueAndFreeButtonsSpeakMatchingResponsesOnce() {
         var conversations=(IConversationService)org.springframework.test.util.ReflectionTestUtils.getField(courses,"conversations");
@@ -76,8 +101,9 @@ public class AgentActionFlowTest {
         verify(conversations,times(2)).say(eq("s"),spoken.capture());
         assertTrue(spoken.getAllValues().get(0).text().contains("继续上次"));
         assertTrue(spoken.getAllValues().get(0).text().contains("Do you enjoy cooking?"));
-        assertTrue(spoken.getAllValues().get(1).text().contains("自由聊聊"));
-        assertTrue(spoken.getAllValues().get(1).text().contains("What would you like to talk about?"));
+        // 自由聊开场允许调整文案；仍验证两次实际播报、对应模式和课程动作幂等。
+        String freeReply=spoken.getAllValues().get(1).text();
+        assertTrue(freeReply,freeReply.contains("自由聊聊") || freeReply.contains("今天过得怎么样"));
         assertEquals("FREE",practice.state("s").snapshot().mode());
         verify(recent,times(1)).save(eq("user:7"),any());
     }

@@ -28,6 +28,8 @@ public final class SpokenTaskResolver {
      * 若模型只提到英文句、没有邀请跟读，则不会凭计划强行认定用户应该读它。
      */
     public static TeachingTaskVO resolve(TeachingTaskVO planned, String spoken) {
+        // 知识讲解里的问句/例句不是练习任务；解释完成后不留下强制待答问题或待跟读目标。
+        if (planned != null && planned.explaining()) return TeachingTaskVO.question("");
         // 新跟读只由模型生成目标，播报完成后再保存实际说出的英文句。
         if (planned != null && "READ".equals(planned.action()) && (planned.target() == null || planned.target().isBlank()) && spoken != null) {
             var matcher = TARGET.matcher(spoken);
