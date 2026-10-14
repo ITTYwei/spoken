@@ -5,10 +5,16 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
-/** 登录令牌及设备隔离标识的单向摘要计算，不依赖领域服务实现。 */
+/**
+ * 登录令牌及设备隔离标识的单向摘要计算，不依赖领域服务实现。
+ */
 public final class TokenHasher {
-    private TokenHasher() { }
-    /** 高熵令牌只持久化摘要；同一算法也用于设备索引的稳定隔离键。 */
+    private TokenHasher() {
+    }
+
+    /**
+     * 高熵令牌只持久化摘要；同一算法也用于设备索引的稳定隔离键。
+     */
     public static String digest(String token) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));

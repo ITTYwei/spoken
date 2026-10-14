@@ -5,6 +5,7 @@ import cn.adinall.ai.domain.agent.adapter.repository.ILongTermMemoryRepository;
 import cn.adinall.ai.domain.agent.model.entity.LongTermMemoryEntity;
 import org.springframework.stereotype.Service;
 import org.slf4j.*;
+
 import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -21,46 +22,80 @@ import java.util.regex.Pattern;
  */
 @Service
 public class LongTermMemoryService implements ILongTermMemoryService {
-    /** 事实存储端口。 */ private final ILongTermMemoryRepository repository;
-    /** 降级日志，不包含私有原话。 */ private static final Logger log = LoggerFactory.getLogger(LongTermMemoryService.class);
-    /** 只匹配整条简单偏好，避免把引用或角色扮演变为事实。 */
+    /**
+     * 事实存储端口。
+     */
+    private final ILongTermMemoryRepository repository;
+    /**
+     * 降级日志，不包含私有原话。
+     */
+    private static final Logger log = LoggerFactory.getLogger(LongTermMemoryService.class);
+    /**
+     * 只匹配整条简单偏好，避免把引用或角色扮演变为事实。
+     */
     private static final Pattern PREFERENCE = Pattern.compile("^(?:记住[，,：:]?\\s*)?(?:我(?:不再喜欢|不喜欢|喜欢)|I (?:no longer like|don't like|do not like|like))\\s*([\\p{L} ]{1,40})[。.!！]?$", Pattern.CASE_INSENSITIVE);
-    /** 只识别明确练习意愿，条件句、引用和临时情绪不归为长期目标。 */
+    /**
+     * 只识别明确练习意愿，条件句、引用和临时情绪不归为长期目标。
+     */
     private static final Pattern GOAL = Pattern.compile("^(?:我的学习目标是|我想练习|我想练|我希望练习|My learning goal is |I want to practi[cs]e |I'd like to practi[cs]e )[^。.!！?？]{1,100}[。.!！]?$", Pattern.CASE_INSENSITIVE);
-    public LongTermMemoryService(ILongTermMemoryRepository repository) { this.repository = repository; }
-    @Override public void record(String subject, String session, Long turn, String text, boolean practice, Instant now) {
+
+    public LongTermMemoryService(ILongTermMemoryRepository repository) {
+        this.repository = repository;
+    }
+
+    @Override
+    public void record(String subject, String session, Long turn, String text, boolean practice, Instant now) {
         if (text == null || text.isBlank() || text.length() > 300) return;
         String input = text.trim();
         try {
             if (input.equals("忘掉所有记忆") || input.equalsIgnoreCase("forget all memories")) {
-                repository.forgetAllAndHistory(subject,turn); return;
+                repository.forgetAllAndHistory(subject, turn);
+                return;
             }
             if (input.startsWith("忘掉") || input.toLowerCase(Locale.ROOT).startsWith("forget ")) {
                 String topic = input.startsWith("忘掉") ? input.substring(2).trim() : input.substring(7).trim();
-                if(!topic.isBlank()) repository.forgetMatchingAndHistory(subject,topic.toLowerCase(Locale.ROOT),turn);
+                if (!topic.isBlank())
+                    repository.forgetMatchingAndHistory(subject, topic.toLowerCase(Locale.ROOT), turn);
                 return;
             }
             if (practice) return;
             var matcher = PREFERENCE.matcher(input);
             String key = null, type = null;
-            if (matcher.matches()) { key = "preference:" + matcher.group(1).trim().toLowerCase(Locale.ROOT); type = "PREFERENCE"; }
-            else if (GOAL.matcher(input).matches()) { key="learning_goal"; type="GOAL"; }
-            else if (input.equals("以后请用中文帮助我") || input.equalsIgnoreCase("please help me in Chinese")) { key="language_support"; type="LANGUAGE"; }
-            if (key != null) repository.save(new LongTermMemoryEntity(subject,key,type,input,session,turn,"EXPLICIT",now,
-                    now.plus("LANGUAGE".equals(type)?30:180,ChronoUnit.DAYS)));
-        } catch (RuntimeException e) { log.warn("记忆写入降级 type={}",e.getClass().getSimpleName()); }
+            if (matcher.matches()) {
+                key = "preference:" + matcher.group(1).trim().toLowerCase(Locale.ROOT);
+                type = "PREFERENCE";
+            } else if (GOAL.matcher(input).matches()) {
+                key = "learning_goal";
+                type = "GOAL";
+            } else if (input.equals("以后请用中文帮助我") || input.equalsIgnoreCase("please help me in Chinese")) {
+                key = "language_support";
+                type = "LANGUAGE";
+            }
+            if (key != null)
+                repository.save(new LongTermMemoryEntity(subject, key, type, input, session, turn, "EXPLICIT", now,
+                        now.plus("LANGUAGE".equals(type) ? 30 : 180, ChronoUnit.DAYS)));
+        } catch (RuntimeException e) {
+            log.warn("记忆写入降级 type={}", e.getClass().getSimpleName());
+        }
     }
-    @Override public List<LongTermMemoryEntity> recall(String subject, String topic, Instant now) {
+
+    @Override
+    public List<LongTermMemoryEntity> recall(String subject, String topic, Instant now) {
         try {
             String query = topic == null ? "" : topic.toLowerCase(Locale.ROOT);
-            return repository.active(subject,now).stream().filter(m -> "EXPLICIT".equals(m.confirmation()))
-                    .filter(m -> "LANGUAGE".equals(m.type()) || relevant(query,m))
+            return repository.active(subject, now).stream().filter(m -> "EXPLICIT".equals(m.confirmation()))
+                    .filter(m -> "LANGUAGE".equals(m.type()) || relevant(query, m))
                     .sorted(Comparator.comparing(LongTermMemoryEntity::confirmedAt).reversed()).limit(3).toList();
-        } catch (RuntimeException e) { log.warn("记忆召回降级 type={}",e.getClass().getSimpleName()); return List.of(); }
+        } catch (RuntimeException e) {
+            log.warn("记忆召回降级 type={}", e.getClass().getSimpleName());
+            return List.of();
+        }
     }
+
     private boolean relevant(String query, LongTermMemoryEntity memory) {
-        if ("GOAL".equals(memory.type())) return query.contains("学习") || query.contains("learn") || query.contains("goal");
-        String key = memory.memoryKey().replace("preference:","");
+        if ("GOAL".equals(memory.type()))
+            return query.contains("学习") || query.contains("learn") || query.contains("goal");
+        String key = memory.memoryKey().replace("preference:", "");
         return !key.isBlank() && query.contains(key);
     }
 }

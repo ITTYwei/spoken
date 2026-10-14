@@ -107,13 +107,19 @@ import java.util.Optional;
 @Service
 public class ConversationServiceImpl implements IConversationService {
 
-    /** 媒体结束后提交教学回复，整段模式不把/say受理当播放结束。 */
+    /**
+     * 媒体结束后提交教学回复，整段模式不把/say受理当播放结束。
+     */
     @jakarta.annotation.Resource
     private cn.adinall.ai.domain.conversation.adapter.repository.ITeachingReplyRepository teachingReplies;
-    /** 开场正常完成后保存主体介绍记录，纯创建与请求受理不算完成。 */
+    /**
+     * 开场正常完成后保存主体介绍记录，纯创建与请求受理不算完成。
+     */
     @jakarta.annotation.Resource
     private cn.adinall.ai.domain.conversation.adapter.repository.IOpeningEncounterRepository openingEncounters;
-    /** 每个会话当前播报的订阅；会话关闭和用户打断都会取消整条生产链。 */
+    /**
+     * 每个会话当前播报的订阅；会话关闭和用户打断都会取消整条生产链。
+     */
     private final java.util.concurrent.ConcurrentMap<String, reactor.core.Disposable.Swap> playback =
             new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -159,6 +165,7 @@ public class ConversationServiceImpl implements IConversationService {
     private final IConversationSessionRepository sessionRepository;
     private final IConversationTurnRepository turnRepository;
     private final IConversationEventBusPort eventBus;
+
     public ConversationServiceImpl(IAvatarDriverPort avatarDriver,
                                    IConversationSessionRepository sessionRepository,
                                    IConversationTurnRepository turnRepository,
@@ -203,7 +210,7 @@ public class ConversationServiceImpl implements IConversationService {
 
     /**
      * 取会话：仓储里查不到就抛 session_not_found（404，"会话不存在或已结束"）。
-     *
+     * <p>
      * 本方法**只做这一件事** —— 不向上游纠偏状态，也不转对外形状。
      * 「取会话 -> 纠偏一次 -> 转 ResponseDTO」那条链在用例层：ConversationCaseImpl.get()
      * 调完本方法后还会自己调 refreshStatus，再交给 ConversationAssembler 转换。
@@ -216,14 +223,14 @@ public class ConversationServiceImpl implements IConversationService {
 
     /**
      * 向上游纠偏一次会话状态。
-     *
+     * <p>
      * 只有「已经收尾」才跳过：QUEUED / READY / ACTIVE 都还要问。
-     *
+     * <p>
      * READY/ACTIVE 也必须问 —— 这是原来漏掉的一档。上游在 WebRTC 断开后会自动关会话并释放槽位，
      * 而 READY/ACTIVE 恰恰是「媒体连着」的那个阶段，也就是最容易死的时候。如果本地因为
      * 「已经不是 QUEUED」就不再纠偏，会话明明已经死在那边，这边还一直显示 READY，
      * App 就永远等不到「已结束」这个事实，只会拿一个废号反复换 SDP。
-     *
+     * <p>
      * 状态和本地一致时不落库：轮询很频繁，没必要把同一条记录反复写。
      */
     @Override
@@ -271,11 +278,11 @@ public class ConversationServiceImpl implements IConversationService {
 
     /**
      * WebRTC SDP 交换：把 App 的 offer 换成 answer。
-     *
+     * <p>
      * 流程：取会话（取不到抛 session_not_found）-> 纠偏状态 ->
      * 已收尾就抛 session_not_found（404）-> 仍在排队抛 session_queued（409，让 App 去等，
      * 而不是把请求挂在这里）-> 调驱动端口换 SDP，由适配器重试上游「worker 未就绪」的 404/409。
-     *
+     * <p>
      * 「已收尾」这一档为什么要单独判并且用 404：收尾的会话 providerSessionId 是废号，换 SDP
      * 必然一直 404；而 404 是 App 唯一不会重试的信号。如果落到兜底的 502，App 会把它当
      * 「没听清」显示成语音问题，把「会话已经没了」这个事实说歪。
@@ -297,7 +304,7 @@ public class ConversationServiceImpl implements IConversationService {
     /**
      * 文本驱动数字人说话：只负责下发，不回等结果。
      * 说什么、说完了没都从事件流的 assistant.delta / assistant.done 出来。
-     *
+     * <p>
      * ⚠️ command.text() 是**用户说的话**，上游会用 LLM 生成回复再念。
      * 要让数字人原样念一句已定的话，用 {@link #say}。
      */
@@ -320,7 +327,7 @@ public class ConversationServiceImpl implements IConversationService {
 
     /**
      * 逐句音色为空时，用会话默认音色补上。
-     *
+     * <p>
      * 目的：让每一次 speak / say 下发都带上音色，行为不取决于「不传 voice」时由谁兜底
      * （适配器对空 voice 是不发该字段、交给上游默认值处理，见 OpenTalkingGateway.speak）。
      * 放在领域服务而不是用例层：音色是会话状态，会话在这里才拿得到 session.getVoice()。
@@ -334,7 +341,7 @@ public class ConversationServiceImpl implements IConversationService {
     }
 
     private static SayCommandEntity withSessionVoice(SayCommandEntity command,
-                                                    ConversationSessionAggregate session) {
+                                                     ConversationSessionAggregate session) {
         if (command.voice() != null && !command.voice().isBlank()) {
             return command;
         }
@@ -343,7 +350,7 @@ public class ConversationServiceImpl implements IConversationService {
 
     /**
      * 打断。
-     *
+     * <p>
      * 先让上游停掉当前这句，然后由本类**统一下发一条 INTERRUPTED** 到本地事件总线：
      * 客户端那条「正在说」的字幕需要一条收口事件才能封口（界面上的「已打断」标记
      * 也靠它）。走本地事件总线意味着这个封口不依赖上游是否发「打断回执」——
@@ -363,11 +370,11 @@ public class ConversationServiceImpl implements IConversationService {
 
     /**
      * 语音上行：App 传一段 PCM 上来，交给驱动后端做服务端识别。
-     *
+     * <p>
      * 识别出的文本以 stt.final 推给正在听的 SSE（App 不用关心它是谁识别的），
      * 同时作为返回值给 HTTP 调用方 —— App 靠它立刻收掉「正在识别」的转圈，
      * 不用等 SSE 往返；识别不出来时也由它同步报错，比等超时友好得多。
-     *
+     * <p>
      * 注意：上游拿到文本后会**自己**触发数字人说话，所以这里绝对不能再调一次 speak，
      * 否则同一句话会被读两遍。
      */
@@ -391,7 +398,9 @@ public class ConversationServiceImpl implements IConversationService {
         return text;
     }
 
-    /** 识别并记录一条用户话语；评测和回复由用例编排。 */
+    /**
+     * 识别并记录一条用户话语；评测和回复由用例编排。
+     */
     @Override
     public UserUtteranceVO transcribeUploadedAndRecord(String sessionId, byte[] wav) {
         ConversationSessionAggregate session = requireSession(sessionId);
@@ -497,21 +506,23 @@ public class ConversationServiceImpl implements IConversationService {
                             session.getSessionId());
                 }
                 completeAssistantTurn(session.getSessionId(), text, session.responseLatencyMs());
-                var opening=session.getOpeningDecision();
-                if(opening!=null && session.isOpeningSpoken() && event.data() instanceof java.util.Map<?,?> data
-                        && (session.getSessionId()+":opening").equals(data.get("replyId"))
-                        && text!=null && !text.isBlank()) {
+                var opening = session.getOpeningDecision();
+                if (opening != null && session.isOpeningSpoken() && event.data() instanceof java.util.Map<?, ?> data
+                        && (session.getSessionId() + ":opening").equals(data.get("replyId"))
+                        && text != null && !text.isBlank()) {
                     session.teaching().commit(cn.adinall.ai.domain.conversation.model.valobj.TeachingTaskVO.question(
                             lastOpeningQuestion(text)));
                     try {
-                        openingEncounters.recordShown(session.teachingSubject(),session.getSessionId(),opening.avatarId(),opening.avatarName(),
-                                "FIRST".equals(opening.context()) && cn.adinall.ai.domain.conversation.service.opening.OpeningTextPolicy.valid(text,"FIRST"),
+                        openingEncounters.recordShown(session.teachingSubject(), session.getSessionId(), opening.avatarId(), opening.avatarName(),
+                                "FIRST".equals(opening.context()) && cn.adinall.ai.domain.conversation.service.opening.OpeningTextPolicy.valid(text, "FIRST"),
                                 java.time.Instant.now());
-                    } catch(RuntimeException e) { log.warn("开场完成记录降级 type={}",e.getClass().getSimpleName()); }
+                    } catch (RuntimeException e) {
+                        log.warn("开场完成记录降级 type={}", e.getClass().getSimpleName());
+                    }
                 }
-                var pending=session.pendingTeaching();
-                if(pending!=null && session.acceptsReply(pending.replyId()) && text!=null && !text.isBlank()) {
-                    teachingReplies.complete(pending.turnId(),pending.replyId(),text);
+                var pending = session.pendingTeaching();
+                if (pending != null && session.acceptsReply(pending.replyId()) && text != null && !text.isBlank()) {
+                    teachingReplies.complete(pending.turnId(), pending.replyId(), text);
                     // 整段播报回调与流式回调采用同一核验规则，避免把未说出的跟读任务提交。
                     session.teaching().commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(
                             pending.decision().nextTask(), text));
@@ -532,10 +543,14 @@ public class ConversationServiceImpl implements IConversationService {
         return ConversationEventVO.of(event.type(), event.data());
     }
 
-    /** 首次开始动作没有问句，不能把用户的招呼误判为没有回答问题。 */
+    /**
+     * 首次开始动作没有问句，不能把用户的招呼误判为没有回答问题。
+     */
     private static String lastOpeningQuestion(String text) {
-        var matcher=java.util.regex.Pattern.compile("[^.!?。！？]*[?？]").matcher(text);
-        String question=""; while(matcher.find()) question=matcher.group().trim(); return question;
+        var matcher = java.util.regex.Pattern.compile("[^.!?。！？]*[?？]").matcher(text);
+        String question = "";
+        while (matcher.find()) question = matcher.group().trim();
+        return question;
     }
 
     // ------------------------------------------------------------------ 回合落库
@@ -546,7 +561,9 @@ public class ConversationServiceImpl implements IConversationService {
         return turnRepository.listBySessionId(sessionId);
     }
 
-    /** 用户说完一句：先建一条只有 userText 的回合，等数字人回完再补 assistantText。 */
+    /**
+     * 用户说完一句：先建一条只有 userText 的回合，等数字人回完再补 assistantText。
+     */
     private ConversationTurnAggregate appendUserTurn(String sessionId, String userText) {
         synchronized (requireSession(sessionId)) {
             int nextSeq = turnRepository.findLastBySessionId(sessionId)

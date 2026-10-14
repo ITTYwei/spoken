@@ -11,6 +11,7 @@ import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Semaphore;
@@ -26,13 +27,28 @@ import java.util.concurrent.Semaphore;
  */
 @Service
 public class AbilityEvidenceService implements IAbilityEvidenceService {
-    /** 只读装配产物，模型调用归 Agent。 */ private final DefaultArmoryFactory factory;
-    /** 限制后台请求并发，避免抢占对话资源。 */ private final Semaphore slots = new Semaphore(2);
-    /** JSON 编解码器，不执行用户文本。 */ private final ObjectMapper json = new ObjectMapper();
-    public AbilityEvidenceService(DefaultArmoryFactory factory) { this.factory = factory; }
-    @Override public Mono<AbilityEvidenceVO> observe(String agentId, String question, String answer) {
+    /**
+     * 只读装配产物，模型调用归 Agent。
+     */
+    private final DefaultArmoryFactory factory;
+    /**
+     * 限制后台请求并发，避免抢占对话资源。
+     */
+    private final Semaphore slots = new Semaphore(2);
+    /**
+     * JSON 编解码器，不执行用户文本。
+     */
+    private final ObjectMapper json = new ObjectMapper();
+
+    public AbilityEvidenceService(DefaultArmoryFactory factory) {
+        this.factory = factory;
+    }
+
+    @Override
+    public Mono<AbilityEvidenceVO> observe(String agentId, String question, String answer) {
         return Mono.defer(() -> {
-            if (question == null || question.isBlank() || answer == null || answer.isBlank() || !slots.tryAcquire()) return Mono.empty();
+            if (question == null || question.isBlank() || answer == null || answer.isBlank() || !slots.tryAcquire())
+                return Mono.empty();
             return Mono.defer(() -> {
                 var model = factory.getAiAgentRegisterVO(agentId).getChatModel();
                 if (model == null) return Mono.empty();
@@ -46,26 +62,36 @@ public class AbilityEvidenceService implements IAbilityEvidenceService {
                         + "Do not infer high levels from length alone. Copied phrases, reading, help, unclear intent: independent=false. "
                         + "When evidence is insufficient use UNCERTAIN and confidence below 0.85. Never invent pronunciation or grammar evidence.";
                 String payload;
-                try { payload = json.writeValueAsString(Map.of("previousQuestion", question, "answer", answer)); }
-                catch (Exception e) { return Mono.empty(); }
+                try {
+                    payload = json.writeValueAsString(Map.of("previousQuestion", question, "answer", answer));
+                } catch (Exception e) {
+                    return Mono.empty();
+                }
                 Prompt prompt = new Prompt(List.of(new SystemMessage(instruction), new UserMessage(payload)),
                         OpenAiChatOptions.builder().toolCallbacks(List.of()).build());
                 return streaming.stream(prompt).map(r -> r.getResult() == null || r.getResult().getOutput().getText() == null
                                 ? "" : r.getResult().getOutput().getText())
-                        .reduce(new StringBuilder(), (b,s) -> { if (b.length()+s.length()>2048) throw new IllegalStateException("observation_too_large"); return b.append(s); })
+                        .reduce(new StringBuilder(), (b, s) -> {
+                            if (b.length() + s.length() > 2048)
+                                throw new IllegalStateException("observation_too_large");
+                            return b.append(s);
+                        })
                         .flatMap(b -> parse(b.toString())).timeout(Duration.ofSeconds(15));
             }).subscribeOn(Schedulers.boundedElastic()).doFinally(signal -> slots.release()).onErrorResume(e -> Mono.empty());
         });
     }
+
     private Mono<AbilityEvidenceVO> parse(String text) {
         try {
             var n = json.readTree(text);
             String outcome = n.path("outcome").asText(), candidate = n.path("candidate").asText();
             double confidence = n.path("confidence").asDouble(-1);
-            if (!Set.of("ANSWERED","PARTIAL","HELP","DECLINED","UNCERTAIN").contains(outcome)
+            if (!Set.of("ANSWERED", "PARTIAL", "HELP", "DECLINED", "UNCERTAIN").contains(outcome)
                     || !candidate.matches("L[1-6]") || !n.path("confidence").isNumber() || !Double.isFinite(confidence) || confidence < 0 || confidence > 1
                     || !n.path("independent").isBoolean()) return Mono.empty();
-            return Mono.just(new AbilityEvidenceVO(outcome,candidate,confidence,n.path("independent").asBoolean()));
-        } catch (Exception e) { return Mono.empty(); }
+            return Mono.just(new AbilityEvidenceVO(outcome, candidate, confidence, n.path("independent").asBoolean()));
+        } catch (Exception e) {
+            return Mono.empty();
+        }
     }
 }

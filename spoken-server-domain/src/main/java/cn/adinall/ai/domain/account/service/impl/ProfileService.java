@@ -13,19 +13,29 @@ import cn.adinall.ai.domain.agent.adapter.repository.ILongTermMemoryRepository;
 import cn.adinall.ai.domain.learner.adapter.repository.ILearnerProgressRepository;
 import cn.adinall.ai.domain.learner.model.valobj.*;
 import org.springframework.stereotype.Service;
+
 import java.time.*;
 import java.util.*;
 
-/** 资料、对话画像及能力描述；注册流程不会调用画像采集。 */
+/**
+ * 资料、对话画像及能力描述；注册流程不会调用画像采集。
+ */
 @Service
 public class ProfileService implements IProfileService {
     private final IProfileRepository profiles;
     private final ILongTermMemoryRepository memories;
     private final ILearnerProgressRepository learner;
+
     public ProfileService(IProfileRepository profiles, ILongTermMemoryRepository memories, ILearnerProgressRepository learner) {
-        this.profiles = profiles; this.memories = memories; this.learner = learner;
+        this.profiles = profiles;
+        this.memories = memories;
+        this.learner = learner;
     }
-    public AccountProfileVO profile() { return profiles.get(AccountContext.require().id()); }
+
+    public AccountProfileVO profile() {
+        return profiles.get(AccountContext.require().id());
+    }
+
     public AccountOverviewVO me() {
         long id = AccountContext.require().id();
         String subject = "user:" + id;
@@ -35,12 +45,15 @@ public class ProfileService implements IProfileService {
                 .map(m -> new PracticePreferenceVO(m.memoryKey(), m.type(), m.content())).toList();
         return new AccountOverviewVO(profiles.get(id), ability(learner.recentForDescription(subject, Instant.now().minus(Duration.ofDays(30)))), facts);
     }
-    /** 近期30天、最近10场内至少3场20条有效独立回答，才产生能力描述。 */
+
+    /**
+     * 近期30天、最近10场内至少3场20条有效独立回答，才产生能力描述。
+     */
     public static AbilityDescriptionVO ability(List<LearningEvidenceVO> source) {
         var recent = source.stream().sorted(Comparator.comparing(LearningEvidenceVO::observedAt).reversed())
                 .map(LearningEvidenceVO::sessionId).distinct().limit(10).toList();
         var valid = source.stream().filter(e -> recent.contains(e.sessionId()) && e.eligible() && "ANSWERED".equals(e.outcome())
-                && e.confidence() >= .85 && e.candidate() != null)
+                        && e.confidence() >= .85 && e.candidate() != null)
                 .collect(java.util.stream.Collectors.toMap(LearningEvidenceVO::turnId, e -> e, (a, b) -> b)).values();
         if (valid.size() < 20 || valid.stream().map(LearningEvidenceVO::sessionId).distinct().count() < 3)
             return new AbilityDescriptionVO("learning", "正在了解");
@@ -59,20 +72,28 @@ public class ProfileService implements IProfileService {
         };
         return new AbilityDescriptionVO("ready", description);
     }
+
     public void nickname(String value) {
-        if (value == null || value.isBlank() || value.trim().length() > 64) throw new IllegalArgumentException("昵称需为1至64个字符");
+        if (value == null || value.isBlank() || value.trim().length() > 64)
+            throw new IllegalArgumentException("昵称需为1至64个字符");
         profiles.nickname(AccountContext.require().id(), value.trim());
     }
+
     public void display(boolean subtitles, String translation) {
-        if (!Set.of("on_demand", "off").contains(translation == null ? "" : translation)) throw new IllegalArgumentException("翻译偏好无效");
+        if (!Set.of("on_demand", "off").contains(translation == null ? "" : translation))
+            throw new IllegalArgumentException("翻译偏好无效");
         profiles.display(AccountContext.require().id(), subtitles, translation);
     }
-    /** 仅允许管理目标和兴趣，避免写入内部能力或教学规则。content为空表示删除。 */
+
+    /**
+     * 仅允许管理目标和兴趣，避免写入内部能力或教学规则。content为空表示删除。
+     */
     public void fact(String key, String type, String content) {
         boolean goal = "GOAL".equals(type) && "learning_goal".equals(key);
         boolean interest = "PREFERENCE".equals(type) && key != null && key.startsWith("preference:") && key.length() > 11 && key.length() <= 128;
         if (!goal && !interest) throw new IllegalArgumentException("仅允许管理练习目标和兴趣");
-        if (content != null && (content.isBlank() || content.length() > 300)) throw new IllegalArgumentException("偏好内容需为1至300个字符");
+        if (content != null && (content.isBlank() || content.length() > 300))
+            throw new IllegalArgumentException("偏好内容需为1至300个字符");
         profiles.manageFact(AccountContext.require().id(), key, type, content);
     }
 }
