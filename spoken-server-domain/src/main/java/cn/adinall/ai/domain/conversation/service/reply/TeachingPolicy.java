@@ -152,11 +152,12 @@ public final class TeachingPolicy {
             if (usable && feedback.score() >= 80 && issue == null) {
                 return result(level, TeachingTaskVO.question(""), "READ_PASS", chinese, "", true, true);
             }
-            // 【7.2】重读纠音：总分不达标 + 有可信错词 + 还没试满两次。
+            // 【7.2】重读纠音：有可信的目标词发音差异 + 还没试满两次。
+            // 具体错词证据优先于整句总分：总分较高仍可能有一个需要示范的结尾音，不能因此跳过指导。
             //     任务仍是原目标（重新读同一句），attempts+1 控制“同一目标最多纠音两次”。
             //     提示只针对错词本身：默认“注意某个词”；以 -ed 结尾且期望读音以 t 结尾时，
             //     给出更具体的 /t/ 提示（这是中国学员的常见加音错误）。
-            if (usable && issue != null && feedback.score() < 80 && previous.attempts() < 2) {
+            if (usable && issue != null && previous.attempts() < 2) {
                 String word = issue.word();
                 String hint = "注意单词 " + word + "。";
                 if (word.toLowerCase(Locale.ROOT).endsWith("ed") && issue.expected() != null && issue.expected().endsWith("t"))

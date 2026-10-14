@@ -18,7 +18,46 @@ import static org.junit.Assert.*;
  * <ul><li>测用户可观察行为。</li><li>不访问模型或数据库。</li></ul>
  */
 public class TeachingPolicyTest {
+    /** 共建反馈去掉对错符号后，真实跟读目标和邀请仍完整保留，不能因此丢失下一轮任务。 */
+    @Test public void safeSpaceMarkersAreRemovedWithoutLosingReadingTask() {
+        var feedback = new PronunciationFeedbackVO(55., List.of(
+                new PronunciationFeedbackVO.IssueVO("cooked", "kʊkt", "kʊk", .95)));
+        var decision = TeachingPolicy.decide(EnglishLevelEnum.L2, read(0), "I cooked dinner", feedback, true);
+        String spoken = String.join("", TeachingReplyGuard.apply(Flux.just(
+                "❌", "\"I cooked dinner.\" 意思是：我做了晚饭。",
+                " 更清楚的读法是把 cooked 的结尾轻轻收住。✅ 请再跟读一次。"), decision).collectList().block());
+        assertFalse(spoken.contains("❌"));
+        assertFalse(spoken.contains("✅"));
+        assertTrue(spoken.contains("更清楚的读法"));
+        var task = SpokenTaskResolver.resolve(decision.nextTask(), spoken);
+        assertTrue(task.reading());
+        assertEquals("I cooked dinner.", task.target());
+    }
+
+    /** 相关追问及其中文译意可以正常播出，安全符号清理不能变成删除聊天内容。 */
+    @Test public void safeSpaceKeepsRelevantFollowupAndMeaningAcrossChunks() {
+        var decision = TeachingPolicy.decide(EnglishLevelEnum.L2, TeachingTaskVO.question(""),
+                "I like reading books", null, false, .9);
+        String spoken = String.join("", TeachingReplyGuard.apply(Flux.just(
+                "✗ You enjoy reading. ", "What books do you like?", "意思是：你喜欢什么书？"), decision).collectList().block());
+        assertFalse(spoken.contains("✗"));
+        assertTrue(spoken.contains("What books do you like?"));
+        assertTrue(spoken.contains("意思是：你喜欢什么书？"));
+        assertEquals("What books do you like?", SpokenTaskResolver.lastQuestion(spoken));
+    }
+
     private TeachingTaskVO read(int attempts) { return new TeachingTaskVO("READ","I cooked dinner.","",attempts); }
+    /** 整句高分不能覆盖一个可信目标词的发音差异；仍给具体指导，重试次数依然有界。 */
+    @Test public void reliableWordIssueCanReceiveGuidanceEvenWhenOverallScoreIsHigh() {
+        var feedback = new PronunciationFeedbackVO(92., List.of(
+                new PronunciationFeedbackVO.IssueVO("cooked", "kʊkt", "kʊk", .95)));
+        var decision = TeachingPolicy.decide(EnglishLevelEnum.L2, read(0), "I cooked dinner", feedback, true);
+        assertEquals("CORRECT", decision.nextTask().action());
+        assertEquals("READ_RETRY", decision.outcome());
+        assertTrue(decision.practiceInput());
+        assertEquals("I cooked dinner.", decision.nextTask().target());
+        assertFalse(TeachingPolicy.decide(EnglishLevelEnum.L2, read(2), "I cooked dinner", feedback, true).nextTask().reading());
+    }
     @Test public void refusalExitsReadingWithoutDowngradeOrAnotherReading() {
         var d=TeachingPolicy.decide(EnglishLevelEnum.L2,read(1),"不想读",null,true);
         assertEquals("DECLINED",d.outcome()); assertEquals(EnglishLevelEnum.L2,d.level());

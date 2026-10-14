@@ -44,6 +44,60 @@ import static org.mockito.Mockito.*;
  * <li>不启动 Java 服务，密钥只从环境变量读取，验证文本均为合成样例。</li></ul>
  */
 public class AgentTurnPolicyTest {
+    /**
+     * 合成原话验证两层准则的可观察结果：相关追问，以及高总分下的温和具体纠音。
+     * 显式开关才访问当前配置模型；不使用真实账号，不执行任何业务工具或保存偏好。
+     */
+    @Test public void configuredModelKeepsConversationMovingAndOffersGentlePronunciationGuidance() {
+        assumeTrue(Boolean.getBoolean("spoken.verify.coaching-principles"));
+        String key = System.getenv("LK888_API_KEY");
+        assertNotNull("需要当前模型环境密钥", key);
+        var config = module();
+        var apiConfig = (Map<?, ?>) config.get("ai-api");
+        var modelConfig = (Map<?, ?>) config.get("chat-model");
+        var api = OpenAiApi.builder().baseUrl((String) apiConfig.get("base-url")).apiKey(key)
+                .completionsPath("/" + apiConfig.get("completions-path")).build();
+        var model = OpenAiChatModel.builder().openAiApi(api).defaultOptions(OpenAiChatOptions.builder()
+                .model((String) modelConfig.get("model")).temperature(((Number) modelConfig.get("temperature")).doubleValue())
+                .reasoningEffort((String) modelConfig.get("reasoning-effort"))
+                .toolChoice("none").internalToolExecutionEnabled(false).build()).build();
+        var service = service(runner(model));
+        var previous = new TeachingTaskVO("READ", "I cooked dinner.", "", 0);
+        var feedback = new cn.adinall.ai.domain.conversation.model.valobj.PronunciationFeedbackVO(92., List.of(
+                new cn.adinall.ai.domain.conversation.model.valobj.PronunciationFeedbackVO.IssueVO("cooked", "kʊkt", "kʊk", .95)));
+        var decisions = List.of(
+                TeachingPolicy.decide(EnglishLevelEnum.L3, TeachingTaskVO.question(""), "I like reading books", null, true, .9),
+                TeachingPolicy.decide(EnglishLevelEnum.L2, previous, "I cooked dinner", feedback, true));
+        for (int i = 0; i < decisions.size(); i++) {
+            var decision = decisions.get(i);
+            String input = i == 0 ? "I like reading books" : "I cooked dinner";
+            var chunks = service.handlePreparedTextStream("coach", "coaching-principles-test",
+                    ReplyPromptBuilder.buildManaged(input, decision, null, i == 0 ? TeachingTaskVO.question("") : previous),
+                    ReplyPromptBuilder.buildSystemPolicy(decision)).collectList().block(Duration.ofSeconds(45));
+            String reply = String.join("", chunks);
+            String played = String.join("", cn.adinall.ai.domain.conversation.service.reply.TeachingReplyGuard
+                    .apply(Flux.fromIterable(chunks), decision).collectList().block());
+            System.out.println("LIVE_COACHING_UTF8 " + i + " " + Base64.getEncoder().encodeToString(played.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            for (String judgment : List.of("你错了", "读错了", "不对", "失败", "you are wrong", "incorrect", "❌", "✗"))
+                assertFalse(reply, reply.toLowerCase(Locale.ROOT).contains(judgment));
+            if (i == 0) {
+                String question = cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.lastQuestion(played);
+                assertFalse(played, question.isBlank());
+                assertTrue(played, question.toLowerCase(Locale.ROOT).matches("(?s).*(book|read).*"));
+                assertFalse(played, played.toLowerCase(Locale.ROOT).contains("i like reading books too"));
+            } else {
+                assertTrue(played, played.contains("cooked"));
+                assertTrue(played, played.matches("(?s).*(结尾|收住|短促|轻轻|尾音).*"));
+                assertTrue(played, cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(), played).reading());
+                var english = java.util.regex.Pattern.compile("[A-Za-z]").matcher(played);
+                var chinese = java.util.regex.Pattern.compile("\\p{IsHan}").matcher(played);
+                assertTrue(played, english.find());
+                assertTrue(played, chinese.find());
+                assertTrue(played, english.start() < chinese.start());
+            }
+        }
+    }
+
     /** 读取生产 Agent 配置，使测试与实际系统指令使用同一来源。 */
     @SuppressWarnings("unchecked")
     private Map<String, Object> module() {

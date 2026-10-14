@@ -20,10 +20,14 @@ public final class TeachingReplyGuard {
     }
 
     public static Flux<String> apply(Flux<String> source, TeachingDecisionVO decision) {
-        if (decision.nextTask().reading()) return source;
+        // 提示词控制共建语气；此处统一清除模型偶发输出的对错视觉标记。
+        // 必须在 READ 的直接返回之前处理，否则跟读反馈仍可能把红叉等字符送进字幕与播报。
+        // 只移除符号，不改写英文目标、不伪造追问或发音建议，保留真实评测驱动的纠音内容。
+        var safeSource = source.map(text -> text.replaceAll("[❌❎✘✗×☒✅✔✓☑\\uFE0F]", ""));
+        if (decision.nextTask().reading()) return safeSource;
         return Flux.defer(() -> {
             SentenceState state = new SentenceState(decision.level().ordinal() <= 1);
-            return source.concatMap(delta -> Flux.fromIterable(state.feed(delta)), 1)
+            return safeSource.concatMap(delta -> Flux.fromIterable(state.feed(delta)), 1)
                     .concatWith(Flux.defer(() -> Flux.fromIterable(state.finish(decision.chineseSupport()))));
         });
     }

@@ -264,7 +264,8 @@ public class AgentActionFlowTest {
     @Test public void everyTurnKeepsCompleteLessonAndDropsOptionalHistory() {
         practice.state("s").change("COURSE","bandready-daily","food-cooking","食物与烹饪","button","course");
         var context=new cn.adinall.ai.domain.agent.service.context.ChatContextService(java.util.List.of(
-                request->java.util.List.of(new cn.adinall.ai.domain.agent.model.valobj.ContextSectionVO("OLD_HISTORY",1,"old".repeat(3000)))),6000);
+                // 与当前运行预算保持一致；大段旧历史仍超出剩余容量，须丢弃而保留整课。
+                request->java.util.List.of(new cn.adinall.ai.domain.agent.model.valobj.ContextSectionVO("OLD_HISTORY",1,"old".repeat(3000)))),12000);
         var teaching=new cn.adinall.ai.cases.conversation.impl.TeachingPreparation(null,null,context,null,null,null);
         org.springframework.test.util.ReflectionTestUtils.setField(teaching,"practice",practice);
         org.springframework.test.util.ReflectionTestUtils.setField(teaching,"textbooks",books);
