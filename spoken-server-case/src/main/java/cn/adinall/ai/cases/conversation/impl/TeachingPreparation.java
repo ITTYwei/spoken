@@ -189,7 +189,7 @@ public class TeachingPreparation {
         }
         var previous = decision.previousTask();
         // 仅对独立、真实回复触发后台能力观察：非练习、结果为已回应、上轮有待作答问题且回答含英文字符。
-        if (!decision.practiceInput() && "RESPONDED".equals(decision.outcome()) && previous != null && previous.question() != null
+        if (!decision.practiceInput() && decision.outcome() == TeachingOutcomeEnum.RESPONDED && previous != null && previous.question() != null
                 && !previous.question().isBlank() && text != null && text.matches(".*[A-Za-z].*")) {
             final Instant observedAt = decision.inputAt();
             ability.observe(agentId, previous.question(), text).subscribe(observed -> {

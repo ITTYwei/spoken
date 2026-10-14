@@ -1,5 +1,7 @@
 package cn.adinall.ai.domain.practice;
 
+import cn.adinall.ai.domain.conversation.model.valobj.TeachingOutcomeEnum;
+
 import cn.adinall.ai.cases.practice.*;
 import cn.adinall.ai.domain.agent.model.valobj.AgentInvocationVO;
 import cn.adinall.ai.domain.agent.service.tool.AgentToolContextRegistry;
@@ -121,7 +123,7 @@ public class AgentActionFlowTest {
         var replies=new cn.adinall.ai.cases.conversation.impl.AgentReplyPreparation(chat,practice,courses,actions);
         var decision=new cn.adinall.ai.domain.conversation.model.valobj.TeachingDecisionVO(
                 cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2,
-                cn.adinall.ai.domain.conversation.model.valobj.TeachingTaskVO.question(""),"READ_RETRY",true,"Focus on books",true,true);
+                cn.adinall.ai.domain.conversation.model.valobj.TeachingTaskVO.question(""),TeachingOutcomeEnum.READ_RETRY,true,"Focus on books",true,true);
         String result=replies.reply("100003",session,42,"I like reading books.","prompt","policy",decision,alive::get)
                 .collectList().map(parts->String.join("",parts)).block();
         assertEquals(feedback,result);

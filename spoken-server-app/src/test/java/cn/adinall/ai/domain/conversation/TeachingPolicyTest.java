@@ -53,19 +53,19 @@ public class TeachingPolicyTest {
                 new PronunciationFeedbackVO.IssueVO("cooked", "kʊkt", "kʊk", .95)));
         var decision = TeachingPolicy.decide(EnglishLevelEnum.L2, read(0), "I cooked dinner", feedback, true);
         assertEquals("CORRECT", decision.nextTask().action());
-        assertEquals("READ_RETRY", decision.outcome());
+        assertEquals(TeachingOutcomeEnum.READ_RETRY, decision.outcome());
         assertTrue(decision.practiceInput());
         assertEquals("I cooked dinner.", decision.nextTask().target());
         assertFalse(TeachingPolicy.decide(EnglishLevelEnum.L2, read(2), "I cooked dinner", feedback, true).nextTask().reading());
     }
     @Test public void refusalExitsReadingWithoutDowngradeOrAnotherReading() {
         var d=TeachingPolicy.decide(EnglishLevelEnum.L2,read(1),"不想读",null,true);
-        assertEquals("DECLINED",d.outcome()); assertEquals(EnglishLevelEnum.L2,d.level());
+        assertEquals(TeachingOutcomeEnum.DECLINED,d.outcome()); assertEquals(EnglishLevelEnum.L2,d.level());
         assertFalse(d.nextTask().reading()); assertEquals("", d.correctionHint()); assertTrue(d.practiceInput());
     }
     @Test public void notKnowingAnswerUsesGentleSingleQuestion() {
         var d=TeachingPolicy.decide(EnglishLevelEnum.L5,TeachingTaskVO.question("Where did you go?"),"听不懂",null,true);
-        assertEquals("HELP",d.outcome()); assertTrue(d.chineseSupport()); assertEquals(EnglishLevelEnum.L5,d.level());
+        assertEquals(TeachingOutcomeEnum.HELP,d.outcome()); assertTrue(d.chineseSupport()); assertEquals(EnglishLevelEnum.L5,d.level());
         assertFalse(d.nextTask().reading()); assertEquals("", d.correctionHint());
     }
     @Test public void expressingDifficultyGivesOneReadingTargetWithoutQuestion() {
@@ -100,7 +100,7 @@ public class TeachingPolicyTest {
     }
     @Test public void noAudioIsNotRefusalOrZeroAbility() {
         var d=TeachingPolicy.decide(EnglishLevelEnum.L4,TeachingTaskVO.question(""),"",null,true);
-        assertEquals("NO_AUDIO",d.outcome()); assertEquals(EnglishLevelEnum.L4,d.level());
+        assertEquals(TeachingOutcomeEnum.NO_AUDIO,d.outcome()); assertEquals(EnglishLevelEnum.L4,d.level());
     }
     @Test public void levelSamplingUsesExactEightyAndFiftyPercentBoundaries() {
         var previous=TeachingTaskVO.question("How are you?");
@@ -132,7 +132,7 @@ public class TeachingPolicyTest {
         assertFalse(ReadingAttemptPolicy.isAttempt(previous.target(),"Let's go."));
         assertTrue(ReadingAttemptPolicy.isAttempt(previous.target(),"Let's talk."));
         var decision=TeachingPolicy.decide(EnglishLevelEnum.L2,previous,"你好。",feedback,true,.1);
-        assertEquals("READ_NOT_ATTEMPTED",decision.outcome());
+        assertEquals(TeachingOutcomeEnum.READ_NOT_ATTEMPTED,decision.outcome());
         assertEquals("QUESTION",decision.nextTask().action());
         assertEquals("",decision.correctionHint());
         assertFalse(decision.practiceInput());
@@ -240,7 +240,7 @@ public class TeachingPolicyTest {
         for (var level : EnglishLevelEnum.values()) {
             for (String input : List.of("你说的是什么？", "这是什么意思？", "没听懂", "What do you mean?")) {
                 var decision = TeachingPolicy.decide(level, read(0), input, null, true, 0);
-                assertEquals(input, "HELP", decision.outcome());
+                assertEquals(input, TeachingOutcomeEnum.HELP, decision.outcome());
                 assertEquals("QUESTION", decision.nextTask().action());
                 assertEquals(level, decision.level());
                 assertTrue(decision.chineseSupport());

@@ -90,8 +90,14 @@ public class TeachingDatabaseIntegrationTest {
         exec("INSERT INTO training_session(id,device_id,status,started_at) VALUES('hs','history-device','CLOSED',?)",System.currentTimeMillis());
         exec("INSERT INTO conversation_turn(id,session_id,seq,user_text) VALUES(91001,'hs',1,'I like music')");
         var replies=new TeachingReplyRepository(dao); var history=new ChatHistoryRepository(dao);
-        var d=new TeachingDecisionVO(EnglishLevelEnum.L2,TeachingTaskVO.question(""),"RESPONDED",true,"",false,true);
+        var d=new TeachingDecisionVO(EnglishLevelEnum.L2,TeachingTaskVO.question(""),TeachingOutcomeEnum.RESPONDED,true,"",false,true);
         replies.begin("device:history-device","hs",91001L,"hr",d);
+        // 类型重构后仍通过真实 MyBatis 写入原文本码，已有数据库不需要改列或迁移历史。
+        try (var statement = admin.createStatement();
+             var rows = statement.executeQuery("SELECT outcome FROM `" + schema + "`.conversation_teaching_reply WHERE turn_id=91001")) {
+            assertTrue(rows.next());
+            assertEquals(TeachingOutcomeEnum.RESPONDED.code(), rows.getString("outcome"));
+        }
         assertTrue(history.recent("device:history-device","hs").isEmpty()); replies.complete(91001L,"hr","What music do you like?");
         assertEquals(1,history.recent("device:history-device","hs").size());
         assertTrue(history.recent("device:history-device","hs").get(0).practiceInput());

@@ -1,5 +1,7 @@
 package cn.adinall.ai.domain.agent;
 
+import cn.adinall.ai.domain.conversation.model.valobj.TeachingOutcomeEnum;
+
 import cn.adinall.ai.domain.agent.model.valobj.AiAgentRegisterVO;
 import cn.adinall.ai.domain.agent.service.armory.factory.DefaultArmoryFactory;
 import cn.adinall.ai.domain.agent.service.armory.matter.patch.MySpringAI;
@@ -178,7 +180,7 @@ public class AgentTurnPolicyTest {
             var previous=new TeachingTaskVO("READ","How are you?","",0);
             var decision=TeachingPolicy.decide(level,previous,"How are you?",
                     new cn.adinall.ai.domain.conversation.model.valobj.PronunciationFeedbackVO(92.,List.of()),true);
-            assertEquals("READ_PASS",decision.outcome()); assertTrue(decision.practiceInput());
+            assertEquals(TeachingOutcomeEnum.READ_PASS,decision.outcome()); assertTrue(decision.practiceInput());
             var chunks=service.handlePreparedTextStream("coach","reading-question-test",
                     ReplyPromptBuilder.buildManaged("How are you?",decision,null,previous),ReplyPromptBuilder.buildSystemPolicy(decision))
                     .collectList().block(Duration.ofSeconds(45));
@@ -232,7 +234,7 @@ public class AgentTurnPolicyTest {
                 results.add(Map.of("level", level.name(), "input", input, "action", decision.nextTask().action(), "reply", reply, "playedReply", played, "chunks", chunks.size()));
                 System.out.println("LIVE_POLICY " + level + " " + decision.outcome() + " -> " + reply);
                 check.accept(!reply.isBlank(), "模型无正文");
-                if (level.ordinal() <= 1 || !"HELP".equals(decision.outcome()))
+                if (level.ordinal() <= 1 || decision.outcome() != TeachingOutcomeEnum.HELP)
                     check.accept(reply.matches("(?s).*[A-Za-z].*"), level + " 应包含英语练习内容: " + reply);
                 if (decision.chineseSupport()) check.accept(reply.matches("(?s).*[\\p{IsHan}].*"), level + " 本轮需要中文支持: " + reply);
                 if (level.ordinal() <= 1) {
@@ -241,7 +243,7 @@ public class AgentTurnPolicyTest {
                     check.accept(!cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.lastQuestion(played).isBlank(),
                             level + " 实际问题必须能保存，不能丢问号: " + played);
                 }
-                if ("HELP".equals(decision.outcome())) {
+                if (decision.outcome() == TeachingOutcomeEnum.HELP) {
                     assertEquals("QUESTION", decision.nextTask().action());
                     check.accept(!reply.toLowerCase(Locale.ROOT).matches("(?s).*(跟读|跟我读|repeat after|read that|read this).*"), "求助不能变为跟读: " + reply);
                     check.accept(!(reply.contains("I am Amy") || reply.contains("I am Alex")), "不能编造用户姓名");

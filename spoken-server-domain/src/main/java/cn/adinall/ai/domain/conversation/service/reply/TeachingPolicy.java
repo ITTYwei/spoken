@@ -57,7 +57,7 @@ public final class TeachingPolicy {
      * 7. 非跟读识别          上轮是 READ/CORRECT，但本轮没有尝试目标 -> READ_NOT_ATTEMPTED
      * 8. 跟读评测分支        上一轮是 READ/CORRECT 且本轮是语音
      *    8.1 READ_PASS       评测可信、总分>=80，且没有可信错词
-     *    8.2 READ_RETRY      评测可信、总分&lt;80、有可信错词、尝试次数&lt;2 -> 纠音并重读原目标
+     *    8.2 READ_RETRY      评测可信、有可信目标词发音问题、尝试次数&lt;2（不受高总分遮蔽） -> 纠音并重读原目标
      *    8.3 READ_UNCERTAIN  评测可信但低分且无可信错词，不编造问题
      *         NO_EVIDENCE    评测本身不可用（缺失、非有限值或越界）
      * 9. 普通轮次抽样       纯中文输入必跟读；否则 L1 抽 0.8 / L2 抽 0.5 / L3 及以上不抽
@@ -98,18 +98,18 @@ public final class TeachingPolicy {
 
         // 【3】空输入：识别为空或用户未出声。仍给一个 QUESTION 占位任务，并强制中文支持以免用户卡住；
         //     reliable=false 表示没有可用证据，不能用于评分或升级。
-        if (input.isBlank()) return result(level, TeachingTaskVO.question(""), "NO_AUDIO", true, "", false, reading);
+        if (input.isBlank()) return result(level, TeachingTaskVO.question(""), TeachingOutcomeEnum.NO_AUDIO, true, "", false, reading);
 
         // 【4】明确拒绝：最高优先级。拒绝不是能力证据，因此 chineseSupport 按水平照常给，
         //     reliable=false 保证“不想读”不会被记成不会读。转回 QUESTION 让 Agent 委婉换话题。
         if (matches(lower, "不想", "不愿", "不聊", "跳过", "不读", "换个话题", "skip", "don't want", "do not want", "rather not")) {
-            return result(level, TeachingTaskVO.question(""), "DECLINED", chinese, "", false, reading);
+            return result(level, TeachingTaskVO.question(""), TeachingOutcomeEnum.DECLINED, chinese, "", false, reading);
         }
 
         // 【5】明确求助（听不懂/要中文）：标记 chineseSupport=true，让 Agent 用中文解释或降低难度；
         //     同样不生成纠音线索，避免把“听不懂”误判为发音问题。
         if (matches(lower, "不知道", "不清楚", "听不懂", "看不懂", "没听懂", "没看懂", "什么意思", "什么含义", "你说的是什么", "你说什么", "你在说什么", "用中文", "说中文", "don't know", "do not know", "don't understand", "do not understand", "what do you mean")) {
-            return result(level, TeachingTaskVO.question(""), "HELP", true, "", false, reading);
+            return result(level, TeachingTaskVO.question(""), TeachingOutcomeEnum.HELP, true, "", false, reading);
         }
 
         // 【6】“不会说/不会读”：属于表达困难，直接给可跟读示范句而不是继续追问。
@@ -120,12 +120,12 @@ public final class TeachingPolicy {
             // 已有目标可简化；新目标留空，由模型根据本轮原话生成，避免反复使用固定例句。
             String target = reading && previous.attempts() < 2 ? shorten(previous.target()) : "";
             return result(level, new TeachingTaskVO("READ", target, "", reading ? previous.attempts() + 1 : 0),
-                    "HELP", true, "", false, reading);
+                    TeachingOutcomeEnum.HELP, true, "", false, reading);
         }
 
         // 上轮虽布置了跟读，用户也可能转而聊天；不匹配目标时禁止用目标句评测纠音。
         if (reading && voice && !ReadingAttemptPolicy.isAttempt(previous.target(), input)) {
-            return result(level, TeachingTaskVO.question(""), "READ_NOT_ATTEMPTED", true, "", false, false);
+            return result(level, TeachingTaskVO.question(""), TeachingOutcomeEnum.READ_NOT_ATTEMPTED, true, "", false, false);
         }
 
         // 【7】跟读评测分支：只有“上一轮确实是跟读任务”且“本轮有语音”才允许进入。
@@ -150,7 +150,7 @@ public final class TeachingPolicy {
             // 【7.1】通过：总分达标且没有可信错词。退出跟读回到问答（QUESTION），
             //      reliable=true 表示这次评测有效，可作为完成证据；practiceInput=true 表示输入来自跟读素材。
             if (usable && feedback.score() >= 80 && issue == null) {
-                return result(level, TeachingTaskVO.question(""), "READ_PASS", chinese, "", true, true);
+                return result(level, TeachingTaskVO.question(""), TeachingOutcomeEnum.READ_PASS, chinese, "", true, true);
             }
             // 【7.2】重读纠音：有可信的目标词发音差异 + 还没试满两次。
             // 具体错词证据优先于整句总分：总分较高仍可能有一个需要示范的结尾音，不能因此跳过指导。
@@ -163,7 +163,7 @@ public final class TeachingPolicy {
                 if (word.toLowerCase(Locale.ROOT).endsWith("ed") && issue.expected() != null && issue.expected().endsWith("t"))
                     hint = word + " 以短促的 /t/ 音结尾，不要再加一个音节。";
                 return result(level, new TeachingTaskVO("CORRECT", previous.target(), "", previous.attempts() + 1),
-                        "READ_RETRY", true, hint, true, true);
+                        TeachingOutcomeEnum.READ_RETRY, true, hint, true, true);
             }
             // 【7.3】其余跟读情况：要么评测可信但“低分却没有可信错词”，要么评测本身不可用。
             //      此时不编造发音问题，直接退出原目标回到问答：
@@ -171,7 +171,7 @@ public final class TeachingPolicy {
             //        NO_EVIDENCE    -> 评测缺失或数值非法。
             //      reliable 固定为 false，表示本轮不产生可信能力证据。
             // 低分但没有可信错词，不编造发音问题；两次后退出原目标。
-            return result(level, TeachingTaskVO.question(""), usable ? "READ_UNCERTAIN" : "NO_EVIDENCE", true, "", false, true);
+            return result(level, TeachingTaskVO.question(""), usable ? TeachingOutcomeEnum.READ_UNCERTAIN : TeachingOutcomeEnum.NO_EVIDENCE, true, "", false, true);
         }
 
         // 【8】普通轮次抽样：既非拒绝/求助，也不是跟读评测。
@@ -187,18 +187,18 @@ public final class TeachingPolicy {
         // attempts=0 表示新目标从零开始计数；reliable=false 因为这不是纠音场景。
         if (pureChinese || draw < readingRate) {
             return result(level, new TeachingTaskVO("READ", "", "", 0),
-                    "RESPONDED", chinese, "", false, reading);
+                    TeachingOutcomeEnum.RESPONDED, chinese, "", false, reading);
         }
         // 【9】兜底：抽样未命中，继续保持普通问答节奏（QUESTION）。
         //     注意普通聊天的评测分不会影响任务选择，也不会进入任何纠音分支。
         // 抽样未命中时继续问答；普通聊天评测分不能影响任务选择。
-        return result(level, TeachingTaskVO.question(""), "RESPONDED", chinese, "", false, reading);
+        return result(level, TeachingTaskVO.question(""), TeachingOutcomeEnum.RESPONDED, chinese, "", false, reading);
     }
 
     /**
      * 所有分支只返回任务状态和可信线索，不返回可直接播报的台词。
      */
-    private static TeachingDecisionVO result(EnglishLevelEnum level, TeachingTaskVO task, String outcome,
+    private static TeachingDecisionVO result(EnglishLevelEnum level, TeachingTaskVO task, TeachingOutcomeEnum outcome,
                                              boolean chinese, String correctionHint, boolean reliable, boolean practice) {
         return new TeachingDecisionVO(level, task, outcome, chinese, correctionHint, reliable, practice);
     }

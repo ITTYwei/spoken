@@ -18,8 +18,8 @@ public record TeachingDecisionVO(
         EnglishLevelEnum level,
         /** 本轮唯一任务。 */
         TeachingTaskVO nextTask,
-        /** 上一任务响应结果：RESPONDED / HELP / DECLINED / NO_AUDIO / READ_PASS / READ_RETRY。 */
-        String outcome,
+        /** 对上一任务的响应结果，非空；具体触发条件及处理边界见 TeachingOutcomeEnum。 */
+        TeachingOutcomeEnum outcome,
         /** 此轮是否使用额外中文帮助，与能力等级分别管理。 */
         boolean chineseSupport,
         /** 可信错词的简短纠音线索；不包含可直接播报的整句。 */
@@ -32,7 +32,12 @@ public record TeachingDecisionVO(
         TeachingTaskVO previousTask,
         /** 当前用户输入产生时刻，异步观察完成不能改变证据窗口。 */
         Instant inputAt) {
-    public TeachingDecisionVO(EnglishLevelEnum level, TeachingTaskVO nextTask, String outcome, boolean chineseSupport,
+    /** 结果必须明确；不允许用 null 静默进入提示词默认分支。 */
+    public TeachingDecisionVO {
+        java.util.Objects.requireNonNull(outcome, "教学结果不能为空");
+    }
+
+    public TeachingDecisionVO(EnglishLevelEnum level, TeachingTaskVO nextTask, TeachingOutcomeEnum outcome, boolean chineseSupport,
                               String correctionHint, boolean reliableAssessment, boolean practiceInput) {
         this(level, nextTask, outcome, chineseSupport, correctionHint, reliableAssessment, practiceInput, null, null);
     }

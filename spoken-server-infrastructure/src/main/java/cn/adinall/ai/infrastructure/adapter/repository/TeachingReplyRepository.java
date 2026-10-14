@@ -19,8 +19,9 @@ public class TeachingReplyRepository implements ITeachingReplyRepository {
     /** 有界SQL访问。 */ private final ITeachingContextDao dao;
     public TeachingReplyRepository(ITeachingContextDao dao) { this.dao=dao; }
     public void begin(String subject,String session,Long turn,String reply,TeachingDecisionVO d) {
+        // 数据库继续保存原文本码，避免枚举重构依赖 MyBatis 默认类型处理器或改变既有历史。
         dao.beginReply(Map.of("turn",turn,"subject",subject,"session",session,"reply",reply,"level",d.level().name(),
-                "action",d.nextTask().action(),"target",d.nextTask().target(),"outcome",d.outcome(),"practice",d.practiceInput(),"reliable",d.reliableAssessment()));
+                "action",d.nextTask().action(),"target",d.nextTask().target(),"outcome",d.outcome().code(),"practice",d.practiceInput(),"reliable",d.reliableAssessment()));
     }
     public void complete(Long turn,String reply,String text) { dao.completeReply(turn,reply,text); }
 }

@@ -1,5 +1,7 @@
 package cn.adinall.ai.domain.conversation;
 
+import cn.adinall.ai.domain.conversation.model.valobj.TeachingOutcomeEnum;
+
 import cn.adinall.ai.domain.conversation.adapter.port.IAvatarDriverPort;
 import cn.adinall.ai.domain.conversation.adapter.port.IConversationEventBusPort;
 import cn.adinall.ai.domain.conversation.adapter.repository.IConversationSessionRepository;
@@ -66,7 +68,7 @@ public class ConversationPlaybackTest {
         var field=ConversationServiceImpl.class.getDeclaredField("teachingReplies"); field.setAccessible(true); field.set(service,replies);
         var task=cn.adinall.ai.domain.conversation.model.valobj.TeachingTaskVO.question("");
         var decision=new cn.adinall.ai.domain.conversation.model.valobj.TeachingDecisionVO(
-                cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2,task,"RESPONDED",true,"",false,false);
+                cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2,task,TeachingOutcomeEnum.RESPONDED,true,"",false,false);
         session.beginReply("r1");
         session.pendingTeaching(new cn.adinall.ai.domain.conversation.model.valobj.TeachingPlaybackVO(1L,"r1",decision));
         assertEquals("",session.teaching().pending().question());
