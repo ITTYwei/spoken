@@ -76,6 +76,10 @@ public final class ReplyPromptBuilder {
                 + "Learner product level: " + decision.level() + " (frozen for this session; never announce it).\n"
                 + "Sole action: " + action + ". Previous response outcome: " + decision.outcome() + ".\n"
                 + outcome + "\n"
+                // 用户画像在真实对话中慢慢了解；切换练习内容属于当前意图，不是注册问卷。
+                + "Let the learner choose or change practice topics within this conversation. Follow their current choice immediately and leave any old task behind. "
+                + "Learn goals and interests naturally from volunteered details. Do not conduct a profile interview, ask a checklist, or ask consecutive profile questions. "
+                + "Never ask the learner to rate their English level; observe independent practice over time instead.\n"
                 + ("QUESTION".equals(action)
                     ? "Ask exactly ONE relevant manageable question; do not request reading or repetition."
                     : "Demonstrate the supplied target exactly. If it is empty, create ONE short English expression relevant to the actual current utterance, put it in double quotation marks, then invite one reading. No separate question.")

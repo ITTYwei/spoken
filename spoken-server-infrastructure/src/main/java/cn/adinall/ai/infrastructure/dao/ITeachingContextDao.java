@@ -18,6 +18,8 @@ public interface ITeachingContextDao {
     int promote(@Param("subject") String subject,@Param("from") String from,@Param("to") String to,@Param("session") String session);
     void evidence(Map<String,Object> values);
     List<Map<String,Object>> evidenceSince(@Param("subject") String subject,@Param("since") Date since);
+    /** 页面能力描述不读取内部升级消耗边界。 */
+    List<Map<String,Object>> descriptionEvidence(@Param("subject") String subject,@Param("since") Date since);
     void beginReply(Map<String,Object> values);
     int completeReply(@Param("turn") Long turn,@Param("reply") String reply,@Param("text") String text);
     List<Map<String,Object>> history(@Param("subject") String subject,@Param("session") String session);

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.adinall.ai.infrastructure.dao.IAccountProfileDao">
+    <resultMap id="profile" type="cn.adinall.ai.infrastructure.dao.po.AccountProfilePO">
+        <result property="userNo" column="user_no"/><result property="account" column="provider_uid"/>
+        <result property="nickname" column="nickname"/><result property="avatarUrl" column="avatar_url"/>
+        <result property="avatarId" column="preferred_avatar_id"/><result property="voice" column="preferred_voice"/>
+        <result property="subtitles" column="subtitle_enabled"/><result property="translation" column="translation_mode"/>
+    </resultMap>
+    <select id="profile" resultMap="profile">
+        SELECT u.user_no,i.provider_uid,u.nickname,u.avatar_url,p.preferred_avatar_id,p.preferred_voice,p.subtitle_enabled,p.translation_mode
+        FROM app_user u JOIN user_identity i ON i.user_id=u.id AND i.provider='account' AND i.deleted_at IS NULL
+        JOIN user_profile p ON p.user_id=u.id WHERE u.id=#{userId}
+    </select>
+    <update id="nickname">UPDATE app_user SET nickname=#{nickname} WHERE id=#{userId}</update>
+    <update id="display">UPDATE user_profile SET subtitle_enabled=#{subtitles},translation_mode=#{translation} WHERE user_id=#{userId}</update>
+    <update id="selection">UPDATE user_profile SET preferred_avatar_id=#{avatarId},preferred_voice=#{voice} WHERE user_id=#{userId}</update>
+    <insert id="ensureLearner">INSERT IGNORE INTO learner_profile(subject_key) VALUES(#{subject})</insert>
+    <select id="lockLearner" resultType="java.lang.Long">SELECT context_reset_turn FROM learner_profile WHERE subject_key=#{subject} FOR UPDATE</select>
+    <select id="latestTurn" resultType="long">
+        SELECT COALESCE(MAX(t.id),0) FROM conversation_turn t JOIN training_session s ON s.id=t.session_id WHERE s.user_id=#{userId}
+    </select>
+    <!-- GREATEST防止并发编辑将遗忘边界倒退；取值包含仍在生成的用户回合。 -->
+    <update id="resetContext">UPDATE learner_profile SET context_reset_turn=GREATEST(context_reset_turn,#{turn}) WHERE subject_key=#{subject}</update>
+    <delete id="deleteFact">DELETE FROM agent_long_term_memory WHERE subject_key=#{subject} AND memory_key=#{key}</delete>
+    <insert id="saveFact">
+        INSERT INTO agent_long_term_memory(subject_key,memory_key,memory_type,content,source_session,source_turn,confirmation,confirmed_at,expires_at)
+        VALUES(#{subject},#{key},#{type},#{content},'profile',#{turn},'EXPLICIT',CURRENT_TIMESTAMP(3),DATE_ADD(CURRENT_TIMESTAMP(3),INTERVAL 180 DAY))
+        ON DUPLICATE KEY UPDATE memory_type=VALUES(memory_type),content=VALUES(content),source_session='profile',source_turn=VALUES(source_turn),
+        confirmation='EXPLICIT',confirmed_at=VALUES(confirmed_at),expires_at=VALUES(expires_at)
+    </insert>
+</mapper>

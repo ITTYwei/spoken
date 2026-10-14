@@ -25,7 +25,13 @@ public class LearnerProgressRepository implements ILearnerProgressRepository {
                 "candidate",e.candidate().name(),"confidence",e.confidence(),"eligible",e.eligible(),"at",Date.from(e.observedAt())));
     }
     public List<LearningEvidenceVO> recent(String subject,Instant since) {
-        return dao.evidenceSince(subject,Date.from(since)).stream().map(m -> new LearningEvidenceVO(subject,(String)m.get("sessionId"),
+        return mapEvidence(subject, dao.evidenceSince(subject,Date.from(since)));
+    }
+    public List<LearningEvidenceVO> recentForDescription(String subject, Instant since) {
+        return mapEvidence(subject, dao.descriptionEvidence(subject,Date.from(since)));
+    }
+    private List<LearningEvidenceVO> mapEvidence(String subject, List<Map<String,Object>> rows) {
+        return rows.stream().map(m -> new LearningEvidenceVO(subject,(String)m.get("sessionId"),
                 ((Number)m.get("turnId")).longValue(),(String)m.get("outcome"),EnglishLevelEnum.valueOf((String)m.get("candidate")),
                 ((Number)m.get("confidence")).doubleValue(),((Number)m.get("eligible")).intValue()==1,
                 Instant.ofEpochMilli(((Number)m.get("observedAt")).longValue()))).toList();

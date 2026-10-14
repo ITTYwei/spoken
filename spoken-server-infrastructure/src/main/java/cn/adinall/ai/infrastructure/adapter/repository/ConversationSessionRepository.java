@@ -178,6 +178,9 @@ public class ConversationSessionRepository implements IConversationSessionReposi
         TrainingSessionPO po = new TrainingSessionPO();
         po.setId(aggregate.getSessionId());
         po.setDeviceId(aggregate.getDeviceId());
+        // 创建时捕获认证身份并持久化；后续事件线程无需读取请求ThreadLocal。
+        var principal = cn.adinall.ai.domain.account.support.AccountContext.current();
+        po.setUserId(principal == null ? null : principal.id());
         po.setAvatarId(aggregate.getAvatarId());
         po.setModel(aggregate.getModel());
         po.setVoice(aggregate.getVoice());

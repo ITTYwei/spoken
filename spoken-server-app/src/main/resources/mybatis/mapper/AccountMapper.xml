@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.adinall.ai.infrastructure.dao.IAccountDao">
+    <resultMap id="credential" type="cn.adinall.ai.infrastructure.dao.po.AccountCredentialPO">
+        <id property="userId" column="id"/>
+        <result property="userNo" column="user_no"/>
+        <result property="account" column="provider_uid"/>
+        <result property="secretHash" column="secret_hash"/>
+    </resultMap>
+    <insert id="insertUser" useGeneratedKeys="true" keyProperty="userId" keyColumn="id">
+        INSERT INTO app_user(user_no,nickname,status,register_source) VALUES(#{userNo},#{account},1,'account')
+    </insert>
+    <insert id="insertIdentity">
+        INSERT INTO user_identity(user_id,provider,provider_uid,secret_hash,verified)
+        VALUES(#{userId},'account',#{account},#{secretHash},1)
+    </insert>
+    <insert id="insertProfile">INSERT INTO user_profile(user_id) VALUES(#{userId})</insert>
+    <select id="credential" resultMap="credential">
+        SELECT u.id,u.user_no,i.provider_uid,i.secret_hash FROM user_identity i JOIN app_user u ON u.id=i.user_id
+        WHERE i.provider='account' AND i.provider_uid=#{account} AND i.deleted_at IS NULL AND u.status=1 AND u.deleted_at IS NULL
+    </select>
+    <!-- 行锁与改密、令牌撤销在同一事务内，不能改为普通快照查询。 -->
+    <select id="lockCredential" resultType="java.lang.String">
+        SELECT i.secret_hash FROM user_identity i JOIN app_user u ON u.id=i.user_id WHERE i.user_id=#{userId}
+        AND i.provider='account' AND i.deleted_at IS NULL AND u.status=1 AND u.deleted_at IS NULL FOR UPDATE
+    </select>
+    <insert id="insertToken">
+        INSERT INTO user_access_token(token_hash,user_id,expires_at) VALUES(#{tokenHash},#{userId},#{expires})
+    </insert>
+    <update id="lastLogin">UPDATE app_user SET last_login_at=#{at} WHERE id=#{userId}</update>
+    <select id="authenticate" resultMap="credential">
+        SELECT u.id,u.user_no,i.provider_uid FROM user_access_token t JOIN app_user u ON u.id=t.user_id
+        JOIN user_identity i ON i.user_id=u.id AND i.provider='account' AND i.deleted_at IS NULL
+        WHERE t.token_hash=#{tokenHash} AND t.revoked_at IS NULL AND t.expires_at&gt;#{now} AND u.status=1 AND u.deleted_at IS NULL
+    </select>
+    <update id="revoke">UPDATE user_access_token SET revoked_at=CURRENT_TIMESTAMP(3) WHERE token_hash=#{tokenHash} AND revoked_at IS NULL</update>
+    <update id="changePassword">UPDATE user_identity SET secret_hash=#{hash} WHERE user_id=#{userId} AND provider='account' AND deleted_at IS NULL</update>
+    <update id="revokeAll">UPDATE user_access_token SET revoked_at=CURRENT_TIMESTAMP(3) WHERE user_id=#{userId} AND revoked_at IS NULL</update>
+    <select id="ownsSession" resultType="boolean">SELECT EXISTS(SELECT 1 FROM training_session WHERE id=#{sessionId} AND user_id=#{userId})</select>
+</mapper>

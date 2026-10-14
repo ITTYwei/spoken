@@ -50,10 +50,10 @@ import jakarta.validation.constraints.NotBlank;
  * <ul>
  *   <li>形象/模型/音色全部可空是刻意的：App 只要能给一个 deviceId 就能开会话，
  *       默认值集中在后端配置（改默认值不必发版）。</li>
- *   <li>deviceId 而不是 userId 做归属：MVP 没有账号体系，一台设备只留一场会话 ——
- *       建新会话会先关掉同设备的旧会话。</li>
- *   <li>scenarioId 传错不报错：场景仓储 findById 查不到时回退第一个场景（自由对话），
- *       宁给一个能用的剧本，也不让 App 拿到空。</li>
+ *   <li>账号归属来自Bearer认证，不从请求体读取userId；deviceId只用于账号内的设备索引。
+ *       建新会话只关闭同账号、同设备的旧会话。</li>
+ *   <li>第一阶段HTTP入口统一从自由对话进入；练习内容在聊天中确认或切换。
+ *       scenarioId保留用于兼容内部用例调用，不作为注册或首页的学习问卷。</li>
  *   <li>返回 READY 还是 QUEUED 取决于上游 GPU 槽位：建会话最多阻塞 readyWaitMs（默认 15 秒），
  *       超时照样返回，由 App 继续等 —— 接口不该为了「等到就绪」无限占着连接。</li>
  * </ul>

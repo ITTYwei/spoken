@@ -16,5 +16,7 @@ public interface ILearnerProgressRepository {
     EnglishLevelEnum level(String subjectKey);
     void record(LearningEvidenceVO evidence);
     List<LearningEvidenceVO> recent(String subjectKey, Instant since);
+    /** 页面描述使用全部近期有效证据，不因升档消费证据而重新显示“正在了解”。 */
+    default List<LearningEvidenceVO> recentForDescription(String subjectKey, Instant since) { return recent(subjectKey, since); }
     boolean promote(String subjectKey, EnglishLevelEnum from, EnglishLevelEnum to, String sessionId);
 }

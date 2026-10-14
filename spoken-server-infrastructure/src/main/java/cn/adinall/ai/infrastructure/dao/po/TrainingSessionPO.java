@@ -58,6 +58,10 @@ import java.time.LocalDateTime;
  * </ul>
  */
 public class TrainingSessionPO {
+    /** 服务端认证账号；旧设备会话为空，不允许账号入口读取。 */
+    private Long userId;
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 
     /** 我方生成的会话 id（s-xxxx）。 */
     private String id;

@@ -136,7 +136,9 @@ public class GlobalExceptionHandler {
      * 这两种都是客户端把请求拼错了，属于 400；不接住的话会落到兜底分支返回 500，
      * 让 App 以为是自己后端挂了（跟读评测的 file/expectedText 漏传就会走到这里）。
      */
-    @ExceptionHandler({MissingServletRequestPartException.class, MissingServletRequestParameterException.class})
+    @ExceptionHandler({MissingServletRequestPartException.class, MissingServletRequestParameterException.class,
+            org.springframework.web.bind.MissingRequestHeaderException.class,
+            org.springframework.http.converter.HttpMessageNotReadableException.class})
     public ResponseEntity<Map<String, Object>> handleMissingParam(Exception e) {
         return body(HttpStatus.BAD_REQUEST, ResponseCodeEnum.INVALID_REQUEST.getCode(), e.getMessage());
     }
@@ -192,6 +194,9 @@ public class GlobalExceptionHandler {
      * 也会自己挡非法的音频/题面 —— 那些也是 400/413，不该落到 502 的兜底上去。
      */
     private static HttpStatus statusOf(String code) {
+        // 账户错误属于客户端认证或冲突，不应落入上游502兜底。
+        if ("unauthorized".equals(code)) return HttpStatus.UNAUTHORIZED;
+        if ("account_exists".equals(code)) return HttpStatus.CONFLICT;
         if (ResponseCodeEnum.PROVIDER_UNAVAILABLE.getCode().equals(code)) {
             return HttpStatus.SERVICE_UNAVAILABLE;
         }

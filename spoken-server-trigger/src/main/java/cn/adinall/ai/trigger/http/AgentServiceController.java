@@ -116,6 +116,8 @@ public class AgentServiceController implements IAgentService {
     @RequestMapping(value = "create_session", method = RequestMethod.POST)
     @Override
     public Response<CreateSessionResponseDTO> createSession(@RequestBody CreateSessionRequestDTO requestDTO) {
+        // 通用脚手架入口也使用可信身份，禁止通过body伪造另一个用户。
+        requestDTO.setUserId("user:" + cn.adinall.ai.domain.account.support.AccountContext.require().id());
         try {
             log.info("创建会话 agentId:{} userId:{}", requestDTO.getAgentId(), requestDTO.getUserId());
             String sessionId = chatService.createSession(requestDTO.getAgentId(), requestDTO.getUserId());
@@ -154,6 +156,7 @@ public class AgentServiceController implements IAgentService {
     @RequestMapping(value = "chat", method = RequestMethod.POST)
     @Override
     public Response<ChatResponseDTO> chat(@RequestBody ChatRequestDTO requestDTO) {
+        requestDTO.setUserId("user:" + cn.adinall.ai.domain.account.support.AccountContext.require().id());
         try {
             log.info("智能体对话 agentId:{} userId:{}", requestDTO.getAgentId(), requestDTO.getUserId());
             String sessionId = requestDTO.getSessionId();
@@ -189,6 +192,7 @@ public class AgentServiceController implements IAgentService {
     @RequestMapping(value = "chat_stream", method = RequestMethod.POST)
     @Override
     public ResponseBodyEmitter chatStream(@RequestBody ChatRequestDTO requestDTO) {
+        requestDTO.setUserId("user:" + cn.adinall.ai.domain.account.support.AccountContext.require().id());
         ResponseBodyEmitter emitter = new ResponseBodyEmitter(3 * 60 * 1000L);
         // 客户端断线、超时与正常完成都要释放模型订阅。
         var subscription = reactor.core.Disposables.swap();

@@ -155,6 +155,29 @@ public class OpenTalkingGateway {
         return get("/avatars");
     }
 
+    /** 只拉指定引擎的音色目录，provider在服务端选定。 */
+    public JsonNode voices(String provider) {
+        return get("/voices?provider=" + java.net.URLEncoder.encode(provider, java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    /** 独立TTS试听的响应是二进制WAV，不能交给JSON响应解析器。 */
+    public byte[] previewVoice(String provider, String voice, String text) {
+        String body = writeJson(Map.of("tts_provider", provider, "voice", voice, "text", text));
+        var request = request("/tts/preview").header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body)).build();
+        try {
+            var response = http.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            if (response.statusCode() != 200 || response.body().length < 44)
+                throw new AppException(ResponseCodeEnum.PROVIDER_UNAVAILABLE, "音色试听暂时不可用");
+            return response.body();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AppException(ResponseCodeEnum.PROVIDER_UNAVAILABLE, "音色试听被中断", e);
+        } catch (IOException e) {
+            throw new AppException(ResponseCodeEnum.PROVIDER_UNAVAILABLE, "音色试听暂时不可用", e);
+        }
+    }
+
     /** GET /sessions/webrtc/ice-config，拉 WebRTC 的 ICE 服务器配置。 */
     public JsonNode iceConfig() {
         return get("/sessions/webrtc/ice-config");

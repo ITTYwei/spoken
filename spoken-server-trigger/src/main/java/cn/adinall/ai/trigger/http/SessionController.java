@@ -95,7 +95,7 @@ import java.util.Map;
  *       不要「顺手」改成裸数组。</li>
  *   <li>speak / say / interrupt / close 统一返回 {"status":"..."} 或 {"text":"..."}：
  *       下发是异步的，接口只确认受理，真正的进度从 /events 读。</li>
- *   <li>依赖只有一个 IConversationCase，且用构造器注入：Controller 薄到可以脱离 Spring 直接测。</li>
+ *   <li>IConversationCase负责对话；HomeService校验及恢复上次形象/音色选择，均通过构造器注入。</li>
  * </ul>
  */
 @RestController
@@ -103,15 +103,23 @@ import java.util.Map;
 public class SessionController {
 
     private final IConversationCase conversationCase;
+    private final cn.adinall.ai.domain.account.service.IHomeService home;
 
-    public SessionController(IConversationCase conversationCase) {
+    public SessionController(IConversationCase conversationCase, cn.adinall.ai.domain.account.service.IHomeService home) {
         this.conversationCase = conversationCase;
+        this.home = home;
     }
 
-    /** 建会话：请求体里带 deviceId / 形象 / 模型 / 音色，未指定的由后端配置兜底。 */
+    /** 建会话：捕获可信账号，恢复选择并进入统一自由对话，学习意图由聊天逐步确认。 */
     @PostMapping
     public SessionResponseDTO create(@Valid @RequestBody CreateConversationSessionRequestDTO request) {
-        return conversationCase.create(request);
+        var principal = cn.adinall.ai.domain.account.support.AccountContext.require();
+        // 用账号+设备组成内部索引；相同设备切换账号时不能关闭另一人的会话。
+        String scopedDevice = principal.userNo() + ":" + cn.adinall.ai.domain.account.service.security.TokenHasher.digest(request.deviceId().trim());
+        var selection = home.resolve(request.avatarId(), request.voice());
+        if (selection.avatarId() != null) home.select(selection.avatarId(), selection.voice());
+        return conversationCase.create(new CreateConversationSessionRequestDTO(scopedDevice,
+                selection.avatarId(), request.model(), selection.voice(), "free"));
     }
 
     /** 查会话状态。App 轮询这个接口就能看到 QUEUED 变 READY。 */

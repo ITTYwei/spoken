@@ -22,6 +22,15 @@
           AND (p.last_promoted_at IS NULL OR e.observed_at > p.last_promoted_at)
         ORDER BY e.observed_at DESC LIMIT 500
     </select>
+    <!-- 描述依据仍限近期已结束会话，且再次校验账号归属；升档后不丢掉已确认能力。 -->
+    <select id="descriptionEvidence" resultType="map">
+        SELECT e.turn_id AS turnId,e.session_id AS sessionId,e.outcome,e.candidate_level AS candidate,
+               e.confidence,e.eligible,UNIX_TIMESTAMP(e.observed_at)*1000 AS observedAt
+        FROM learner_answer_evidence e JOIN training_session s ON s.id=e.session_id
+        WHERE e.subject_key=#{subject} AND CONCAT('user:',s.user_id)=#{subject}
+          AND s.status='CLOSED' AND e.observed_at >= #{since}
+        ORDER BY e.observed_at DESC LIMIT 500
+    </select>
     <insert id="beginReply">
         INSERT INTO conversation_teaching_reply(turn_id,subject_key,session_id,reply_id,english_level,action,target_text,outcome,practice_input,reliable_assessment)
         VALUES(#{turn},#{subject},#{session},#{reply},#{level},#{action},#{target},#{outcome},#{practice},#{reliable})
