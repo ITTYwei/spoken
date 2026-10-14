@@ -62,6 +62,10 @@ public class SpokenPracticeTools {
     }
 
     /** 上下文缺失、校验拒绝和业务失败都转为失败结果，绝不回显堆栈、账号或内部身份标识。 */
+    /* 模型选择工具名及业务参数，服务器补齐可信上下文，两者在这里汇合。
+     * 读取操作只验证；写入操作还按本轮 operation 去重，成功/失败均作为结构化数据回给模型。
+     * 这里返回的 ok/data/error 不直接播报；最终说法由 AgentReplyPreparation 检查后交给数字人。
+     */
     private Object call(ToolContext tool,String operation,Function<AgentInvocationVO,Object> action) {
         try {
             Object value=tool==null?null:tool.getContext().get(AgentToolContextRegistry.KEY);

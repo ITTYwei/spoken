@@ -37,6 +37,8 @@ public class AgentReplyPreparation {
      */
     public Flux<String> reply(String agent,ConversationSessionAggregate session,long turn,String text,
                               String prompt,String policy,TeachingDecisionVO decision,BooleanSupplier active) {
+        // 【上下文快照】捕获本轮开始时的模式版本和继续邀请。
+        // 随后撤销页面上的旧邀请，但本轮的“好/继续”仍按捕获的邀请解释，不能读取稍后变化的状态。
         var state=practice.state(session.getSessionId()).snapshot();
         var invocation=new AgentInvocationVO(session.teachingSubject(),session.getSessionId(),turn,text,state.version(),
                 state.pendingContinue(),decision.practiceInput() || !"free".equals(session.getScenarioId()),active);
@@ -51,6 +53,9 @@ public class AgentReplyPreparation {
         var generated=chat.handlePreparedTextStream(agent,session.getSessionId(),prompt,replyPolicy,invocation);
         // 教学跟读仍可生成纠音或下一步反馈，但句子不是个人陈述，不进入任何业务动作兜底。
         if(invocation.practiceInput()) return generated;
+        // 【返回速度与执行一致性】普通问答直接流出；需要确认业务动作的回合先收齐。
+        // 收齐后 finish 检查工具是否真正成功，防止模型先说“已切换”而数据库尚未更新。
+        // 自然兴趣维护也可能进入此缓冲分支，但不会因此向用户播报保存回执。
         if(!actions.requiresDecisionBuffer(invocation)) return generated;
         // 控制回合有界收齐，避免内部或恶意模型产生无限列表；普通问答不等待整段。
         return generated.scan(new StringBuilder(),(full,part)->{

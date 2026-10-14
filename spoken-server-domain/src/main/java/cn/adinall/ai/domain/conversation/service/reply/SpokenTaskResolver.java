@@ -23,6 +23,10 @@ public final class SpokenTaskResolver {
     }
 
     /** 已播报文本同时含完整目标和跟读邀请时，才提交原跟读任务。 */
+    /* 例：“How are you?” 意思是你好吗。请跟读。
+     * 引号中的问号不是向用户提问，必须提交 READ；否则下一轮会被误当普通问答。
+     * 若模型只提到英文句、没有邀请跟读，则不会凭计划强行认定用户应该读它。
+     */
     public static TeachingTaskVO resolve(TeachingTaskVO planned, String spoken) {
         // 新跟读只由模型生成目标，播报完成后再保存实际说出的英文句。
         if (planned != null && "READ".equals(planned.action()) && (planned.target() == null || planned.target().isBlank()) && spoken != null) {

@@ -116,6 +116,10 @@ public class TeachingPreparation {
     /**
      * 本轮教学决策：唯一任务 + 语言策略 + 上轮结果。
      */
+    /* 输入性质由业务规则先判定，模型只在判定结果内生成教学话术。
+     * practiceInput 表示“本轮话语是练习素材”，nextTask 表示“下一轮准备让用户做什么”。
+     * 两者不能混用：跟读通过后 nextTask 可以变为 QUESTION，本轮依然是 practiceInput=true。
+     */
     public TeachingDecisionVO decide(ConversationSessionAggregate session, String text, PronunciationFeedbackVO feedback, boolean voice) {
         var previous = session.teaching().pending();
         // 证据时间戳取话音结束时刻，不是决策时刻
@@ -156,12 +160,12 @@ public class TeachingPreparation {
     }
 
     /**
-     * 本轮教学播报落库 + 沉淀事实/历史 + 后台能力观察的总装点。
+     * 登记本轮待播回复，并编排可选的事实维护、待聊记录与后台能力观察。
      * <p>运行过程：</p>
-     * <pre>有效播报落库 -> 待播内容入会话 -> 事实记忆(仅自由对话) -> 待聊历史更新
+     * <pre>待播回复登记 -> 待播状态入会话 -> 旧规则事实维护(开关关闭时) -> 待聊历史更新
      *     ->(独立回答) 后台模型观察 -> 词数/中文门槛校准 -> 学习证据记录</pre>
      * <p>要点：</p>
-     * <ul><li>先写有效播报与待播副本，再沉淀记忆，保证播报不因降级丢失。</li>
+     * <ul><li>这里只登记未完成回复；实际正文与下一轮任务在播报完成回调中提交。</li>
      * <li>事实记忆只取真实自由对话，角色扮演与练习输入不当作现实偏好。</li>
      * <li>能力观察为后台异步，任何写入失败只降级记日志，不阻塞本轮播报。</li></ul>
      */
@@ -209,6 +213,12 @@ public class TeachingPreparation {
         }
     }
 
+    /**
+     * 收到有效播报完成后，保存实际说出的回复，并提交下一轮唯一任务。
+     * planned READ 只是计划；必须从实际文本找出英文目标及跟读邀请才变成待跟读任务。
+     * 旧 replyId 或已关闭会话直接忽略，避免被打断的旧结果覆盖新任务。
+     * @param text 经教学护栏处理、实际送入本轮播报链路的完整文本
+     */
     public void complete(ConversationSessionAggregate session, Long turn, String reply, TeachingDecisionVO decision, String text) {
         synchronized (session) {
             if (!session.acceptsReply(reply) || session.isFinished()) return;

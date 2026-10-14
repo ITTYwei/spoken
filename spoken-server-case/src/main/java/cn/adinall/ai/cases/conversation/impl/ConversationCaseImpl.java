@@ -396,6 +396,25 @@ public class ConversationCaseImpl implements IConversationCase {
         return OpeningResponseDTO.spoken(openingLine);
     }
 
+    /**
+     * 手机一次语音输入的业务总入口：声音在这里变成一轮可追踪的教学对话。
+     * <p>正常 Agent 路径按下列顺序执行：</p>
+     * <ol>
+     * <li>校验业务会话并预留回复位置；新轮到来时旧模型订阅被取消。</li>
+     * <li>把上传 PCM 包成 WAV，调用数字人识别端，保存用户原话并获得 turnId。</li>
+     * <li>读取服务端上一轮已播完的任务。只有话语像该跟读目标时，才按目标评测。</li>
+     * <li>用真实任务、水平和评测决定输入性质，再异步启动 Agent 回复与播报。</li>
+     * </ol>
+     * <p>返回的是识别文字、轮次编号和可选评测；不是最终教练回复。
+     * 教练回复随后通过字幕事件和音视频到达手机，所以 HTTP 成功不等于已经播完。</p>
+     * <p>例：上一轮让读“ How are you? ”，本轮读同一句，只作为练习素材；
+     * 若用户说“不想读了”，则按拒绝/换话题处理，不用原目标给这句话纠音。</p>
+     * @param sessionId 已校验归属的业务会话编号，与数字人供应商会话编号不同
+     * @param pcm 手机上传的一句原始采样字节；不是文字，也不会直接交给 LLM
+     * @param sampleRate 采样率，单位 Hz，用来生成正确 WAV 头
+     * @param expectedText 兼容客户端参数；不能覆盖服务端真实跟读目标
+     * @return 本轮识别结果；评测失败可降级为空，识别失败则不继续生成本轮回复
+     */
     @Override
     public ConversationTurnResponseDTO voice(String sessionId, byte[] pcm, int sampleRate, String expectedText) {
         // llm-owner 开关：agent 走新链路（评测 + agent + 整段 /say），opentalking 退回老链路。
@@ -443,6 +462,8 @@ public class ConversationCaseImpl implements IConversationCase {
         AtomicReference<Long> firstDelta = new AtomicReference<>();
         Flux<String> tokens = Flux.defer(() -> {
                     if (round.isDisposed()) return Flux.empty();
+                    // 先登记“待播回复”，此时并未证明用户听到了新任务。
+                    // begin 还可能启动独立回答的后台能力观察；该观察与本轮教练回复不是同一次模型请求。
                     teaching.begin(session, turnId, replyId, decision, userText, replyAgentId);
                     // 教学策略只给任务与证据；后续对话统一由 Agent 生成。
                     String prompt = teaching.prompt(session, userText, decision, persona);

@@ -21,6 +21,10 @@ public class PracticePlaybackCase implements IReplyCompletionPort {
         this.practice=practice; this.courses=courses; this.conversations=conversations;
     }
     /** 空播报不激活选择；仅匹配原始 replyId 和登记版本才生效。 */
+    /* 此入口接收媒体完成回执，而不是“模型已经生成完”通知。
+     * 开场邀请只有 heard(replyId) 核验通过才打开继续选择；手机再据 practice.changed 展示按钮。
+     * 按钮选择播出的第一题也在这里成为待回答问题，不伪造用户说话记录。
+     */
     @Override public void completed(String sessionId,String replyId,String text) {
         if(text!=null&&!text.isBlank()&&practice.state(sessionId).heard(replyId)) courses.changed(sessionId,practice.state(sessionId).snapshot());
         var state=practice.state(sessionId).snapshot();
