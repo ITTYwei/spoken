@@ -175,6 +175,19 @@ public interface IChatService {
      */
     Flux<String> handlePreparedTextStream(String agentId, String userId, String preparedMessage, String systemPolicy);
 
+    /**
+     * 沿现有短会话装配链路携带可信工具能力；标识在 MySpringAI 请求前剥离。
+     * 订阅时注册，完成、异常和取消均释放，业务身份不进入模型可填参数。
+     */
+    default Flux<String> handlePreparedTextStream(String agentId, String userId, String preparedMessage,
+                                                String systemPolicy, cn.adinall.ai.domain.agent.model.valobj.AgentInvocationVO invocation) {
+        return Flux.defer(() -> {
+            String key=cn.adinall.ai.domain.agent.service.tool.AgentToolContextRegistry.register(invocation);
+            return handlePreparedTextStream(agentId,userId,preparedMessage,systemPolicy+"\nSERVER_TOOL_CONTEXT="+key)
+                    .doFinally(signal->cn.adinall.ai.domain.agent.service.tool.AgentToolContextRegistry.release(key));
+        });
+    }
+
     /** 关闭通用对话接口的缓存会话，不能跨 agentId 删除其他会话。 */
     void closeSession(String agentId, String userId);
 

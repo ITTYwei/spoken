@@ -30,6 +30,9 @@ public interface IOpeningFactsDao {
     List<OpeningScenarioPO> scenarios();
     List<OpeningHistorySessionPO> history(@Param("deviceId") String deviceId, @Param("userId") Long userId);
     List<OpeningHistoryTurnPO> turns(@Param("ids") List<String> ids);
+    /** 最近一场真实会话的已完成非跟读记录；主体隔离与遗忘边界仍由 SQL 校验。 */
+    List<OpeningHistoryTurnPO> topicTurns(@Param("sessionId") String sessionId,
+                                        @Param("deviceId") String deviceId,@Param("userId") Long userId);
     OpeningPlanPO plan(@Param("userId") Long userId, @Param("today") LocalDate today, @Param("scenarioId") String scenarioId);
     int saveResume(@Param("sessionId") String sessionId, @Param("zh") String zh, @Param("en") String en, @Param("evidence") String evidence);
     java.util.Map<String,Object> encounter(@Param("subject") String subject);

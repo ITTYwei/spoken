@@ -1,0 +1,101 @@
+{
+  "id": "card_p1_food_cooking_001",
+  "part": 1,
+  "card_set_id": "set_food_meals_001",
+  "topic_id": "topic_food",
+  "title": "food and cooking",
+  "difficulty": "core",
+  "tags_json": [
+    "food",
+    "daily-life",
+    "preference"
+  ],
+  "payload_json": {
+    "schema_version": 2,
+    "id": "card_p1_food_cooking_001",
+    "part": 1,
+    "topic": "food and cooking",
+    "difficulty": "core",
+    "tags": [
+      "food",
+      "daily-life",
+      "preference"
+    ],
+    "frame_tier": 2,
+    "frame_kind": "topic",
+    "questions": [
+      "Do you enjoy cooking?",
+      "Who does most of the cooking in your home?",
+      "What is a dish that you can cook well?",
+      "Do you prefer eating at home or eating out?",
+      "Has your taste in food changed since you were a child?"
+    ],
+    "teaching": {
+      "schema_version": 1,
+      "tense_focus": "present simple for habits, present perfect for how your taste has changed",
+      "band_move": "Name the dish. Food questions are answered with nouns, and a specific dish is worth more than any adjective.",
+      "questions": [
+        {
+          "q_index": 0,
+          "angle": "A4",
+          "answer_shape": "Say how much, name what you enjoy or hate about it, then when you do it.",
+          "extend_move": "I do when there's no rush — it's cooking on a Tuesday at seven that I resent.",
+          "common_error": {
+            "wrong": "I enjoy to cook at the weekend.",
+            "right": "I enjoy cooking at the weekend.",
+            "why": "'Enjoy' takes the -ing form without exception."
+          },
+          "probe": "What did you cook last?"
+        },
+        {
+          "q_index": 1,
+          "angle": "A1",
+          "answer_shape": "Name who, say how that was decided, then what you contribute.",
+          "extend_move": "My partner does, mainly because he's faster and I'm the one who clears up.",
+          "common_error": {
+            "wrong": "My mother makes the most of cooking.",
+            "right": "My mother does most of the cooking.",
+            "why": "You 'do' the cooking; 'make the most of' means something else."
+          },
+          "probe": "Has that always been the case?"
+        },
+        {
+          "q_index": 2,
+          "angle": "A2",
+          "answer_shape": "Name the dish, say where you learned it, then who you cook it for.",
+          "extend_move": "A lentil soup my grandmother made — six ingredients and almost impossible to ruin.",
+          "common_error": {
+            "wrong": "I can cook well the rice.",
+            "right": "I can cook rice well.",
+            "why": "The adverb follows the object, and 'rice' takes no article."
+          },
+          "probe": "Where did you learn it?"
+        },
+        {
+          "q_index": 3,
+          "angle": "A10",
+          "answer_shape": "Choose one, name what each gives you, then say when you'd swap.",
+          "extend_move": "At home, mostly — eating out is fine, but I resent paying for something I could make.",
+          "common_error": {
+            "wrong": "I prefer eat at home than in restaurant.",
+            "right": "I prefer eating at home to eating out.",
+            "why": "After 'prefer', use -ing, and link the two options with 'to'."
+          },
+          "probe": "How often do you eat out?"
+        },
+        {
+          "q_index": 4,
+          "angle": "A5",
+          "answer_shape": "Say what changed, name one food you now like, then one you have given up.",
+          "extend_move": "Enormously — I wouldn't touch anything bitter as a child and now I live on coffee and olives.",
+          "common_error": {
+            "wrong": "My taste is changed since I am a child.",
+            "right": "My taste has changed since I was a child.",
+            "why": "'Since' plus a past point takes present perfect and past simple."
+          },
+          "probe": "What changed it?"
+        }
+      ]
+    }
+  }
+}

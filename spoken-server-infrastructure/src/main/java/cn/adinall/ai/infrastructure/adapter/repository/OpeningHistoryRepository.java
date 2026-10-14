@@ -59,6 +59,19 @@ public class OpeningHistoryRepository implements IOpeningHistoryRepository {
                 if(actual!=null && Objects.equals(actual.chinese(),last.getResumeTopicZh())
                         && Objects.equals(actual.english(),last.getResumeTopicEn())) resume=actual;
             }
+            // 只从最近一场取实际聊天素材，不能为凑一个话题跳到更早会话。
+            // 显式关闭/敏感/遗忘的来源不恢复；跟读和未播完的回复由 SQL 排除。
+            if(Objects.equals(last.getScenarioId(),scenarioId)
+                    && (last.getResumeState()==null || "OPEN".equals(last.getResumeState()))
+                    && last.getStartedAt()>=now.minus(30,ChronoUnit.DAYS).toEpochMilli()) {
+                for(var turn:dao.topicTurns(last.getId(),subject.deviceId(),subject.userId())) {
+                    if(OpeningTopicPolicy.closed(turn.getUserText())) { resume=null; break; }
+                    String source="session:"+last.getId()+":turn:"+turn.getTurnId();
+                    var candidate=OpeningTopicPolicy.deferred(turn.getUserText(),source+":USER_DEFERRED");
+                    if(candidate==null) candidate=OpeningTopicPolicy.recent(turn.getUserText(),source+":RECENT_CHAT");
+                    if(candidate!=null) { resume=candidate; break; }
+                }
+            }
         }
         return new OpeningFactsVO(true, !history.isEmpty(), dates.isEmpty() ? null : dates.get(0), dates, evidence, resume);
     }

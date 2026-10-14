@@ -12,12 +12,18 @@ import cn.adinall.ai.domain.conversation.adapter.port.IAvatarDriverPort;
 import org.springframework.stereotype.Service;
 
 /**
- * 选择数字人与音色，验证真实目录后按账号保存上次选择。
+ * 账户领域的数字人和音色选择服务：解析候选、核对真实目录、保存明确选择。
+ * HTTP 使用请求身份，Agent 使用 Case 校验过的账号快照；异步入口不读取请求线程身份。
+ * 服务只管理选择与试听，媒体重建由 conversation/客户端处理，不在保存时打断播报。
+ * 例：只换音色时 Case 补齐已保存形象；无效目录编号拒绝，不静默保存默认候选。
  */
 @Service
 public class HomeService implements IHomeService {
+    /** 当前 TTS 引擎系统音色与独立试听端口，不暴露其他账号克隆音色。 */
     private final IHomeMediaPort media;
+    /** 现有公开数字人目录端口，选择不创建媒体会话。 */
     private final IAvatarDriverPort avatars;
+    /** 捕获账号的伙伴选择存储，失败不产生应用事件。 */
     private final IProfileRepository profiles;
 
     public HomeService(IHomeMediaPort media, IAvatarDriverPort avatars, IProfileRepository profiles) {
@@ -43,8 +49,13 @@ public class HomeService implements IHomeService {
     }
 
     public AvatarVoiceSelectionVO select(String avatar, String voice) {
+        return selectFor(AccountContext.require().id(), avatar, voice);
+    }
+
+    /** 校验真实目录后保存捕获账号，不读取异步线程的登录变量；失败不发布伙伴切换事件。 */
+    @Override public AvatarVoiceSelectionVO selectFor(long accountId, String avatar, String voice) {
         validate(avatar, voice);
-        profiles.selection(AccountContext.require().id(), avatar, voice);
+        profiles.selection(accountId, avatar, voice);
         return new AvatarVoiceSelectionVO(avatar, voice);
     }
 

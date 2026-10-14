@@ -60,4 +60,8 @@ public record OpeningDecisionVO(
     public OpeningDecisionVO withAvatar(String id,String name) {
         return new OpeningDecisionVO(date,initialLevel,levelSource,algorithmVersion,sampleSessions,context,variantId,templateVersion,text,materialsSummary,teachingLevel,id,name);
     }
+    /** Case 创建时补齐跨领域最近课询问，保留全部原决策来源；播放阶段不得再次改写。 */
+    public OpeningDecisionVO withText(String preparedText) {
+        return new OpeningDecisionVO(date,initialLevel,levelSource,algorithmVersion,sampleSessions,context,variantId,templateVersion,preparedText,materialsSummary,teachingLevel,avatarId,avatarName);
+    }
 }

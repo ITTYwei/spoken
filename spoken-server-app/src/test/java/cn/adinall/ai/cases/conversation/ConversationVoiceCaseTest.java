@@ -98,7 +98,7 @@ public class ConversationVoiceCaseTest {
         String prompt = generatedPrompt();
         assertFalse(prompt.contains("86.0/100"));
         assertFalse(prompt.contains("həˈloʊ"));
-        assertTrue(prompt.contains("Learner product level: L2"));
+        assertTrue(prompt.contains("学员产品档位：L2"));
         assertTrue(prompt.contains("Be Amy"));
         assertPlayedOnce();
         ArgumentCaptor<ConversationEventVO> event = ArgumentCaptor.forClass(ConversationEventVO.class);
@@ -111,7 +111,7 @@ public class ConversationVoiceCaseTest {
         when(pronunciation.assess(eq("s1"), eq(42L), any())).thenThrow(new IllegalStateException("provider down"));
         var response = useCase.voice("s1", pcm, 16000, null);
         assertNull(response.assessment());
-        assertTrue(generatedPrompt().contains("Sole action:"));
+        assertTrue(generatedPrompt().contains("唯一教学动作："));
         assertPlayedOnce();
         ArgumentCaptor<AssessPronunciationCommandEntity> command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
         verify(pronunciation).assess(eq("s1"), eq(42L), command.capture());

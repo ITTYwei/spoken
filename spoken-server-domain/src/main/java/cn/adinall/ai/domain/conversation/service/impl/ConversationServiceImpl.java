@@ -106,6 +106,10 @@ import java.util.Optional;
  */
 @Service
 public class ConversationServiceImpl implements IConversationService {
+    /** 原始媒体完成回执交给 Case；旧独立测试装配可不提供此扩展。 */
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    @org.springframework.context.annotation.Lazy
+    private cn.adinall.ai.domain.conversation.adapter.port.IReplyCompletionPort replyCompletion;
 
     /**
      * 媒体结束后提交教学回复，整段模式不把/say受理当播放结束。
@@ -243,6 +247,7 @@ public class ConversationServiceImpl implements IConversationService {
             if (status != session.getStatus()) {
                 session.markStatus(status);
                 sessionRepository.update(session);
+                if(session.isFinished() && replyCompletion!=null) replyCompletion.closed(session.getSessionId());
             }
         } catch (Exception e) {
             log.debug("刷新会话状态失败: {}", e.toString());
@@ -434,6 +439,7 @@ public class ConversationServiceImpl implements IConversationService {
             }
             session.markClosed();
             sessionRepository.update(session);
+            if(replyCompletion!=null) replyCompletion.closed(sessionId);
             sessionRepository.remove(sessionId);
             eventBus.remove(sessionId);
         });
@@ -478,6 +484,7 @@ public class ConversationServiceImpl implements IConversationService {
             case SESSION_CLOSED -> {
                 session.markClosed();
                 sessionRepository.update(session);
+                if(replyCompletion!=null) replyCompletion.closed(session.getSessionId());
             }
             case ERROR -> {
                 String message = event.data() instanceof Map<?, ?> m ? String.valueOf(m.get("message")) : null;
@@ -527,6 +534,9 @@ public class ConversationServiceImpl implements IConversationService {
                     session.teaching().commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(
                             pending.decision().nextTask(), text));
                 }
+                // 在规整为字幕字符串前保留原始回复编号；文本生成结束不能打开继续选择窗口。
+                if(replyCompletion!=null && event.data() instanceof Map<?,?> completed && completed.get("replyId")!=null)
+                    replyCompletion.completed(session.getSessionId(),String.valueOf(completed.get("replyId")),text);
                 // 我们对 App 承诺 assistant.done 的 data 就是「整段文本」。
                 // 但上游不一定守约：mock 在 done 里只给最后一块增量，
                 // 直接透传会让 App 把已经累积好的整句字幕覆盖成最后两个字。

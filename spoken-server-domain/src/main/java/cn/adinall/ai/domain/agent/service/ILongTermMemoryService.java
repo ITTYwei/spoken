@@ -13,6 +13,8 @@ import cn.adinall.ai.domain.agent.model.entity.LongTermMemoryEntity;
  * <ul><li>失败不阻塞口语对话。</li><li>不使用模型生成内容作为来源。</li></ul>
  */
 public interface ILongTermMemoryService {
+    /** 明确遗忘工具入口；失败必须传播，不能对模型谎报已删除。topic为空表示全部并推进历史边界。 */
+    default void forget(String subject, Long turn, String topic) { throw new UnsupportedOperationException("trusted forget unavailable"); }
     void record(String subject, String session, Long turn, String text, boolean practice, Instant now);
     List<LongTermMemoryEntity> recall(String subject, String topic, Instant now);
 }

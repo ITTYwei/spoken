@@ -135,6 +135,17 @@ import java.util.Map;
  */
 @Service
 public class ConversationCaseImpl implements IConversationCase {
+    /** 文本课程初始化与模式状态，旧测试装配不包含课程时保持原路径。 */
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private cn.adinall.ai.cases.practice.PracticeCase practiceCase;
+    /** 会话关闭时同步释放课程运行态；主体最近课仍保留。 */
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private cn.adinall.ai.domain.practice.service.PracticeService practice;
+    /** Agent 动作总装只承担业务工具和有限兜底，仍通过 IChatService 使用原装配链路。 */
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private AgentReplyPreparation agentReplies;
+    /** 账号作用域设备当前会话索引，用于替换旧会话时释放练习状态。 */
+    private final java.util.concurrent.ConcurrentMap<String,String> practiceDevices = new java.util.concurrent.ConcurrentHashMap<>();
     /** 整段模式可回退；默认启用 Agent 增量播报。 */
     @Value("${spoken-ai.reply.streaming-enabled:true}")
     private boolean streamingEnabled = true;
@@ -242,6 +253,14 @@ public class ConversationCaseImpl implements IConversationCase {
                         scenario.id(), scenario.systemPromptHint(), openingPreparation.prepare(deviceId, scenario,request.avatarId())));
 
         teaching.bind(session);
+        if (practiceCase != null) {
+            practiceCase.initialize(session);
+            // 最近课和询问台词在创建阶段一起冻结，翻译与重试不重新读取变化中的历史。
+            if(session.getOpeningDecision()!=null) conversationService.saveOpeningDecision(session.getSessionId(),
+                    session.completeOpeningPreparation(practiceCase.opening(session,session.getOpeningDecision().text())));
+            String previous = practiceDevices.put(deviceId, session.getSessionId());
+            if (previous != null && practice != null) practice.close(previous);
+        }
 
         awaitReady(session);
         return ConversationAssembler.toResponse(session);
@@ -366,9 +385,14 @@ public class ConversationCaseImpl implements IConversationCase {
                 decision.sampleSessions(), decision.context(), decision.variantId(), decision.templateVersion(), openingLine,
                 decision.materialsSummary().replaceAll("[\\r\\n\\p{Cntrl}]", " "));
         try {
+            if(practiceCase!=null) practiceCase.invite(session,sessionId+":opening");
             conversationService.say(sessionId,
                     new SayCommandEntity(openingLine, session.getVoice(), sessionId + ":opening"));
-        } catch(RuntimeException e) { session.openingSubmissionFailed(); throw e; }
+        } catch(RuntimeException e) {
+            session.openingSubmissionFailed();
+            if(practice!=null) practice.state(sessionId).dismissInvitation();
+            throw e;
+        }
         return OpeningResponseDTO.spoken(openingLine);
     }
 
@@ -423,8 +447,9 @@ public class ConversationCaseImpl implements IConversationCase {
                     // 教学策略只给任务与证据；后续对话统一由 Agent 生成。
                     String prompt = teaching.prompt(session, userText, decision, persona);
                     // 可信等级/任务进入 SYSTEM；原话、场景与裁剪历史保留在 USER。
-                    return chatService.handlePreparedTextStream(replyAgentId, sessionId, prompt,
-                            ReplyPromptBuilder.buildSystemPolicy(decision));
+                    if(agentReplies==null) return chatService.handlePreparedTextStream(replyAgentId,sessionId,prompt,teaching.systemPolicy(session,decision));
+                    return agentReplies.reply(replyAgentId,session,turnId,userText,prompt,teaching.systemPolicy(session,decision),decision,
+                            ()->!round.isDisposed()&&replyRounds.get(sessionId)==round&&!session.isFinished());
                 }).subscribeOn(Schedulers.boundedElastic())
                 // Agent 的原始增量先经过任务护栏，再交给数字人播报。
                 .transform(source -> TeachingReplyGuard.apply(source, decision))
@@ -536,6 +561,7 @@ public class ConversationCaseImpl implements IConversationCase {
     @Override
     public void interrupt(String sessionId) {
         cancelReply(sessionId);
+        if (practice != null) practice.state(sessionId).dismissInvitation();
         conversationService.interrupt(sessionId);
     }
 
@@ -543,6 +569,8 @@ public class ConversationCaseImpl implements IConversationCase {
     public void close(String sessionId) {
         cancelReply(sessionId);
         conversationService.closeSession(sessionId);
+        if (practice != null) practice.close(sessionId);
+        practiceDevices.values().removeIf(id -> id.equals(sessionId));
         learnerLevelService.forgetSession(sessionId);
     }
 
@@ -567,6 +595,12 @@ public class ConversationCaseImpl implements IConversationCase {
                 Map.of("status", session.getStatus().name())));
 
         Flux<ServerEventDTO> body = conversationService.streamDriverEvents(session)
+                .doOnNext(event -> {
+                    if (event.type() == EventTypeEnum.SESSION_CLOSED && practice != null) {
+                        practice.close(sessionId);
+                        practiceDevices.values().removeIf(id -> id.equals(sessionId));
+                    }
+                })
                 .map(event -> ServerEventDTO.of(event.type().wire(), sessionId, event.data()));
 
         // 心跳有两个作用：顶住 Servlet 容器的 async 超时（默认 30s 就掐），

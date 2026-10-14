@@ -1,0 +1,75 @@
+{
+  "id": "bandready-daily",
+  "title": "BandReady · 日常口语 Part 1",
+  "sourceUrl": "https://github.com/Luxshan2000/ielts-prep/tree/10282cc853a03b6984907fec0affe6cbbd4fe0b0/content/core-en",
+  "sourceCommit": "10282cc853a03b6984907fec0affe6cbbd4fe0b0",
+  "license": "CC0-1.0",
+  "lessons": [
+    {
+      "id": "daily-home",
+      "title": "日常与居家",
+      "objective": "用简短回答描述日常生活，再补充一个具体细节。",
+      "sourceCardId": "card_p1_days_and_home_001",
+      "questions": [
+        "First of all, are you working or studying at the moment?",
+        "Is it something you'd choose again?",
+        "Is there anything about it you'd change if you could?",
+        "Now, your home. Do you live on your own or with other people?",
+        "Do most people your age where you live still live with family?",
+        "Do you think it matters how big a home is?"
+      ],
+      "aliases": [
+        "daily-home",
+        "日常与居家",
+        "what you do and the home you live in",
+        "居家",
+        "日常与居家"
+      ],
+      "addedGuidance": "以友好对话逐题练习原题，从第一个未回答的问题开始。遵循学员档位的语言规则，邀请补充具体细节或原因。不评分，不声称考试结果。跟读属于练习，不是个人偏好。"
+    },
+    {
+      "id": "food-cooking",
+      "title": "食物与烹饪",
+      "objective": "表达饮食喜好，描述一道菜，并解释原因。",
+      "sourceCardId": "card_p1_food_cooking_001",
+      "questions": [
+        "Do you enjoy cooking?",
+        "Who does most of the cooking in your home?",
+        "What is a dish that you can cook well?",
+        "Do you prefer eating at home or eating out?",
+        "Has your taste in food changed since you were a child?"
+      ],
+      "aliases": [
+        "food-cooking",
+        "食物与烹饪",
+        "food and cooking",
+        "烹饪",
+        "做饭",
+        "cooking"
+      ],
+      "addedGuidance": "以友好对话逐题练习原题，从第一个未回答的问题开始。遵循学员档位的语言规则，邀请补充具体细节或原因。不评分，不声称考试结果。跟读属于练习，不是个人偏好。"
+    },
+    {
+      "id": "food-shopping",
+      "title": "食品购物",
+      "objective": "描述购买食物的习惯，并比较不同选择。",
+      "sourceCardId": "card_p1_food_shopping_001",
+      "questions": [
+        "Where do you usually buy your food?",
+        "Do you write a shopping list?",
+        "How often do you shop for food?",
+        "Do you look at the price first or the quality?",
+        "Have you ever bought food online?"
+      ],
+      "aliases": [
+        "food-shopping",
+        "食品购物",
+        "shopping for food",
+        "食品购物",
+        "买菜",
+        "food shopping"
+      ],
+      "addedGuidance": "以友好对话逐题练习原题，从第一个未回答的问题开始。遵循学员档位的语言规则，邀请补充具体细节或原因。不评分，不声称考试结果。跟读属于练习，不是个人偏好。"
+    }
+  ]
+}

@@ -90,8 +90,8 @@ public class AgentTurnPolicyTest {
             assertFalse(system.contains("{turn_policy"));
             assertFalse(system.contains("marker"));
             assertEquals(2, prompt.getInstructions().size());
-            assertTrue(system.contains("Learner product level: " + (user.equals("low-marker") ? "L2" : "L5")));
-            assertFalse(system.contains("Learner product level: " + (user.equals("low-marker") ? "L5" : "L2")));
+            assertTrue(system.contains("学员产品档位：" + (user.equals("low-marker") ? "L2" : "L5")));
+            assertFalse(system.contains("学员产品档位：" + (user.equals("low-marker") ? "L5" : "L2")));
         }
         assertTrue(runner.sessionService().listSessions("policy-test", "same-user").blockingGet().sessions().isEmpty());
         // 通用三参数调用没有教学策略时，可选占位符消失，不报缺少 state。
@@ -106,6 +106,40 @@ public class AgentTurnPolicyTest {
                 .collectList().block(Duration.ofSeconds(10));
         assertEquals("先说中文。I like coffee.\nDo you like tea?", String.join("", chunks));
         assertEquals("Do you like tea?", cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.lastQuestion(String.join("", chunks)));
+    }
+
+    /** 当前配置模型端到端验证：问句跟读不作为提问，L1/L2 英文先播、中文译意实际保留。 */
+    @Test public void configuredModelKeepsReadingQuestionsAsExercisesAndExplainsAfterEnglish() {
+        assumeTrue(Boolean.getBoolean("spoken.verify.reading-question"));
+        String key=System.getenv("LK888_API_KEY");
+        assertNotNull("需要当前模型环境密钥",key);
+        var config=module(); var apiConfig=(Map<?,?>)config.get("ai-api"); var modelConfig=(Map<?,?>)config.get("chat-model");
+        var api=OpenAiApi.builder().baseUrl((String)apiConfig.get("base-url")).apiKey(key)
+                .completionsPath("/"+apiConfig.get("completions-path")).build();
+        var model=OpenAiChatModel.builder().openAiApi(api).defaultOptions(OpenAiChatOptions.builder()
+                .model((String)modelConfig.get("model")).temperature(((Number)modelConfig.get("temperature")).doubleValue())
+                .toolChoice("none").internalToolExecutionEnabled(false).build()).build();
+        var service=service(runner(model));
+        for(var level:List.of(EnglishLevelEnum.L1,EnglishLevelEnum.L2)) {
+            var previous=new TeachingTaskVO("READ","How are you?","",0);
+            var decision=TeachingPolicy.decide(level,previous,"How are you?",
+                    new cn.adinall.ai.domain.conversation.model.valobj.PronunciationFeedbackVO(92.,List.of()),true);
+            assertEquals("READ_PASS",decision.outcome()); assertTrue(decision.practiceInput());
+            var chunks=service.handlePreparedTextStream("coach","reading-question-test",
+                    ReplyPromptBuilder.buildManaged("How are you?",decision,null,previous),ReplyPromptBuilder.buildSystemPolicy(decision))
+                    .collectList().block(Duration.ofSeconds(45));
+            String reply=String.join("",chunks);
+            String played=String.join("",cn.adinall.ai.domain.conversation.service.reply.TeachingReplyGuard
+                    .apply(Flux.fromIterable(chunks),decision).collectList().block());
+            System.out.println("LIVE_READING_QUESTION "+level+" -> "+played);
+            System.out.println("LIVE_READING_UTF8 "+level+" "+java.util.Base64.getEncoder().encodeToString(reply.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            assertFalse(reply,reply.toLowerCase(Locale.ROOT).matches("(?s).*(i'm|i am|i’m) (fine|good|well).*"));
+            var english=java.util.regex.Pattern.compile("[A-Za-z]").matcher(played);
+            var chinese=java.util.regex.Pattern.compile("\\p{IsHan}").matcher(played);
+            assertTrue(played,english.find()); assertTrue(played,chinese.find());
+            assertTrue(played,english.start()<chinese.start());
+            assertFalse(played,cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.lastQuestion(played).isBlank());
+        }
     }
 
     @Test public void configuredModelHonorsHelpReadingAndStableLevels() throws Exception {

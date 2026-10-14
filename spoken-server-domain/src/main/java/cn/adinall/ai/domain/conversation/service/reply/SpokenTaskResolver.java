@@ -39,7 +39,13 @@ public final class SpokenTaskResolver {
 
     public static String lastQuestion(String spoken) {
         if (spoken == null) return "";
-        var matcher = QUESTION.matcher(spoken);
+        // 引号中的问句可能是跟读目标或中文译文，不能被提升为真实聊天问题。
+        // 例如 “How are you?” 意思是你好吗。请跟读。必须仍提交 READ，下一轮才有练习标记。
+        String questions = spoken.replaceAll("\"[^\"]*\"|“[^”]*”", "");
+        // 英文问句后解释“意思是：你准备好了吗？”仍是译意，不是下一轮等待回答的中文问题。
+        // 只消除带明确译意前缀的中文段；真实未加前缀的中文聊天问题仍可被正常提交。
+        questions = questions.replaceAll("(?:这句英文的意思是|这句话的意思是|中文意思是|意思是|中文是|也就是|是在问|表示)[：:\\s]*[\\p{IsHan}，、\\s]+[。！？.!?]?", "");
+        var matcher = QUESTION.matcher(questions);
         String last = "";
         while (matcher.find()) last = matcher.group().trim();
         return last;

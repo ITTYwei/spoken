@@ -22,7 +22,7 @@ public final class TeachingReplyGuard {
     public static Flux<String> apply(Flux<String> source, TeachingDecisionVO decision) {
         if (decision.nextTask().reading()) return source;
         return Flux.defer(() -> {
-            SentenceState state = new SentenceState();
+            SentenceState state = new SentenceState(decision.level().ordinal() <= 1);
             return source.concatMap(delta -> Flux.fromIterable(state.feed(delta)), 1)
                     .concatWith(Flux.defer(() -> Flux.fromIterable(state.finish(decision.chineseSupport()))));
         });
@@ -49,6 +49,12 @@ public final class TeachingReplyGuard {
          * 已放行的普通陈述数量，回复最多三句。
          */
         private int statements;
+        /** L1/L2 必须在英文后解释含义；只允许一道问题之后的一句中文译意。 */
+        private final boolean explainAfterQuestion;
+        /** 已放行的问题后译意，防止翻译许可变成无限追加中文内容。 */
+        private boolean explanationEmitted;
+
+        SentenceState(boolean explainAfterQuestion) { this.explainAfterQuestion = explainAfterQuestion; }
 
         List<String> feed(String delta) {
             if (delta == null) return List.of();
@@ -85,12 +91,25 @@ public final class TeachingReplyGuard {
 
         private void accept(String raw, List<String> out) {
             String text = raw.trim().replaceAll("[*#`•]", "");
-            if (text.isEmpty() || questions > 0) return; // 一个问句收尾，之后不追加其他任务。
+            if (text.isEmpty()) return;
             String lower = text.toLowerCase(Locale.ROOT);
             for (String banned : List.of("跟读", "跟我读", "读一遍", "读这", "试着读", "试着说", "试试说", "试试读", "你可以说", "重复这", "repeat after", "read aloud", "read this", "read it", "try saying", "say it", "you can say", "you could say", "try to say",
                     "你说得很好", "说得很顺", "真厉害", "你的英语", "you are wrong", "incorrect", "mispronounced", "your score", "your english is"))
                 if (lower.contains(banned)) return;
             String taskText = text.replaceAll("\"[^\"]*\"|“[^”]*”", "");
+            if (questions > 0) {
+                // 英文问题已播报后，仅保留显式中文译意；其他问句、跟读要求和新英文任务仍丢弃。
+                // 明确译意即使带中文问号也不是新任务；只保留一次，且不能包含新的英文表达。
+                if (explainAfterQuestion && !explanationEmitted && statements < 2
+                        && !taskText.matches("(?s).*[A-Za-z].*")
+                        && text.matches("(?s).*\\p{IsHan}.*")
+                        && text.matches("(?s)^(意思是|这句话的意思是|这句英文的意思是|中文意思是|中文是|也就是|是在问|表示).*")) {
+                    explanationEmitted = true;
+                    statements++;
+                    out.add(text + " ");
+                }
+                return;
+            }
             if (taskText.contains("?") || taskText.contains("？")) {
                 questions++;
                 out.add(text);

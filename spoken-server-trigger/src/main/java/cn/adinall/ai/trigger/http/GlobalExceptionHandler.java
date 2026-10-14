@@ -197,6 +197,9 @@ public class GlobalExceptionHandler {
         // 账户错误属于客户端认证或冲突，不应落入上游502兜底。
         if ("unauthorized".equals(code)) return HttpStatus.UNAUTHORIZED;
         if ("account_exists".equals(code)) return HttpStatus.CONFLICT;
+        if ("practice_conflict".equals(code)) return HttpStatus.CONFLICT;
+        if ("lesson_not_found".equals(code)) return HttpStatus.NOT_FOUND;
+        if ("lesson_too_large".equals(code)) return HttpStatus.PAYLOAD_TOO_LARGE;
         if (ResponseCodeEnum.PROVIDER_UNAVAILABLE.getCode().equals(code)) {
             return HttpStatus.SERVICE_UNAVAILABLE;
         }

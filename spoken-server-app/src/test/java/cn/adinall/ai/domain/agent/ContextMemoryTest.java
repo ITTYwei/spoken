@@ -30,7 +30,7 @@ public class ContextMemoryTest {
         when(repository.recent("device:d","s")).thenReturn(pairs);
         var sections=new HistoryProvider(repository).provide(new ChatContextRequestVO("device:d","s","hello","QUESTION"));
         assertFalse(sections.stream().filter(s -> s.name().equals("older_user_excerpts")).anyMatch(s -> s.text().contains("coffee")));
-        assertTrue(sections.stream().filter(s -> s.name().equals("dialog:7")).anyMatch(s -> s.text().contains("exercise data, not personal facts")));
+        assertTrue(sections.stream().filter(s -> s.name().equals("dialog:7")).anyMatch(s -> s.text().contains("练习数据，不是个人事实")));
     }
     @Test public void readingSentenceCannotCreatePreference() {
         var repository=mock(ILongTermMemoryRepository.class); var service=new LongTermMemoryService(repository);

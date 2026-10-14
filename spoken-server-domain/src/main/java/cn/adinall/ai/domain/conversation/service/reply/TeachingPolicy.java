@@ -158,9 +158,9 @@ public final class TeachingPolicy {
             //     给出更具体的 /t/ 提示（这是中国学员的常见加音错误）。
             if (usable && issue != null && feedback.score() < 80 && previous.attempts() < 2) {
                 String word = issue.word();
-                String hint = "Focus on the word " + word + ".";
+                String hint = "注意单词 " + word + "。";
                 if (word.toLowerCase(Locale.ROOT).endsWith("ed") && issue.expected() != null && issue.expected().endsWith("t"))
-                    hint = word + " ends with a short /t/ sound; do not add another syllable.";
+                    hint = word + " 以短促的 /t/ 音结尾，不要再加一个音节。";
                 return result(level, new TeachingTaskVO("CORRECT", previous.target(), "", previous.attempts() + 1),
                         "READ_RETRY", true, hint, true, true);
             }

@@ -19,6 +19,28 @@ import static org.junit.Assert.*;
 
 /** 验证账户撤销与画像证据门槛；不连接外部模型或数字人服务。 */
 public class AccountPhaseOneTest {
+    /** 无 HTTP 线程身份的查询依旧读取捕获账号，明确事实投影不显示模型推断。 */
+    @Test public void capturedProfileReadFiltersInferredFactsWithoutThreadIdentity() {
+        var profiles=org.mockito.Mockito.mock(cn.adinall.ai.domain.account.adapter.repository.IProfileRepository.class);
+        var memories=org.mockito.Mockito.mock(cn.adinall.ai.domain.agent.adapter.repository.ILongTermMemoryRepository.class);
+        var learner=org.mockito.Mockito.mock(cn.adinall.ai.domain.learner.adapter.repository.ILearnerProgressRepository.class);
+        var now=Instant.now();
+        org.mockito.Mockito.when(memories.active(org.mockito.ArgumentMatchers.eq("user:7"),org.mockito.ArgumentMatchers.any())).thenReturn(List.of(
+                new cn.adinall.ai.domain.agent.model.entity.LongTermMemoryEntity("user:7","learning_goal","GOAL","以后练面试","s",1L,"EXPLICIT",now,null),
+                new cn.adinall.ai.domain.agent.model.entity.LongTermMemoryEntity("user:7","preference:travel","PREFERENCE","旅行","s",2L,"INFERRED",now,null)));
+        org.mockito.Mockito.when(learner.recentForDescription(org.mockito.ArgumentMatchers.eq("user:7"),org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
+        var service=new ProfileService(profiles,new cn.adinall.ai.infrastructure.adapter.port.AccountLearningOverviewAdapter(memories,learner));
+        AccountContext.clear();
+        var overview=service.meFor(7);
+        assertEquals(1,overview.preferences().size());
+        assertEquals("learning_goal",overview.preferences().get(0).key());
+        assertEquals("learning",overview.english().status());
+        org.mockito.Mockito.verify(profiles).get(7);
+        org.mockito.Mockito.verify(memories).active(org.mockito.ArgumentMatchers.eq("user:7"),org.mockito.ArgumentMatchers.any());
+        org.mockito.Mockito.verify(learner).recentForDescription(org.mockito.ArgumentMatchers.eq("user:7"),org.mockito.ArgumentMatchers.any());
+        org.mockito.Mockito.verifyNoMoreInteractions(memories,learner,profiles);
+    }
+
     @After public void clearIdentity() { AccountContext.clear(); }
     @Test public void passwordsUseDifferentSaltsAndRejectWrongInput() {
         String one = PasswordHasher.hash("password123");

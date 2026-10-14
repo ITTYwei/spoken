@@ -115,6 +115,15 @@ public class ConversationSessionAggregate {
     }
 
     public cn.adinall.ai.domain.conversation.model.valobj.OpeningDecisionVO getOpeningDecision() { return openingDecision; }
+    /** 创建阶段仅可补齐一次课程询问；完成后原文冻结，开场翻译和重试都读取同一快照。 */
+    private boolean openingPreparationCompleted;
+    /** 必须在返回新会话、媒体可播放之前调用；已认领开场后拒绝任何改写。 */
+    public synchronized cn.adinall.ai.domain.conversation.model.valobj.OpeningDecisionVO completeOpeningPreparation(String text) {
+        if(openingPreparationCompleted || openingSpoken) throw new IllegalStateException("opening_already_prepared");
+        openingPreparationCompleted=true;
+        openingDecision=openingDecision.withText(text);
+        return openingDecision;
+    }
 
     /** 用户最后一次说完话的时刻；用来算「数字人隔了多久才开口」。 */
     private long lastUserSpeechEndedAt;

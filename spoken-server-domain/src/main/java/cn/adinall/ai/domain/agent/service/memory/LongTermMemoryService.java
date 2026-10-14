@@ -42,6 +42,12 @@ public class LongTermMemoryService implements ILongTermMemoryService {
     public LongTermMemoryService(ILongTermMemoryRepository repository) {
         this.repository = repository;
     }
+    /** 遗忘与历史边界由已有仓储原子推进；不捕获异常，薄工具必须报告真实失败。 */
+    @Override public void forget(String subject, Long turn, String topic) {
+        if (topic==null) repository.forgetAllAndHistory(subject,turn);
+        else if(!topic.isBlank()) repository.forgetMatchingAndHistory(subject,topic.toLowerCase(Locale.ROOT),turn);
+        else throw new IllegalArgumentException("遗忘主题不能为空");
+    }
 
     @Override
     public void record(String subject, String session, Long turn, String text, boolean practice, Instant now) {

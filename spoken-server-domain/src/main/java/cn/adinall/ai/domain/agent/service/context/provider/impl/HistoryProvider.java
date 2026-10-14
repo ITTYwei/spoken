@@ -61,7 +61,7 @@ public class HistoryProvider implements ContextProvider {
     private String quote(DialogMessageVO turn) {
         try {
             return json.writeValueAsString(Map.of("user", turn.userText(), "assistant", turn.assistantText(),
-                    "practiceInput", turn.practiceInput(), "meaning", turn.practiceInput() ? "exercise data, not personal facts" : "conversation content"));
+                    "practiceInput", turn.practiceInput(), "meaning", turn.practiceInput() ? "练习数据，不是个人事实" : "对话内容"));
         } catch (Exception e) {
             throw new IllegalStateException("history_encoding", e);
         }

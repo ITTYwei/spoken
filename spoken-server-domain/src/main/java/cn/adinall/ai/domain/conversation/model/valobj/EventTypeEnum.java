@@ -63,7 +63,11 @@ public enum EventTypeEnum {
     VIDEO_FIRST_FRAME("video.first_frame"),
     INTERRUPTED("interrupted"),
     ERROR("error"),
-    HEARTBEAT("heartbeat");
+    HEARTBEAT("heartbeat"),
+    /** 练习模式和继续选择状态快照；仅更新界面，不进入 TTS。 */
+    PRACTICE_CHANGED("practice.changed"),
+    /** 伙伴配置已保存，手机在当前回应播放结束后应用；不能当语音文本。 */
+    PARTNER_CHANGED("partner.changed");
 
     private final String wire;
 

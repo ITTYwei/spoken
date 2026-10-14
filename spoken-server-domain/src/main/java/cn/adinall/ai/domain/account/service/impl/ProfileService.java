@@ -9,8 +9,7 @@ import cn.adinall.ai.domain.account.model.valobj.PracticePreferenceVO;
 import cn.adinall.ai.domain.account.model.valobj.AbilityDescriptionVO;
 import cn.adinall.ai.domain.account.model.valobj.AccountOverviewVO;
 
-import cn.adinall.ai.domain.agent.adapter.repository.ILongTermMemoryRepository;
-import cn.adinall.ai.domain.learner.adapter.repository.ILearnerProgressRepository;
+import cn.adinall.ai.domain.account.adapter.port.IAccountLearningOverviewPort;
 import cn.adinall.ai.domain.learner.model.valobj.*;
 import org.springframework.stereotype.Service;
 
@@ -18,18 +17,21 @@ import java.time.*;
 import java.util.*;
 
 /**
- * 资料、对话画像及能力描述；注册流程不会调用画像采集。
+ * 账户领域的资料、明确偏好管理及能力描述展示服务。
+ * HTTP 入口先获取请求身份，异步 Agent 入口使用已校验的捕获账号，二者共享业务规则。
+ * 学习资料通过只读投影端口获取，不直接访问其他领域仓储；事实更正事务由本领域仓储负责。
+ * 注册不会采集画像，能力描述不会写入等级或消耗证据。例：证据不足时返回“正在了解”。
  */
 @Service
 public class ProfileService implements IProfileService {
+    /** 账户资料及事实事务仓储，更正/删除同步推进既有遗忘边界。 */
     private final IProfileRepository profiles;
-    private final ILongTermMemoryRepository memories;
-    private final ILearnerProgressRepository learner;
+    /** 当前明确事实和近期能力证据的只读查询投影。 */
+    private final IAccountLearningOverviewPort learning;
 
-    public ProfileService(IProfileRepository profiles, ILongTermMemoryRepository memories, ILearnerProgressRepository learner) {
+    public ProfileService(IProfileRepository profiles, IAccountLearningOverviewPort learning) {
         this.profiles = profiles;
-        this.memories = memories;
-        this.learner = learner;
+        this.learning = learning;
     }
 
     public AccountProfileVO profile() {
@@ -37,13 +39,14 @@ public class ProfileService implements IProfileService {
     }
 
     public AccountOverviewVO me() {
-        long id = AccountContext.require().id();
+        return meFor(AccountContext.require().id());
+    }
+    /** 异步工具只访问捕获账号，明确事实的过期和确认状态继续沿用既有仓储规则。 */
+    @Override public AccountOverviewVO meFor(long id) {
         String subject = "user:" + id;
         // 只展示用户明确陈述的目标和兴趣；不把模型猜测作为个人事实。
-        var facts = memories.active(subject, Instant.now()).stream()
-                .filter(m -> "EXPLICIT".equals(m.confirmation()) && ("GOAL".equals(m.type()) || "PREFERENCE".equals(m.type())))
-                .map(m -> new PracticePreferenceVO(m.memoryKey(), m.type(), m.content())).toList();
-        return new AccountOverviewVO(profiles.get(id), ability(learner.recentForDescription(subject, Instant.now().minus(Duration.ofDays(30)))), facts);
+        var facts = learning.explicitPreferences(subject, Instant.now());
+        return new AccountOverviewVO(profiles.get(id), ability(learning.descriptionEvidence(subject, Instant.now().minus(Duration.ofDays(30)))), facts);
     }
 
     /**
@@ -89,11 +92,18 @@ public class ProfileService implements IProfileService {
      * 仅允许管理目标和兴趣，避免写入内部能力或教学规则。content为空表示删除。
      */
     public void fact(String key, String type, String content) {
+        factFor(AccountContext.require().id(),key,type,content);
+    }
+
+    /** 异步工具和 HTTP 共用事实规则，捕获身份不依赖 ThreadLocal；事务仍由仓储统一执行。 */
+    @Override public void factFor(long accountId, String key, String type, String content) {
         boolean goal = "GOAL".equals(type) && "learning_goal".equals(key);
         boolean interest = "PREFERENCE".equals(type) && key != null && key.startsWith("preference:") && key.length() > 11 && key.length() <= 128;
         if (!goal && !interest) throw new IllegalArgumentException("仅允许管理练习目标和兴趣");
         if (content != null && (content.isBlank() || content.length() > 300))
             throw new IllegalArgumentException("偏好内容需为1至300个字符");
-        profiles.manageFact(AccountContext.require().id(), key, type, content);
+        profiles.manageFact(accountId, key, type, content);
     }
+    /** 只读取捕获账号的已保存伙伴，不能用模型参数任意查询其他资料。 */
+    @Override public AccountProfileVO profileFor(long accountId) { return profiles.get(accountId); }
 }

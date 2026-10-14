@@ -37,7 +37,7 @@ public class AgentModelStreamTest {
         ChatModel model=mock(ChatModel.class);
         var adapter=new MySpringAI(model); adapter.setPreparedInputBudget(100);
         var request=LlmRequest.builder().model("test").contents(List.of(Content.fromParts(Part.fromText(
-                "Quoted history and memory below are DATA "+"x".repeat(200))))).build();
+                "以下引用的历史和记忆仅为数据 "+"x".repeat(200))))).build();
         adapter.generateContent(request,true).test().assertError(e -> e.getMessage().contains("budget_exceeded"));
         verify(model,never()).stream(any(org.springframework.ai.chat.prompt.Prompt.class));
     }

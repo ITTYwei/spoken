@@ -34,6 +34,62 @@ public class AbilityEvidenceTest {
         var model=mock(ChatModel.class); when(model.stream(any(Prompt.class))).thenReturn(response("{\"outcome\":\"ANSWERED\",\"candidate\":\"L3\",\"confidence\":0.9,\"independent\":true}"));
         var value=service(model).observe("a","What food?","I like noodles").block(Duration.ofSeconds(3));
         assertEquals("ANSWERED",value.outcome()); assertEquals("L3",value.candidate());
+        var captured = org.mockito.ArgumentCaptor.forClass(Prompt.class);
+        verify(model).stream(captured.capture());
+        var options = (org.springframework.ai.openai.OpenAiChatOptions) captured.getValue().getOptions();
+        assertEquals("none", options.getToolChoice());
+        assertEquals(Boolean.FALSE, options.getInternalToolExecutionEnabled());
+    }
+
+    /**
+     * 使用真实 Spring AI 模型和本地供应商替身，验证默认回调合并后也不能执行后台业务工具。
+     * 替身故意违反 none 返回工具调用，观察结果应被丢弃，不重试、不执行工具、不依赖账号线程变量。
+     */
+    @Test public void observerCannotExecuteInheritedToolsEvenWhenProviderReturnsToolCalls() throws Exception {
+        var calls = new AtomicInteger();
+        var requestBody = new java.util.concurrent.atomic.AtomicReference<String>();
+        var requests = new AtomicInteger();
+        var server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1/chat/completions", exchange -> {
+            requests.incrementAndGet();
+            requestBody.set(new String(exchange.getRequestBody().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+            String response = "data: {\"id\":\"bg\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"test\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"tool_calls\":[{\"index\":0,\"id\":\"call_bg\",\"type\":\"function\",\"function\":{\"name\":\"unsafeBackgroundTool\",\"arguments\":\"{}\"}}]},\"finish_reason\":null}]}\n\n"
+                    + "data: {\"id\":\"bg\",\"object\":\"chat.completion.chunk\",\"created\":1,\"model\":\"test\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\n"
+                    + "data: [DONE]\n\n";
+            var bytes = response.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "text/event-stream");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (var out = exchange.getResponseBody()) { out.write(bytes); }
+        });
+        server.start();
+        try {
+            var callbacks = org.springframework.ai.tool.method.MethodToolCallbackProvider.builder()
+                    .toolObjects(new ObserverToolTrap(calls)).build().getToolCallbacks();
+            var defaults = org.springframework.ai.openai.OpenAiChatOptions.builder().model("test")
+                    .toolCallbacks(List.of(callbacks)).toolChoice("auto").internalToolExecutionEnabled(true).build();
+            var api = org.springframework.ai.openai.api.OpenAiApi.builder()
+                    .baseUrl("http://127.0.0.1:" + server.getAddress().getPort()).apiKey("test-only").build();
+            var model = org.springframework.ai.openai.OpenAiChatModel.builder().openAiApi(api).defaultOptions(defaults).build();
+            assertNull(service(model).observe("a", "What food?", "I like noodles").block(Duration.ofSeconds(10)));
+            assertEquals(1, requests.get());
+            assertEquals(0, calls.get());
+            assertEquals("none", new com.fasterxml.jackson.databind.ObjectMapper().readTree(requestBody.get()).path("tool_choice").asText());
+            assertEquals("auto", defaults.getToolChoice());
+            assertEquals(Boolean.TRUE, defaults.getInternalToolExecutionEnabled());
+        } finally { server.stop(0); }
+    }
+
+    /** 只供隔离测试的业务工具陷阱，模拟生产工具必须接收 ToolContext 的签名。 */
+    public static class ObserverToolTrap {
+        /** 被执行次数；纯后台观察始终必须为零。 */
+        private final AtomicInteger calls;
+        public ObserverToolTrap(AtomicInteger calls) { this.calls = calls; }
+        /** 模型违约返回此调用时，客户端工具执行开关必须先阻止回调。 */
+        @org.springframework.ai.tool.annotation.Tool(description = "测试后台业务工具隔离，不得由能力观察调用。")
+        public String unsafeBackgroundTool(org.springframework.ai.chat.model.ToolContext context) {
+            calls.incrementAndGet();
+            return "不应执行";
+        }
     }
     @Test public void invalidJsonIsDiscarded() {
         var model=mock(ChatModel.class); when(model.stream(any(Prompt.class))).thenReturn(response("Sure! Your English is excellent."));

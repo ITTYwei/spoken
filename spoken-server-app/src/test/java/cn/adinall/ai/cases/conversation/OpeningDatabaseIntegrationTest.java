@@ -107,6 +107,32 @@ public class OpeningDatabaseIntegrationTest {
         for(var scenario:repository.listAll()) for(var level:LearnerLevelEnum.values())
             assertTrue(scenario.id()+"/"+level,cn.adinall.ai.domain.conversation.service.opening.OpeningTextPolicy.valid(scenario.openingFor(level)));
     }
+    /** 最近聊天按实际发言排序，完成状态、跟读标记、账号和遗忘边界同时生效。 */
+    @Test public void recentActualTopicComesOnlyFromLatestConversation() throws Exception {
+        session("topic-old","topic-device",22L,"free",NOW.minusSeconds(100).toEpochMilli());
+        session("topic-new","topic-device",22L,"free",NOW.minusSeconds(30).toEpochMilli());
+        execute("insert into conversation_turn(id,session_id,seq,user_text) values(992001,'topic-old',0,'I like movies')");
+        execute("insert into conversation_turn(id,session_id,seq,user_text) values(992002,'topic-new',0,'I drink coffee')");
+        execute("insert into conversation_turn(id,session_id,seq,user_text) values(992003,'topic-new',1,'I like reading books')");
+        execute("insert into conversation_turn(id,session_id,seq,user_text) values(992004,'topic-new',2,'I listen to music')");
+        for(long turn:List.of(992001L,992002L,992003L,992004L)) {
+            execute("insert into conversation_teaching_reply(turn_id,subject_key,session_id,reply_id,english_level,action,outcome,completed,practice_input) values(?,'user:22',?,?,'L2','QUESTION','RESPONDED',?,?)",
+                    turn,turn==992001L?"topic-old":"topic-new","topic-r-"+turn,turn==992004L?0:1,turn==992003L?1:0);
+        }
+        var repository=new OpeningHistoryRepository(dao);
+        var subject=new OpeningSubjectVO("topic-device",22L,null);
+        var actual=repository.read(subject,NOW,"free").unfinishedTopic();
+        assertEquals("咖啡",actual.chinese()); assertTrue(actual.source().contains("topic-new:turn:992002"));
+        assertNull(repository.read(new OpeningSubjectVO("topic-device",null,null),NOW,"free").unfinishedTopic());
+        assertTrue(dao.topicTurns("topic-new","another-device",23L).isEmpty());
+        execute("insert into learner_profile(subject_key,context_reset_turn) values('user:22',992002)");
+        assertNull(repository.read(subject,NOW,"free").unfinishedTopic()); // 不返回旧会话电影。
+        // 较早建立的长会话后来又有实际发言，应成为最近会话。
+        execute("insert into conversation_turn(id,session_id,seq,user_text) values(992005,'topic-old',1,'I enjoy sports')");
+        execute("insert into conversation_teaching_reply(turn_id,subject_key,session_id,reply_id,english_level,action,outcome,completed,practice_input) values(992005,'user:22','topic-old','topic-r-992005','L2','QUESTION','RESPONDED',1,0)");
+        assertEquals("topic-old",dao.history("topic-device",22L).get(0).getId());
+        assertEquals("运动",repository.read(subject,NOW,"free").unfinishedTopic().chinese());
+    }
     @Test public void explicitResumeRequiresRealCompletedTurnAndSameScenario() throws Exception {
         assertEquals(1,dao.saveResume("private","周末安排","weekend plans","explicit:turn1"));
         var repository=new OpeningHistoryRepository(dao); var subject=new OpeningSubjectVO("device",9L,null);

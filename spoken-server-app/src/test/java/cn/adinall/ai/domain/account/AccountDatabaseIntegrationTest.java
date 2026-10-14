@@ -33,6 +33,8 @@ public class AccountDatabaseIntegrationTest {
     private static IProfileRepository profiles;
     private static org.apache.ibatis.session.SqlSession sql;
     private static cn.adinall.ai.infrastructure.dao.ITeachingContextDao teaching;
+    /** 在临时库验证最近课程迁移及真实 Mapper，不能只用内存替身验证持久化。 */
+    private static cn.adinall.ai.infrastructure.dao.IRecentLessonDao recentLessons;
     @Configuration @EnableTransactionManagement
     public static class Transactions { }
     @BeforeClass public static void setup() throws Exception {
@@ -54,6 +56,7 @@ public class AccountDatabaseIntegrationTest {
                 new org.springframework.core.io.ClassPathResource("mybatis/mapper/AccountProfileMapper.xml"),
                 new org.springframework.core.io.ClassPathResource("mybatis/mapper/TeachingContextMapper.xml"));
         var sessionFactory = factory.getObject();
+        sessionFactory.getConfiguration().addMapper(cn.adinall.ai.infrastructure.dao.IRecentLessonDao.class);
         // SqlSessionTemplate参与Spring事务；不能用自动提交的独立SqlSession验证仓储原子性。
         var template = new org.mybatis.spring.SqlSessionTemplate(sessionFactory);
         // 通过Spring代理调用真实事务，不能用new仓储绕过@Transactional验证。
@@ -69,6 +72,7 @@ public class AccountDatabaseIntegrationTest {
         accounts = context.getBean(IAccountRepository.class); profiles = context.getBean(IProfileRepository.class);
         sql = sessionFactory.openSession(true);
         teaching = sql.getMapper(cn.adinall.ai.infrastructure.dao.ITeachingContextDao.class);
+        recentLessons = sql.getMapper(cn.adinall.ai.infrastructure.dao.IRecentLessonDao.class);
     }
     @AfterClass public static void cleanup() throws Exception {
         AccountContext.clear();
@@ -84,6 +88,15 @@ public class AccountDatabaseIntegrationTest {
         var matcher = Pattern.compile("(?m)^\\s*" + key + ":\\s*([^\\r\\n#]+)").matcher(yaml);
         if (!matcher.find()) throw new IllegalStateException("缺少数据库配置字段");
         return matcher.group(1).trim().replaceAll("^['\"]|['\"]$", "");
+    }
+    /** 最近课程只覆盖同一主体，其他账号隔离，重启读取也只是引用而非具体题号。 */
+    @Test public void recentLessonsPersistAndRemainIsolated() {
+        assertNull(recentLessons.find("user:course-a"));
+        recentLessons.save("user:course-a","bandready-daily","food-cooking");
+        recentLessons.save("user:course-b","bandready-daily","daily-home");
+        recentLessons.save("user:course-a","bandready-daily","food-shopping");
+        assertEquals("food-shopping",recentLessons.find("user:course-a").getLessonId());
+        assertEquals("daily-home",recentLessons.find("user:course-b").getLessonId());
     }
     @Test public void registrationIsAtomicAndPasswordChangeBlocksStaleIssuance() {
         var principal = accounts.register("atomic_user", "old-hash", UUID.randomUUID().toString().replace("-", ""));

@@ -30,9 +30,13 @@ public final class OpeningTemplates {
         boolean english=level==LearnerLevelEnum.HIGH;
         String intro=changedAvatar && avatarName!=null ? (english ? "Hi, I'm "+avatarName+". " : "嗨，我是"+avatarName+"。") : "";
         String line;
-        if("RESUME".equals(context)) line=english
-                ? RESUME_EN[variant]+material.english()+". Would you like to continue or try another topic?"
-                : RESUME_ZH[variant]+"“"+material.chinese()+"”。今天想接着聊，还是换个话题？";
+        if("RESUME".equals(context)) {
+            // 最近聊天只能说“上次聊到”，不能伪称用户约好了下次继续。
+            boolean actualChat=material.source().endsWith(":RECENT_CHAT");
+            line=english
+                    ? (actualChat ? "Welcome back! Last time we talked about " : RESUME_EN[variant])+material.english()+". Would you like to continue or try another topic?"
+                    : (actualChat ? "欢迎回来！上次我们聊到了" : RESUME_ZH[variant])+"“"+material.chinese()+"”。今天想接着聊，还是换个话题？";
+        }
         else line=english ? DEFAULT_EN[variant] : DEFAULT_ZH[variant];
         // 新数字人已用简短名字招呼，去掉模板第一个普通招呼，避免重复寒暄。
         if(!intro.isEmpty()) { int boundary=english ? line.indexOf('!') : line.indexOf('！'); if(boundary>=0) line=line.substring(boundary+1).trim(); }

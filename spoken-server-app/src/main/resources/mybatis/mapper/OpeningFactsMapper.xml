@@ -25,7 +25,25 @@
         </choose>
         and s.started_at is not null
         and exists (select 1 from conversation_turn t where t.session_id=s.id and char_length(trim(t.user_text)) &gt; 0)
-        order by s.started_at desc, s.id desc
+        <!-- 长会话可能在新会话建立后继续聊天，按最近实际发言而非建立时间排序。 -->
+        order by (select max(t.id) from conversation_turn t where t.session_id=s.id
+                  and char_length(trim(t.user_text)) &gt; 0) desc, s.started_at desc, s.id desc
+    </select>
+    <!-- 限定已经选出的最近会话，不能从更早会话回填话题；尊重完成状态、账号与遗忘边界。 -->
+    <select id="topicTurns" resultType="cn.adinall.ai.infrastructure.dao.po.OpeningHistoryTurnPO">
+        select t.id turn_id,t.session_id,t.user_text
+        from conversation_turn t join conversation_teaching_reply r on r.turn_id=t.id
+        join training_session s on s.id=t.session_id
+        where s.id=#{sessionId} and r.session_id=s.id and r.completed=1 and r.practice_input=0
+          and COALESCE(s.scenario_id,'free')='free'
+          and r.subject_key=IF(s.user_id is null,CONCAT('device:',s.device_id),CONCAT('user:',s.user_id))
+          and char_length(trim(t.user_text)) &gt; 0
+          and t.id &gt; COALESCE((select p.context_reset_turn from learner_profile p where p.subject_key=r.subject_key),0)
+        <choose>
+            <when test="userId != null">and s.user_id=#{userId}</when>
+            <otherwise>and s.device_id=#{deviceId} and s.user_id is null</otherwise>
+        </choose>
+        order by t.id desc limit 6
     </select>
     <!-- 一次批量读取最近十场，评测只取该回合最新一份，避免多次评测放大会话权重。 -->
     <select id="turns" resultType="cn.adinall.ai.infrastructure.dao.po.OpeningHistoryTurnPO">

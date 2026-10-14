@@ -23,6 +23,8 @@ import lombok.Data;
  */
 @Data
 public class OpeningHistoryTurnPO {
+    /** 真实用户回合编号，作为最近话题来源；旧能力批查不填写，为 null。 */
+    private Long turnId;
     /** 来源会话 ID，用于证据追溯与去重。 */
     private String sessionId;
     /** 已保存的用户发言；空文本不构成有效历史。 */

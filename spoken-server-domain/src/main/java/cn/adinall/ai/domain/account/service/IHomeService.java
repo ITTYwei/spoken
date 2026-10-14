@@ -15,6 +15,8 @@ public interface IHomeService {
      * 校验当前目录后按账号保存。
      */
     AvatarVoiceSelectionVO select(String avatar, String voice);
+    /** 可信异步调用入口，账号只可由 Case 的捕获上下文提供，禁止注册为工具参数。 */
+    default AvatarVoiceSelectionVO selectFor(long accountId, String avatar, String voice) { throw new UnsupportedOperationException("trusted selection unavailable"); }
 
     /**
      * 只返回当前引擎允许公开的系统音色。

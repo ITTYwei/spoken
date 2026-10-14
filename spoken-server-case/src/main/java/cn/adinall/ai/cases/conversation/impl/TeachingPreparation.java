@@ -26,6 +26,15 @@ import java.time.Instant;
  */
 @Component
 public class TeachingPreparation {
+    /** 当前课程由 practice 管理，Case 组合领域，不让 conversation 直接读取教材仓储。 */
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private cn.adinall.ai.domain.practice.service.PracticeService practice;
+    /** 文本课程定义及容量校验，只有课程模式才需要。 */
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private cn.adinall.ai.domain.scenario.service.TextbookService textbooks;
+    /** 使用工具管理明确个人事实时关闭旧的主动规则提取，保留原服务供独立老路径使用。 */
+    @org.springframework.beans.factory.annotation.Value("${spoken-ai.agent-actions.enabled:true}")
+    private boolean agentActionsEnabled;
     /**
      * 明确待聊事实的仓储，来源仅为真实用户回合。
      */
@@ -124,9 +133,26 @@ public class TeachingPreparation {
     public String prompt(ConversationSessionAggregate session, String text, TeachingDecisionVO decision, String persona) {
         // 本轮原话、状态摘要和场景人设；执行规则由 buildSystemPolicy 单独提供。
         String current = ReplyPromptBuilder.buildManaged(text, decision, persona, decision.previousTask());
+        // 教材属于本轮必需数据，排在 current 内；历史 reducer 无权删减题目。
+        if (practice != null && textbooks != null) {
+            var state = practice.state(session.getSessionId()).snapshot();
+            current += "\n当前练习：" + state.mode() + "; version=" + state.version() + "\n";
+            // 选择任务和最近课也占必需预算，不能在 reducer 之后临时追加造成实际输入超量。
+            current += "本轮输入时的选择状态：pendingContinue="+state.pendingContinue()+
+                    "; recentTextbook="+state.recentTextbookId()+"; recentLesson="+state.recentLessonId()+"\n";
+            if ("COURSE".equals(state.mode())) current += textbooks.lesson(state.textbookId(), state.lessonId()).context();
+        }
         // 历史和记忆作为 DATA 排在当前规则之前；裁剪时始终保留 current。
         return context.build(new ChatContextRequestVO(subject(session), session.getSessionId(), text, current,
-                ReplyPromptBuilder.buildSystemPolicy(decision)));
+                systemPolicy(session, decision)));
+    }
+
+    /** 本轮可信课程策略：教学语言及跟读任务优先，提问范围来自完整课数据，不把原题当系统指令。 */
+    public String systemPolicy(ConversationSessionAggregate session, TeachingDecisionVO decision) {
+        return ReplyPromptBuilder.buildSystemPolicy(decision) +
+                "\n当前练习为 COURSE 时，在当前文本课程数据范围内陪练。" +
+                "每次最多问一个原题或相关追问。" +
+                "保持规定的档位语言与唯一教学动作；不要声称评分或课程已完成。\n";
     }
 
     /**
@@ -143,8 +169,9 @@ public class TeachingPreparation {
         replies.begin(subject(session), session.getSessionId(), turn, reply, decision);
         session.pendingTeaching(new TeachingPlaybackVO(turn, reply, decision));
         // 场景角色扮演中的陈述也不是用户现实偏好；首版仅自由对话提取事实。
-        memory.record(subject(session), session.getSessionId(), turn, text,
-                decision.practiceInput() || !"free".equals(session.getScenarioId()), Instant.now());
+        if(!agentActionsEnabled) memory.record(subject(session), session.getSessionId(), turn, text,
+                decision.practiceInput() || !"free".equals(session.getScenarioId()) ||
+                        (practice != null && "COURSE".equals(practice.state(session.getSessionId()).snapshot().mode())), Instant.now());
         // 仅自由对话维护待聊话题：练习或角色扮演不进入历史；写入失败降级不中断。
         if (openingHistory != null && !decision.practiceInput() && "free".equals(session.getScenarioId())) {
             var topic = cn.adinall.ai.domain.conversation.service.opening.OpeningTopicPolicy.deferred(text, "turn:" + turn);

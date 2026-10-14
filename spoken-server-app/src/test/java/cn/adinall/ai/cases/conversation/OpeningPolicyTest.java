@@ -77,6 +77,17 @@ public class OpeningPolicyTest {
         assertTrue(OpeningTopicPolicy.closed("旅行聊完了")); assertTrue(OpeningTopicPolicy.closed("不要提这个隐私话题"));
         assertTrue(OpeningTopicPolicy.closed("换个话题"));
     }
+    /** 实际聊过的主题不冒充“约好下次聊”，且含糊多话题不随意选择。 */
+    @Test public void actualChatTopicUsesRecordedSourceWithoutInventingAgreement() {
+        var topic=OpeningTopicPolicy.recent("I like reading books","session:last:turn:9:RECENT_CHAT");
+        assertNotNull(topic); assertEquals("读书",topic.chinese());
+        var result=decide(facts(true,topic),OpeningEncounterVO.unseen(),"a",null);
+        assertTrue(result.text().contains("上次我们聊到了")); assertTrue(result.text().contains("读书"));
+        assertFalse(result.text().contains("约好"));
+        assertNull(OpeningTopicPolicy.recent("I like coffee and music","turn:10"));
+        assertNull(OpeningTopicPolicy.recent("不想聊旅行","turn:10"));
+        assertNull(OpeningTopicPolicy.recent("引用：I like coffee","turn:10"));
+    }
     @Test public void historyOrEncounterFailureDoesNotRepeatFullIntroduction() {
         var result=decide(OpeningFactsVO.unavailable(),OpeningEncounterVO.unseen(),"a",null);
         assertEquals("DEFAULT",result.context()); assertFalse(result.text().contains("又见面"));
