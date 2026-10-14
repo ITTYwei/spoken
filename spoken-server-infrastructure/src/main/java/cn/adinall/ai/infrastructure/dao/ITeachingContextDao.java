@@ -15,6 +15,10 @@ import java.util.*;
 public interface ITeachingContextDao {
     void ensureProfile(@Param("subject") String subject);
     String level(@Param("subject") String subject);
+    /** 独立的手动档位列，null 表示自动；所有 SQL 按可信主体隔离。 */
+    String manualLevel(@Param("subject") String subject);
+    /** 覆盖手动选择或置空，不写 english_level 及升级时间。 */
+    void setManualLevel(@Param("subject") String subject, @Param("level") String level);
     int promote(@Param("subject") String subject,@Param("from") String from,@Param("to") String to,@Param("session") String session);
     void evidence(Map<String,Object> values);
     List<Map<String,Object>> evidenceSince(@Param("subject") String subject,@Param("since") Date since);

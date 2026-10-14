@@ -14,6 +14,10 @@ import java.util.List;
  */
 public interface ILearnerProgressRepository {
     EnglishLevelEnum level(String subjectKey);
+    /** 手动陪练档位；null 表示使用自动适配，不能据此修改能力证据。 */
+    EnglishLevelEnum manualLevel(String subjectKey);
+    /** 保存手动档位，null 恢复自动；主体来自认证上下文，更新独立列。 */
+    void setManualLevel(String subjectKey, EnglishLevelEnum level);
     void record(LearningEvidenceVO evidence);
     List<LearningEvidenceVO> recent(String subjectKey, Instant since);
     /** 页面描述使用全部近期有效证据，不因升档消费证据而重新显示“正在了解”。 */

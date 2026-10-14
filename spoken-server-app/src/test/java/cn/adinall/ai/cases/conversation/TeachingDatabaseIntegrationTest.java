@@ -56,6 +56,19 @@ public class TeachingDatabaseIntegrationTest {
         try(var p=admin.prepareStatement("USE `"+schema+"`")) {p.execute();}
         try(var p=admin.prepareStatement(statement)) {for(int i=0;i<params.length;i++) p.setObject(i+1,params[i]); p.execute();}
     }
+    /** 新迁移和真实 Mapper：选择 L6 再恢复自动，自动等级和其他账号不受影响。 */
+    @Test public void manualLevelPersistsSeparatelyAndCanBeCleared() {
+        var repository=new LearnerProgressRepository(dao);
+        assertEquals(EnglishLevelEnum.L2,repository.level("user:manual-test"));
+        repository.setManualLevel("user:manual-test",EnglishLevelEnum.L6);
+        assertEquals(EnglishLevelEnum.L6,repository.manualLevel("user:manual-test"));
+        assertEquals(EnglishLevelEnum.L2,repository.level("user:manual-test"));
+        assertNull(repository.manualLevel("user:other-test"));
+        repository.setManualLevel("user:manual-test",null);
+        assertNull(repository.manualLevel("user:manual-test"));
+        assertEquals(EnglishLevelEnum.L2,repository.level("user:manual-test"));
+    }
+
     @Test public void unifiedOfficialCoachHasNoPersonaOrStagePrompt() throws Exception {
         try (var statement = admin.createStatement();
              var rows = statement.executeQuery("SELECT COUNT(*) FROM `" + schema + "`.conversation_scenario "

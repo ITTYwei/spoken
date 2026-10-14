@@ -24,6 +24,9 @@ public class LearnerProgressService {
     public LearnerProgressService(ILearnerProgressRepository repository) { this.repository = repository; }
     public EnglishLevelEnum begin(String subject, String newSession, Instant now) {
         try {
+            // 新会话优先读取手动选择；不覆盖自动等级，也不消耗历史升级证据。
+            EnglishLevelEnum manual = repository.manualLevel(subject);
+            if (manual != null) return manual;
             EnglishLevelEnum current = repository.level(subject);
             if (current == null) current = EnglishLevelEnum.L2;
             var evidence = repository.recent(subject, now.minus(30, ChronoUnit.DAYS));
@@ -34,6 +37,18 @@ public class LearnerProgressService {
             log.warn("能力历史不可用，保守从L2开始 type={}", e.getClass().getSimpleName());
             return EnglishLevelEnum.L2;
         }
+    }
+    /** 读取真实设置状态；页面查询失败直接报错，不用默认值冒充已经保存的选择。 */
+    public EnglishLevelSettingVO settings(String subject) {
+        var automatic = repository.level(subject);
+        if (automatic == null) automatic = EnglishLevelEnum.L2;
+        var manual = repository.manualLevel(subject);
+        return new EnglishLevelSettingVO(automatic, manual, manual == null ? automatic : manual);
+    }
+    /** 只写陪练难度选择；不改自动档位、不删除证据、不影响已开始的会话。 */
+    public EnglishLevelSettingVO select(String subject, EnglishLevelEnum level) {
+        repository.setManualLevel(subject, level);
+        return settings(subject);
     }
     public void record(LearningEvidenceVO evidence) { repository.record(evidence); }
     /** 纯策略便于验证门槛；一场长对话不代替三场稳定表现。 */

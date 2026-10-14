@@ -3,6 +3,10 @@
 <mapper namespace="cn.adinall.ai.infrastructure.dao.ITeachingContextDao">
     <insert id="ensureProfile">INSERT IGNORE INTO learner_profile(subject_key) VALUES(#{subject})</insert>
     <select id="level" resultType="string">SELECT english_level FROM learner_profile WHERE subject_key=#{subject}</select>
+    <select id="manualLevel" resultType="string">SELECT manual_english_level FROM learner_profile WHERE subject_key=#{subject}</select>
+    <update id="setManualLevel">
+        UPDATE learner_profile SET manual_english_level=#{level,jdbcType=VARCHAR} WHERE subject_key=#{subject}
+    </update>
     <update id="promote">
         UPDATE learner_profile SET english_level=#{to},last_promoted_session=#{session},last_promoted_at=CURRENT_TIMESTAMP(3)
         WHERE subject_key=#{subject} AND english_level=#{from}

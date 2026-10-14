@@ -20,6 +20,17 @@ public class LearnerProgressRepository implements ILearnerProgressRepository {
     /** SQL访问接口。 */ private final ITeachingContextDao dao;
     public LearnerProgressRepository(ITeachingContextDao dao) { this.dao=dao; }
     public EnglishLevelEnum level(String subject) { dao.ensureProfile(subject); return EnglishLevelEnum.valueOf(dao.level(subject)); }
+    /** 手动选择与自动水平分别读取；首次查询创建账号自己的默认档案。 */
+    public EnglishLevelEnum manualLevel(String subject) {
+        dao.ensureProfile(subject);
+        String value = dao.manualLevel(subject);
+        return value == null ? null : EnglishLevelEnum.valueOf(value);
+    }
+    /** 只更新独立设置列；恢复自动必须写 SQL NULL，不使用空字符串代替。 */
+    public void setManualLevel(String subject, EnglishLevelEnum level) {
+        dao.ensureProfile(subject);
+        dao.setManualLevel(subject, level == null ? null : level.name());
+    }
     public void record(LearningEvidenceVO e) {
         dao.evidence(Map.of("turn",e.turnId(),"subject",e.subjectKey(),"session",e.sessionId(),"outcome",e.outcome(),
                 "candidate",e.candidate().name(),"confidence",e.confidence(),"eligible",e.eligible(),"at",Date.from(e.observedAt())));

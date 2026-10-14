@@ -7,7 +7,7 @@ package cn.adinall.ai.domain.learner.model.valobj;
  * <p>案例：L2 -> 中文为主、3～6词目标；L4 -> 英文为主但允许中文帮助。</p>
  * <p>设计要点：</p>
  * <ul><li>不是 CEFR 认证；发音分不能直接转换为等级。</li>
- * <li>等级不进入客户端展示；中文求助不改变稳定等级。</li></ul>
+ * <li>档位可在设置中由用户选择陪练难度，不作为评判标签播报；中文求助不改变稳定等级。</li></ul>
  */
 public enum EnglishLevelEnum {
     /** 入门：需要单词或短语支持。 */ L1,
