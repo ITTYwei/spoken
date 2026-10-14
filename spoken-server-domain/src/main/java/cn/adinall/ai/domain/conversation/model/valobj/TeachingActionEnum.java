@@ -6,6 +6,8 @@ package cn.adinall.ai.domain.conversation.model.valobj;
  * 例：用户询问词义时执行 EXPLAIN，既不是跟读，也不是要求用户回答一个练习问题。
  */
 public enum TeachingActionEnum {
+    /** 模型理解本轮真实意图后自主回应，不强制提问、解释或跟读。 */
+    RESPOND,
     /** 一个与用户内容相关的练习问题，等待用户自主回答。 */
     QUESTION,
     /** 示范一个英文目标并邀请跟读；目标只有实际播完后才生效。 */

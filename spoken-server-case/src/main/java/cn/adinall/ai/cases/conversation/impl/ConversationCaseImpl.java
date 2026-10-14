@@ -431,7 +431,6 @@ public class ConversationCaseImpl implements IConversationCase {
         // 客户端 expectedText 不能改写服务端任务；自由对话分仅作参考，不进入教学决策。
         // 当前话语不像目标句时按自由发言评测，避免将中文招呼对照英文跟读句打分。
         String serverTarget = previousTask.reading()
-                && !cn.adinall.ai.domain.conversation.service.reply.EnglishLearningQuestionPolicy.isQuestion(utterance.userText(), previousTask)
                 && cn.adinall.ai.domain.conversation.service.reply.ReadingAttemptPolicy.isAttempt(previousTask.target(), utterance.userText())
                 ? previousTask.target() : null;
         PronunciationAssessmentAggregate assessment = assessQuietly(sessionId, utterance.turnId(), wav,

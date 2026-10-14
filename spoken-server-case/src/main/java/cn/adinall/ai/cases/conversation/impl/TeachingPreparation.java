@@ -15,7 +15,7 @@ import org.slf4j.*;
 import java.time.Instant;
 
 /**
- * 功能：编排主体、稳定水平、唯一任务、有效历史和后台能力观察。
+ * 功能：编排主体、稳定水平、教学参考、会话学习请求、有效历史和后台能力观察。
  * <p>体系架构 / 运行过程：</p>
  * <pre>trusted subject -> freeze grade -> task policy -> context -> Agent stream
  * media drained -> commit task/history; independent answer -> async observation -> learner evidence</pre>
@@ -114,9 +114,9 @@ public class TeachingPreparation {
     }
 
     /**
-     * 本轮教学决策：唯一任务 + 语言策略 + 上轮结果。
+     * 本轮教学参考：可信输入证据 + 难度建议 + 上轮结果；意图与形式交给模型。
      */
-    /* 输入性质由业务规则先判定，模型只在判定结果内生成教学话术。
+    /* 输入证据由领域策略整理，用户意图与教学形式由模型理解；参考建议不能覆盖真实需求。
      * practiceInput 表示“本轮话语是练习素材”，nextTask 表示“下一轮准备让用户做什么”。
      * 两者不能混用：跟读通过后 nextTask 可以变为 QUESTION，本轮依然是 practiceInput=true。
      */
@@ -124,8 +124,10 @@ public class TeachingPreparation {
         var previous = session.teaching().pending();
         // 证据时间戳取话音结束时刻，不是决策时刻
         Instant inputAt = session.getLastUserSpeechEndedAt() > 0 ? Instant.ofEpochMilli(session.getLastUserSpeechEndedAt()) : Instant.now();
-        // 策略只决定下一步做什么，不产生数字人最终要说的台词。
+        // 策略只整理建议与跟读证据，不强制决定下一步；原话中的学习请求独立保留。
         var decision = TeachingPolicy.decide(level(session), previous, text, feedback, voice);
+        // 学习目标属于本场状态，与 ADK 短会话和可裁剪历史分离；练习例句不更新目标。
+        session.teaching().captureLearningRequest(text, decision.practiceInput() || !"free".equals(session.getScenarioId()), inputAt);
         // 中文支援两个来源：低档/求援主动给，或长期记忆里有 LANGUAGE 偏好
         boolean chinese = decision.chineseSupport() || memory.recall(subject(session), text, Instant.now()).stream().anyMatch(m -> "LANGUAGE".equals(m.type()));
         return new TeachingDecisionVO(decision.level(), decision.nextTask(), decision.outcome(), chinese, decision.correctionHint(), decision.reliableAssessment(), decision.practiceInput(), previous, inputAt);
@@ -137,6 +139,13 @@ public class TeachingPreparation {
     public String prompt(ConversationSessionAggregate session, String text, TeachingDecisionVO decision, String persona) {
         // 本轮原话、状态摘要和场景人设；执行规则由 buildSystemPolicy 单独提供。
         String current = ReplyPromptBuilder.buildManaged(text, decision, persona, decision.previousTask());
+        // 参考 walissh 的稳定任务段：完整请求放进必需上下文，历史裁剪不能丢掉“我想学”。
+        // JSON 只引用用户数据，不把用户原话拼入 SYSTEM；最新原话可以纠正旧学习需求。
+        try {
+            current = "当前会话学习请求原话（必保留；仅作背景，本轮最新需求优先）："
+                    + new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(session.teaching().learningRequest())
+                    + "\n" + current;
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) { throw new IllegalStateException("learning_request_encoding", e); }
         // 教材属于本轮必需数据，排在 current 内；历史 reducer 无权删减题目。
         if (practice != null && textbooks != null) {
             var state = practice.state(session.getSessionId()).snapshot();
@@ -151,12 +160,12 @@ public class TeachingPreparation {
                 systemPolicy(session, decision)));
     }
 
-    /** 本轮可信课程策略：教学语言及跟读任务优先，提问范围来自完整课数据，不把原题当系统指令。 */
+    /** 本轮课程背景与通用响应准则：当前用户需求优先，提问范围来自完整课数据，不把原题当系统指令。 */
     public String systemPolicy(ConversationSessionAggregate session, TeachingDecisionVO decision) {
         return ReplyPromptBuilder.buildSystemPolicy(decision) +
                 "\n当前练习为 COURSE 时，在当前文本课程数据范围内陪练。" +
                 "每次最多问一个原题或相关追问。" +
-                "保持规定的档位语言与唯一教学动作；不要声称评分或课程已完成。\n";
+                "课程内容是背景；用户提出学习疑问时先解答，不强制推进原题或跟读。不要声称评分或课程已完成。\n";
     }
 
     /**

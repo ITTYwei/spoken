@@ -60,7 +60,7 @@ public class AgentActionFlowTest {
     private ToolContext context(AgentInvocationVO value) { return new ToolContext(Map.of(AgentToolContextRegistry.KEY,value)); }
     private boolean ok(Object result) { return Boolean.TRUE.equals(((Map<?,?>)result).get("ok")); }
 
-    /** 解答里包含“请记住”也只是翻译对象；禁用工具及设置兜底，不能播出漏保存回执。 */
+    /** 翻译对象含“请记住”仍不执行设置兜底；意图由模型理解，领域拒绝引用的写入。 */
     @Test public void knowledgeExplanationDisablesToolsAndPreferenceFallback() {
         var chat=mock(cn.adinall.ai.domain.agent.service.IChatService.class);
         String text="请记住，我喜欢读书，这句话用英语怎么说？";
@@ -68,10 +68,11 @@ public class AgentActionFlowTest {
         when(chat.handlePreparedTextStream(anyString(),anyString(),anyString(),anyString(),any(AgentInvocationVO.class)))
                 .thenAnswer(call -> {
                     String policy=call.getArgument(3);
+                    assertTrue(policy.contains("静默维护"));
                     assertTrue(policy.contains(AgentToolContextRegistry.TEXT_ONLY_POLICY));
-                    var prompt=AgentToolContextRegistry.attach(new Prompt(List.of(new SystemMessage(policy),new UserMessage(text)),
-                            org.springframework.ai.openai.OpenAiChatOptions.builder().toolChoice("auto").build()));
-                    var options=(org.springframework.ai.openai.OpenAiChatOptions)prompt.getOptions();
+                    var options=(org.springframework.ai.openai.OpenAiChatOptions)AgentToolContextRegistry.attach(new Prompt(
+                            List.of(new SystemMessage(policy),new UserMessage(text)),
+                            org.springframework.ai.openai.OpenAiChatOptions.builder().toolChoice("auto").build())).getOptions();
                     assertEquals("none",options.getToolChoice());
                     assertEquals(Boolean.FALSE,options.getInternalToolExecutionEnabled());
                     return reactor.core.publisher.Flux.just(answer);
@@ -79,7 +80,7 @@ public class AgentActionFlowTest {
         var replies=new cn.adinall.ai.cases.conversation.impl.AgentReplyPreparation(chat,practice,courses,actions);
         var decision=cn.adinall.ai.domain.conversation.service.reply.TeachingPolicy.decide(
                 cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2,null,text,null,true,0);
-        assertEquals(TeachingOutcomeEnum.ENGLISH_QUESTION,decision.outcome());
+        assertEquals(TeachingOutcomeEnum.RESPONDED,decision.outcome());
         assertEquals(answer,String.join("",replies.reply("100003",session,42,text,"prompt","policy",decision,alive::get)
                 .collectList().block()));
         verifyNoInteractions(profiles,recent);

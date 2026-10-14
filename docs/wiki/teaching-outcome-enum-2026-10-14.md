@@ -1,5 +1,8 @@
 # 教学结果枚举
 
+> 最新实现：教学策略只作参考，知识请求由模型理解，删除强制关键词分流与等级抽样；本次学习请求原话每轮必保留。以下早期流程以 [教学参考与学习目标](teaching-advisory-learning-request-2026-10-14.md) 为准。
+
+
 `TeachingDecisionVO.outcome` 已从字符串改为 `TeachingOutcomeEnum`。内部判断使用枚举比较与穷尽 switch，新增结果时必须补齐提示词分支；数据库、JSON 与提示词仍显式使用原有文本码。
 
 ## 每项处理什么

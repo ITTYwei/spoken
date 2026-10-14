@@ -111,7 +111,7 @@ public class ConversationVoiceCaseTest {
         when(pronunciation.assess(eq("s1"), eq(42L), any())).thenThrow(new IllegalStateException("provider down"));
         var response = useCase.voice("s1", pcm, 16000, null);
         assertNull(response.assessment());
-        assertTrue(generatedPrompt().contains("唯一教学动作："));
+        assertTrue(generatedPrompt().contains("教学参考建议"));
         assertPlayedOnce();
         ArgumentCaptor<AssessPronunciationCommandEntity> command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
         verify(pronunciation).assess(eq("s1"), eq(42L), command.capture());

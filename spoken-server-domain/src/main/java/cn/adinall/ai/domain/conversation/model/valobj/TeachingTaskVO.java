@@ -24,6 +24,9 @@ public record TeachingTaskVO(
         return TeachingActionEnum.READ.code().equals(action) || TeachingActionEnum.CORRECT.code().equals(action);
     }
 
+    /** 普通轮次仅建议自然回应；实际播完后才解析模型真正提出的任务。 */
+    public static TeachingTaskVO response() { return new TeachingTaskVO(TeachingActionEnum.RESPOND.code(), "", "", 0); }
+
     /**
      * 开场没有可用原文时也明确属于问答任务。
      */

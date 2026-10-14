@@ -5,7 +5,7 @@ import cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum;
 import java.time.Instant;
 
 /**
- * 功能：冻结本轮任务、有效输入证据和语言支持，防止旧轮次指令重新生效。
+ * 功能：冻结本轮参考建议、有效输入证据和语言支持，防止旧轮次指令重新生效。
  * <p>体系架构 / 运行过程：</p>
  * <pre>上一任务 + 用户反馈 + 可靠评测 -> Decision -> case / Agent</pre>
  * <p>案例：用户“不想读” -> outcome=DECLINED、action=QUESTION、拒绝不扣等级。</p>
@@ -16,7 +16,7 @@ import java.time.Instant;
 public record TeachingDecisionVO(
         /** 当前会话冻结的六级水平。 */
         EnglishLevelEnum level,
-        /** 本轮唯一任务。 */
+        /** 本轮教学参考建议；实际待完成任务以模型真实播报后的解析为准。 */
         TeachingTaskVO nextTask,
         /** 对上一任务的响应结果，非空；具体触发条件及处理边界见 TeachingOutcomeEnum。 */
         TeachingOutcomeEnum outcome,

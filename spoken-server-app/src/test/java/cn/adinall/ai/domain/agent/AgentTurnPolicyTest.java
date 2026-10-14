@@ -119,7 +119,7 @@ public class AgentTurnPolicyTest {
         int sample=0;
         for(String input:List.of("apple 是什么意思？","I cooked dinner 这句话为什么用过去式？")) {
             var decision=TeachingPolicy.decide(EnglishLevelEnum.L2,previous,input,feedback,true,0);
-            assertEquals(TeachingOutcomeEnum.ENGLISH_QUESTION,decision.outcome());
+            assertFalse(decision.practiceInput());
             var chunks=service.handlePreparedTextStream("coach","english-question-test",
                     ReplyPromptBuilder.buildManaged(input,decision,null,previous),ReplyPromptBuilder.buildSystemPolicy(decision))
                     .collectList().block(Duration.ofSeconds(45));
@@ -131,8 +131,40 @@ public class AgentTurnPolicyTest {
             for(String forced:List.of("请跟读","跟我读","读一遍","repeat after me","读错了","你错了","发音有问题"))
                 assertFalse(played,played.toLowerCase(Locale.ROOT).contains(forced));
             assertTrue(played,sample==0 ? played.contains("苹果") : played.contains("过去"));
-            assertTrue(played,played.contains(sample==0 ? "apple" : "cooked"));
+            assertTrue(played,played.toLowerCase(Locale.ROOT).contains(sample==0 ? "apple" : "cooked"));
             assertFalse(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(),played).reading());
+            sample++;
+        }
+    }
+
+    /** 音标学习实际模型回归：先回答分类；后续原话很短时仍读取必保留的会话学习请求。 */
+    @Test public void configuredModelAnswersPhoneticsAndKeepsLearningRequest() {
+        assumeTrue(Boolean.getBoolean("spoken.verify.advisory-policy"));
+        String key=System.getenv("LK888_API_KEY");assertNotNull("需要当前模型环境密钥",key);
+        var config=module();var apiConfig=(Map<?,?>)config.get("ai-api");var modelConfig=(Map<?,?>)config.get("chat-model");
+        var api=OpenAiApi.builder().baseUrl((String)apiConfig.get("base-url")).apiKey(key)
+                .completionsPath("/"+apiConfig.get("completions-path")).build();
+        var model=OpenAiChatModel.builder().openAiApi(api).defaultOptions(OpenAiChatOptions.builder()
+                .model((String)modelConfig.get("model")).temperature(((Number)modelConfig.get("temperature")).doubleValue())
+                .reasoningEffort((String)modelConfig.get("reasoning-effort"))
+                .toolChoice("none").internalToolExecutionEnabled(false).build()).build();
+        var service=service(runner(model));
+        String focus="我想学习音标，你告诉我音标有哪些？";int sample=0;
+        for(String text:List.of(focus,"先讲元音，能举例吗？")) {
+            var decision=TeachingPolicy.decide(EnglishLevelEnum.L2,null,text,null,true);
+            String current="当前会话学习请求原话（必保留；仅作背景，本轮最新需求优先）："+new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(focus)+"\n"
+                    +ReplyPromptBuilder.buildManaged(text,decision,null,null);
+            var context=new cn.adinall.ai.domain.agent.service.context.ChatContextService(List.of(r -> List.of(
+                    new cn.adinall.ai.domain.agent.model.valobj.ContextSectionVO("old",40,"old-irrelevant-".repeat(10000)))),10000);
+            String prompt=context.build(new cn.adinall.ai.domain.agent.model.valobj.ChatContextRequestVO("model-test","phonetics",text,current,ReplyPromptBuilder.buildSystemPolicy(decision)));
+            var chunks=service.handlePreparedTextStream("coach","phonetics",prompt,ReplyPromptBuilder.buildSystemPolicy(decision))
+                    .collectList().block(Duration.ofSeconds(45));
+            String reply=String.join("",cn.adinall.ai.domain.conversation.service.reply.TeachingReplyGuard.apply(Flux.fromIterable(chunks),decision).collectList().block());
+            System.out.println("LIVE_ADVISORY_UTF8 "+sample+" "+Base64.getEncoder().encodeToString(reply.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            assertTrue(reply,reply.contains("元音"));
+            if(sample==0) assertTrue(reply,reply.contains("辅音"));
+            assertFalse(reply,reply.contains("请跟读") || reply.contains("跟我读"));
+            if(sample==1) assertTrue(reply,reply.matches("(?s).*(/[a-zɪiːəæɛʊuɔɒʌɑeɜ:]+/).*"));
             sample++;
         }
     }
@@ -149,10 +181,13 @@ public class AgentTurnPolicyTest {
     @SuppressWarnings("unchecked")
     private InMemoryRunner runner(StreamingChatModel model) {
         var agent = ((List<Map<String, Object>>) module().get("agents")).get(0);
+        var adapter = new MySpringAI(model, "bonsai-2-27b");
+        // 与生产装配的 12000 输入预算一致；手工构建适配器不能沿用其通用 6000 默认值。
+        adapter.setPreparedInputBudget(12000);
         return new InMemoryRunner(LlmAgent.builder().name((String) agent.get("name"))
                 .description((String) agent.get("description"))
                 .instruction((String) agent.get("instruction"))
-                .model(new MySpringAI(model, "bonsai-2-27b")).build(), "policy-test");
+                .model(adapter).build(), "policy-test");
     }
 
     private ChatService service(InMemoryRunner runner) {

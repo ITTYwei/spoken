@@ -25,6 +25,10 @@ public final class ReadingAttemptPolicy {
         Set<String> targetWords = words(target);
         Set<String> heardWords = words(transcript);
         if (targetWords.isEmpty() || heardWords.isEmpty()) return false;
+        // 追加中文或超出目标的英文词表示新的话语，保守地不当跟读证据。
+        // 这是证据准入，不做意图分类：“I cooked dinner 为什么...”必须留给模型理解。
+        if (transcript.matches("(?s).*\\p{IsHan}.*")) return false;
+        if (!targetWords.containsAll(heardWords)) return false;
         int matched = 0;
         for (String word : targetWords) if (heardWords.contains(word)) matched++;
         return matched * 3 >= targetWords.size() * 2;

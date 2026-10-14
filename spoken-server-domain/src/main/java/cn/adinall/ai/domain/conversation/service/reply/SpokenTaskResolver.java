@@ -31,7 +31,7 @@ public final class SpokenTaskResolver {
         // 知识讲解里的问句/例句不是练习任务；解释完成后不留下强制待答问题或待跟读目标。
         if (planned != null && planned.explaining()) return TeachingTaskVO.question("");
         // 新跟读只由模型生成目标，播报完成后再保存实际说出的英文句。
-        if (planned != null && "READ".equals(planned.action()) && (planned.target() == null || planned.target().isBlank()) && spoken != null) {
+        if (planned != null && !planned.explaining() && (planned.target() == null || planned.target().isBlank()) && spoken != null) {
             var matcher = TARGET.matcher(spoken);
             if (matcher.find()) {
                 String target = matcher.group(1).trim();
@@ -68,17 +68,14 @@ public final class SpokenTaskResolver {
         return invitesReading(line) && (question.isEmpty() || invitesReading(question));
     }
 
+    /** 明确的阅读邀请才产生任务；表达示例和“不用跟读”不能登记为跟读。 */
     private static boolean invitesReading(String line) {
-        return line.contains("跟读") || line.contains("跟我读") || line.contains("跟我念")
-                || line.contains("读一遍") || line.contains("读一下") || line.contains("读这")
-                || line.contains("请读") || line.contains("试着读") || line.contains("你来读")
-                || line.contains("念一遍") || line.contains("重复") || line.contains("跟我说")
-                || line.contains("你来说") || line.contains("说一遍") || line.contains("试着说")
-                || line.contains("你可以说") || line.contains("可以这样说")
-                || line.contains("repeat") || line.contains("read aloud") || line.contains("read this")
-                || line.contains("read that") || line.contains("read it") || line.contains("try reading")
-                || line.contains("try saying") || line.contains("try to say")
-                || line.contains("you can say") || line.contains("you could say")
-                || line.contains("say it") || line.contains("your turn");
+        if (line.matches("(?s).*(?:不需要|不用|不必|无需|不要)(?:再|先|你|进行)?(?:跟读|重复|读).*")) return false;
+        if (line.matches("(?s).*(?:don't|do not|no need to) (?:read|repeat).*")) return false;
+        return line.contains("请跟读") || line.contains("请再跟读") || line.contains("跟我读") || line.contains("跟我念")
+                || line.contains("读一遍") || line.contains("请读") || line.contains("试着读") || line.contains("你来读")
+                || line.contains("跟读一次") || line.contains("跟读这") || line.contains("请重复")
+                || line.contains("repeat after") || line.contains("please repeat") || line.contains("please read")
+                || line.contains("read aloud") || line.contains("try reading") || line.contains("your turn");
     }
 }
