@@ -45,13 +45,19 @@ public class TeachingPreparation {
                 .retryWhen(reactor.util.retry.Retry.max(1).filter(ReadingGenerationException.class::isInstance)
                         .onRetryExhaustedThrow((spec, signal) -> signal.failure())) : source;
     }
-    /** 当前课程由 practice 管理，Case 组合领域，不让 conversation 直接读取教材仓储。 */
-    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    /**
+     * 当前课程由 practice 管理，Case 组合领域，不让 conversation 直接读取教材仓储。
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
     private cn.adinall.ai.domain.practice.service.PracticeService practice;
-    /** 文本课程定义及容量校验，只有课程模式才需要。 */
-    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    /**
+     * 文本课程定义及容量校验，只有课程模式才需要。
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
     private cn.adinall.ai.domain.scenario.service.TextbookService textbooks;
-    /** 使用工具管理明确个人事实时关闭旧的主动规则提取，保留原服务供独立老路径使用。 */
+    /**
+     * 使用工具管理明确个人事实时关闭旧的主动规则提取，保留原服务供独立老路径使用。
+     */
     @org.springframework.beans.factory.annotation.Value("${spoken-ai.agent-actions.enabled:true}")
     private boolean agentActionsEnabled;
     /**
@@ -206,7 +212,9 @@ public class TeachingPreparation {
                 systemPolicy(session, decision, rejectionReason)));
     }
 
-    /** 本轮课程背景与通用响应准则：当前用户需求优先，提问范围来自完整课数据，不把原题当系统指令。 */
+    /**
+     * 本轮课程背景与通用响应准则：当前用户需求优先，提问范围来自完整课数据，不把原题当系统指令。
+     */
     public String systemPolicy(ConversationSessionAggregate session, TeachingDecisionVO decision) {
         return systemPolicy(session, decision, false);
     }
@@ -241,7 +249,7 @@ public class TeachingPreparation {
         // 按钮主动示范没有用户输入，不进入用户事实、待聊话题或能力观察链路。
         if (turn == null) return;
         // 场景角色扮演中的陈述也不是用户现实偏好；首版仅自由对话提取事实。
-        if(!agentActionsEnabled) memory.record(subject(session), session.getSessionId(), turn, text,
+        if (!agentActionsEnabled) memory.record(subject(session), session.getSessionId(), turn, text,
                 decision.practiceInput() || !"free".equals(session.getScenarioId()) ||
                         (practice != null && "COURSE".equals(practice.state(session.getSessionId()).snapshot().mode())), Instant.now());
         // 仅自由对话维护待聊话题：练习或角色扮演不进入历史；写入失败降级不中断。
@@ -285,6 +293,7 @@ public class TeachingPreparation {
      * 收到有效播报完成后，保存实际说出的回复，并提交下一轮唯一任务。
      * planned READ 只是计划；必须从实际文本找出英文目标及跟读邀请才变成待跟读任务。
      * 旧 replyId 或已关闭会话直接忽略，避免被打断的旧结果覆盖新任务。
+     *
      * @param text 经教学护栏处理、实际送入本轮播报链路的完整文本
      */
     public void complete(ConversationSessionAggregate session, Long turn, String reply, TeachingDecisionVO decision, String text) {

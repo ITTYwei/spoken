@@ -28,7 +28,9 @@ import cn.adinall.ai.domain.conversation.adapter.port.IConversationEventBusPort;
 import cn.adinall.ai.domain.pronunciation.service.IPronunciationService;
 import cn.adinall.ai.domain.pronunciation.model.entity.AssessPronunciationCommandEntity;
 import cn.adinall.ai.domain.pronunciation.model.aggregate.PronunciationAssessmentAggregate;
+
 import java.util.LinkedHashMap;
+
 import cn.adinall.ai.domain.conversation.model.valobj.LlmOwnerEnum;
 import cn.adinall.ai.domain.conversation.model.valobj.SessionStatusEnum;
 import cn.adinall.ai.domain.conversation.service.IConversationService;
@@ -46,7 +48,9 @@ import cn.adinall.ai.domain.conversation.service.reply.ReplyPromptBuilder;
 import cn.adinall.ai.domain.conversation.service.reply.TeachingReplyGuard;
 import cn.adinall.ai.domain.conversation.model.valobj.TeachingDecisionVO;
 import reactor.core.scheduler.Schedulers;
+
 import java.util.concurrent.atomic.AtomicReference;
+
 import reactor.core.publisher.Flux;
 
 import java.time.Duration;
@@ -138,21 +142,33 @@ import java.util.Map;
  */
 @Service
 public class ConversationCaseImpl implements IConversationCase {
-    /** 文本课程初始化与模式状态，旧测试装配不包含课程时保持原路径。 */
-    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    /**
+     * 文本课程初始化与模式状态，旧测试装配不包含课程时保持原路径。
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
     private cn.adinall.ai.cases.practice.PracticeCase practiceCase;
-    /** 会话关闭时同步释放课程运行态；主体最近课仍保留。 */
-    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    /**
+     * 会话关闭时同步释放课程运行态；主体最近课仍保留。
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
     private cn.adinall.ai.domain.practice.service.PracticeService practice;
-    /** Agent 动作总装只承担业务工具和有限兜底，仍通过 IChatService 使用原装配链路。 */
-    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    /**
+     * Agent 动作总装只承担业务工具和有限兜底，仍通过 IChatService 使用原装配链路。
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
     private AgentReplyPreparation agentReplies;
-    /** 账号作用域设备当前会话索引，用于替换旧会话时释放练习状态。 */
-    private final java.util.concurrent.ConcurrentMap<String,String> practiceDevices = new java.util.concurrent.ConcurrentHashMap<>();
-    /** 整段模式可回退；默认启用 Agent 增量播报。 */
+    /**
+     * 账号作用域设备当前会话索引，用于替换旧会话时释放练习状态。
+     */
+    private final java.util.concurrent.ConcurrentMap<String, String> practiceDevices = new java.util.concurrent.ConcurrentHashMap<>();
+    /**
+     * 整段模式可回退；默认启用 Agent 增量播报。
+     */
     @Value("${spoken-ai.reply.streaming-enabled:true}")
     private boolean streamingEnabled = true;
-    /** 包含识别、评测准备期的轮次令牌，防止打断后迟到的准备结果再次发声。 */
+    /**
+     * 包含识别、评测准备期的轮次令牌，防止打断后迟到的准备结果再次发声。
+     */
     private final java.util.concurrent.ConcurrentMap<String, reactor.core.Disposable.Swap> replyRounds =
             new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -171,29 +187,45 @@ public class ConversationCaseImpl implements IConversationCase {
 
     private static final Logger log = LoggerFactory.getLogger(ConversationCaseImpl.class);
 
-    /** 轮询上游就绪的间隔，够快又不会把上游问烦。 */
+    /**
+     * 轮询上游就绪的间隔，够快又不会把上游问烦。
+     */
     private static final long READY_POLL_INTERVAL_MS = 400L;
 
-    /** SSE 心跳间隔。必须小于 Servlet 容器的 async 超时（配置里放宽到 30 分钟）。 */
+    /**
+     * SSE 心跳间隔。必须小于 Servlet 容器的 async 超时（配置里放宽到 30 分钟）。
+     */
     private static final Duration HEARTBEAT_INTERVAL = Duration.ofSeconds(15);
 
     private final IConversationService conversationService;
     private final IAppConfigPort appConfig;
-    /** 读场景（剧本）：开场白说什么由场景配置决定，不硬编码在用例里。 */
+    /**
+     * 读场景（剧本）：开场白说什么由场景配置决定，不硬编码在用例里。
+     */
     private final IScenarioRepository scenarioRepository;
     private final IPronunciationService pronunciationService;
     private final IAudioFormatPort audioFormat;
     private final IConversationEventBusPort eventBus;
-    /** 建会话时读取历史事实并冻结首句，播放时不再读取变化中的历史。 */
+    /**
+     * 建会话时读取历史事实并冻结首句，播放时不再读取变化中的历史。
+     */
     private final OpeningPreparation openingPreparation;
-    /** Agent 领域入口，负责模型对话和模型文本转换。 */
+    /**
+     * Agent 领域入口，负责模型对话和模型文本转换。
+     */
     private final IChatService chatService;
-    /** Learner 领域入口，负责会话档位判断。 */
+    /**
+     * Learner 领域入口，负责会话档位判断。
+     */
     private final ILearnerLevelService learnerLevelService;
-    /** 跨领域教学、记忆与上下文编排，模型实现仍归Agent。 */
+    /**
+     * 跨领域教学、记忆与上下文编排，模型实现仍归Agent。
+     */
     @jakarta.annotation.Resource
     private TeachingPreparation teaching;
-    /** 当前口语陪练使用的 Agent 身份，对应 spoken-ai.reply.agent-id。 */
+    /**
+     * 当前口语陪练使用的 Agent 身份，对应 spoken-ai.reply.agent-id。
+     */
     private final String replyAgentId;
 
     /**
@@ -253,14 +285,14 @@ public class ConversationCaseImpl implements IConversationCase {
 
         ConversationSessionAggregate session = conversationService.createSession(
                 new StartConversationCommandEntity(deviceId, request.avatarId(), request.model(), voice,
-                        scenario.id(), scenario.systemPromptHint(), openingPreparation.prepare(deviceId, scenario,request.avatarId())));
+                        scenario.id(), scenario.systemPromptHint(), openingPreparation.prepare(deviceId, scenario, request.avatarId())));
 
         teaching.bind(session);
         if (practiceCase != null) {
             practiceCase.initialize(session);
             // 最近课和询问台词在创建阶段一起冻结，翻译与重试不重新读取变化中的历史。
-            if(session.getOpeningDecision()!=null) conversationService.saveOpeningDecision(session.getSessionId(),
-                    session.completeOpeningPreparation(practiceCase.opening(session,session.getOpeningDecision().text())));
+            if (session.getOpeningDecision() != null) conversationService.saveOpeningDecision(session.getSessionId(),
+                    session.completeOpeningPreparation(practiceCase.opening(session, session.getOpeningDecision().text())));
             String previous = practiceDevices.put(deviceId, session.getSessionId());
             if (previous != null && practice != null) practice.close(previous);
         }
@@ -336,7 +368,7 @@ public class ConversationCaseImpl implements IConversationCase {
 
     /**
      * 脚本轨：让数字人原样念出这句话，不经过 LLM。
-     *
+     * <p>
      * 和 speak 一样只负责下发，「说完了没」从事件流的 assistant.delta / assistant.done 出来。
      * 内容已定的话（开场白、题目、讲解、判分反馈）走这里，不要用 speak —— 那会绕一圈 LLM。
      */
@@ -348,15 +380,15 @@ public class ConversationCaseImpl implements IConversationCase {
 
     /**
      * 开场：让数字人主动说出本场景的开场白（脚本轨，不经过 LLM）。
-     *
+     * <p>
      * 流程：
      * 1) 取会话（不存在就直接 404）；
      * 2) 使用建会话时已落库的首句快照，重试不重新读取历史、日期或场景文案；
      * 3) 场景没配开场白 -> 返回 no_opening，不做无谓的上游调用；
      * 4) 用聚合的 markOpeningSpoken() 做<b>原子</b>状态跃迁，抢不到就说明已经说过了；
      * 5) 走脚本轨 say 下发。commandId 固定成 "{sessionId}:opening" ——
-     *    幂等键必须稳定，随机生成等于没有幂等。
-     *
+     * 幂等键必须稳定，随机生成等于没有幂等。
+     * <p>
      * 第 4 步刻意排在第 5 步之前：并发请求只有一个能通过跃迁。
      * 代价是「跃迁成功但下发失败」会丢掉这次开场；相比让用户听见两遍，
      * 这个代价更可接受，而且调用方拿到的 spoken=true 就是"我认领了这次开场"。
@@ -369,7 +401,7 @@ public class ConversationCaseImpl implements IConversationCase {
         if (decision == null) {
             // 兼容旧内部建会话路径；正常 App 请求已在 create 中冻结并落库。
             ScenarioVO scenario = scenarioRepository.findById(session.getScenarioId());
-            decision = session.freezeOpening(openingPreparation.prepare(session.getDeviceId(), scenario,session.getAvatarId()));
+            decision = session.freezeOpening(openingPreparation.prepare(session.getDeviceId(), scenario, session.getAvatarId()));
             conversationService.saveOpeningDecision(sessionId, decision);
         }
         // 详情直接开始会先保存当前课；实际开场优先该课，普通待机仍使用原始开场快照。
@@ -389,12 +421,12 @@ public class ConversationCaseImpl implements IConversationCase {
                 decision.sampleSessions(), decision.context(), decision.variantId(), decision.templateVersion(), openingLine,
                 decision.materialsSummary().replaceAll("[\\r\\n\\p{Cntrl}]", " "));
         try {
-            if(practiceCase!=null) practiceCase.invite(session,sessionId+":opening");
+            if (practiceCase != null) practiceCase.invite(session, sessionId + ":opening");
             conversationService.say(sessionId,
                     new SayCommandEntity(openingLine, session.getVoice(), sessionId + ":opening"));
-        } catch(RuntimeException e) {
+        } catch (RuntimeException e) {
             session.openingSubmissionFailed();
-            if(practice!=null) practice.state(sessionId).dismissInvitation();
+            if (practice != null) practice.state(sessionId).dismissInvitation();
             throw e;
         }
         return OpeningResponseDTO.spoken(openingLine);
@@ -413,9 +445,10 @@ public class ConversationCaseImpl implements IConversationCase {
      * 教练回复随后通过字幕事件和音视频到达手机，所以 HTTP 成功不等于已经播完。</p>
      * <p>例：上一轮让读“ How are you? ”，本轮读同一句，只作为练习素材；
      * 若用户说“不想读了”，则按拒绝/换话题处理，不用原目标给这句话纠音。</p>
-     * @param sessionId 已校验归属的业务会话编号，与数字人供应商会话编号不同
-     * @param pcm 手机上传的一句原始采样字节；不是文字，也不会直接交给 LLM
-     * @param sampleRate 采样率，单位 Hz，用来生成正确 WAV 头
+     *
+     * @param sessionId    已校验归属的业务会话编号，与数字人供应商会话编号不同
+     * @param pcm          手机上传的一句原始采样字节；不是文字，也不会直接交给 LLM
+     * @param sampleRate   采样率，单位 Hz，用来生成正确 WAV 头
      * @param expectedText 兼容客户端参数；不能覆盖服务端真实跟读目标
      * @return 本轮识别结果；评测失败可降级为空，识别失败则不继续生成本轮回复
      */
@@ -501,16 +534,17 @@ public class ConversationCaseImpl implements IConversationCase {
                     // 教学策略只给任务与证据；后续对话统一由 Agent 生成。
                     String prompt = teaching.prompt(session, userText, decision, persona, regenerated.get());
                     // 可信等级/任务进入 SYSTEM；原话、场景与裁剪历史保留在 USER。
-                    if(agentReplies==null) return chatService.handlePreparedTextStream(replyAgentId, sessionId, prompt, teaching.systemPolicy(session, decision, regenerated.get()));
+                    if (agentReplies == null)
+                        return chatService.handlePreparedTextStream(replyAgentId, sessionId, prompt, teaching.systemPolicy(session, decision, regenerated.get()));
                     return agentReplies.reply(replyAgentId, session, turnId == null ? 0L : turnId, userText, prompt, teaching.systemPolicy(session, decision, regenerated.get()), decision,
-                            ()->!round.isDisposed()&&replyRounds.get(sessionId)==round&&!session.isFinished());
+                            () -> !round.isDisposed() && replyRounds.get(sessionId) == round && !session.isFinished());
                 }).subscribeOn(Schedulers.boundedElastic())
                 // Agent 的原始增量先经过任务护栏，再交给数字人播报。
                 .transform(source -> TeachingReplyGuard.apply(source, decision))
                 .transform(source -> teaching.guard(session, decision, source, reason -> regenerated.set(reason.correction())))
                 .filter(delta -> delta != null && !delta.isEmpty())
                 .doOnNext(delta -> {
-                    if (spoken.length()+delta.length()>32768) throw new IllegalStateException("reply_too_large");
+                    if (spoken.length() + delta.length() > 32768) throw new IllegalStateException("reply_too_large");
                     spoken.append(delta);
                     if (firstDelta.compareAndSet(null, session.responseLatencyMs()))
                         log.info("Agent first delta session={} replyId={} latencyMs={}", sessionId, replyId, firstDelta.get());
@@ -539,10 +573,12 @@ public class ConversationCaseImpl implements IConversationCase {
         round.update(reply.subscribeOn(Schedulers.boundedElastic())
                 .doOnSuccess(ignored -> {
                     // /say 的返回仅表示受理；整段回退的提交由媒体结束事件负责。
-                    if (streamingEnabled && !round.isDisposed()) teaching.complete(session, turnId, replyId, decision, spoken.toString());
+                    if (streamingEnabled && !round.isDisposed())
+                        teaching.complete(session, turnId, replyId, decision, spoken.toString());
                 })
                 .doFinally(signal -> replyRounds.remove(sessionId, round))
-                .subscribe(ignored -> {}, error -> {
+                .subscribe(ignored -> {
+                }, error -> {
                     if (!round.isDisposed()) replyFailed(sessionId, turnId, "生成或播报失败", error);
                 }));
     }
@@ -565,7 +601,9 @@ public class ConversationCaseImpl implements IConversationCase {
                 Map.<String, Object>of("message", message + ": " + error.getMessage())));
     }
 
-    /** Assessment failure degrades this use case without blocking the conversation. */
+    /**
+     * Assessment failure degrades this use case without blocking the conversation.
+     */
     private PronunciationAssessmentAggregate assessQuietly(String sessionId, Long turnId, byte[] wav,
                                                            String text, String expectedText) {
         String reference = expectedText == null || expectedText.isBlank() ? text : expectedText;
@@ -575,9 +613,9 @@ public class ConversationCaseImpl implements IConversationCase {
         try {
             PronunciationAssessmentAggregate assessment = pronunciationService.assess(sessionId, turnId,
                     new AssessPronunciationCommandEntity(wav, "turn.wav", "audio/wav", reference, null));
-            var data=assessmentData(assessment);
-            data.put("referenceSource",expectedText==null ? "TRANSCRIPT_REFERENCE" : "SERVER_TASK");
-            data.put("abilityEvidence",false);
+            var data = assessmentData(assessment);
+            data.put("referenceSource", expectedText == null ? "TRANSCRIPT_REFERENCE" : "SERVER_TASK");
+            data.put("abilityEvidence", false);
             eventBus.publish(sessionId, ConversationEventVO.of(EventTypeEnum.ASSESSMENT_DONE, data));
             return assessment;
         } catch (Exception e) {
@@ -593,7 +631,7 @@ public class ConversationCaseImpl implements IConversationCase {
         var result = assessment.getResult();
         return new PronunciationFeedbackVO(result.score(), result.errors() == null ? List.of()
                 : result.errors().stream().map(error -> new PronunciationFeedbackVO.IssueVO(
-                        error.word(), error.expected(), error.actual(), error.confidence(), error.phones() == null ? List.of()
+                error.word(), error.expected(), error.actual(), error.confidence(), error.phones() == null ? List.of()
                         : error.phones().stream().map(phone -> new PronunciationFeedbackVO.PhoneVO(
                                 phone.expected(), phone.heard(), phone.confidence())).toList())).toList());
     }
@@ -637,10 +675,10 @@ public class ConversationCaseImpl implements IConversationCase {
 
     /**
      * 拼出给 App 的 SSE 流：流头一条状态 + 上游事件 + 本地事件 + 心跳，四路合并。
-     *
+     * <p>
      * 流头为什么要有：App 刚连上时不知道会话什么状态，先给它一条 ready/queued，
      * 它就能立刻把界面摆对，不用先调一次 GET /sessions/{id}。
-     *
+     * <p>
      * 本地事件（语音识别出的用户文本、打断回执）在产生时就已是给 App 的最终形状、
      * 且落库在领域服务里做过了，所以不再过 applyDriverEvent —— 过了会把同一句话重复记一遍。
      */

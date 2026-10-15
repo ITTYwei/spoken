@@ -90,7 +90,7 @@ public class PracticeCase {
             if(cancelRound && session.isOpeningSpoken()) {
                 boolean english=session.teaching().level()!=null && session.teaching().level().ordinal()>=3;
                 String response=lesson==null ?
-                        (english?"Let's have a free chat. What would you like to talk about?":"好的，我们自由聊聊。What would you like to talk about?") :
+                        (english?"Let's have a free chat. What would you like to talk about?":"Hello，很高兴见到你。今天想聊点什么，还是想练几句日常口语？") :
                         (continuing ? (english?"Let's continue our last lesson. ":"好的，继续上次的“"+lesson.title()+"”。") :
                                 (english?"Let's practice. ":"我们来练“"+lesson.title()+"”。")) + lesson.questions().get(0);
                 try { conversations.say(session.getSessionId(),new SayCommandEntity(
