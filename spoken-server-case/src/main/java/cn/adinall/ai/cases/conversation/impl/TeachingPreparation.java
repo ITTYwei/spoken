@@ -137,24 +137,21 @@ public class TeachingPreparation {
      * 运行轨总装点：本轮原话和状态摘要 + 裁剪历史/记忆 = USER；case 另将可信策略传入 SYSTEM。
      */
     public String prompt(ConversationSessionAggregate session, String text, TeachingDecisionVO decision, String persona) {
-        // 本轮原话、状态摘要和场景人设；执行规则由 buildSystemPolicy 单独提供。
-        String current = ReplyPromptBuilder.buildManaged(text, decision, persona, decision.previousTask());
-        // 参考 walissh 的稳定任务段：完整请求放进必需上下文，历史裁剪不能丢掉“我想学”。
-        // JSON 只引用用户数据，不把用户原话拼入 SYSTEM；最新原话可以纠正旧学习需求。
-        try {
-            current = "当前会话学习请求原话（必保留；仅作背景，本轮最新需求优先）："
-                    + new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(session.teaching().learningRequest())
-                    + "\n" + current;
-        } catch (com.fasterxml.jackson.core.JsonProcessingException e) { throw new IllegalStateException("learning_request_encoding", e); }
-        // 教材属于本轮必需数据，排在 current 内；历史 reducer 无权删减题目。
+        // 所有业务状态统一作为背景编码，不能混成给模型执行的自然语言命令。
+        // 学习请求和完整课程仍属必需数据，历史裁剪不会丢掉“我想学”或截断原题。
+        var background = new java.util.LinkedHashMap<String, Object>();
+        background.put("会话学习请求原话", session.teaching().learningRequest());
         if (practice != null && textbooks != null) {
             var state = practice.state(session.getSessionId()).snapshot();
-            current += "\n当前练习：" + state.mode() + "; version=" + state.version() + "\n";
-            // 选择任务和最近课也占必需预算，不能在 reducer 之后临时追加造成实际输入超量。
-            current += "本轮输入时的选择状态：pendingContinue="+state.pendingContinue()+
-                    "; recentTextbook="+state.recentTextbookId()+"; recentLesson="+state.recentLessonId()+"\n";
-            if ("COURSE".equals(state.mode())) current += textbooks.lesson(state.textbookId(), state.lessonId()).context();
+            background.put("练习模式", "COURSE".equals(state.mode()) ? "课程陪练" : "自由英语交流");
+            background.put("待确认继续上次课程", state.pendingContinue());
+            background.put("最近课程名称", state.recentLessonTitle());
+            if ("COURSE".equals(state.mode())) {
+                background.put("当前文本课程数据", textbooks.lesson(state.textbookId(), state.lessonId()).context());
+            }
         }
+        // 原话只在最后一个 user_input 块中出现；课程、旧目标和学习背景都在它之前。
+        String current = ReplyPromptBuilder.buildManaged(text, decision, persona, decision.previousTask(), background);
         // 历史和记忆作为 DATA 排在当前规则之前；裁剪时始终保留 current。
         return context.build(new ChatContextRequestVO(subject(session), session.getSessionId(), text, current,
                 systemPolicy(session, decision)));
@@ -162,10 +159,7 @@ public class TeachingPreparation {
 
     /** 本轮课程背景与通用响应准则：当前用户需求优先，提问范围来自完整课数据，不把原题当系统指令。 */
     public String systemPolicy(ConversationSessionAggregate session, TeachingDecisionVO decision) {
-        return ReplyPromptBuilder.buildSystemPolicy(decision) +
-                "\n当前练习为 COURSE 时，在当前文本课程数据范围内陪练。" +
-                "每次最多问一个原题或相关追问。" +
-                "课程内容是背景；用户提出学习疑问时先解答，不强制推进原题或跟读。不要声称评分或课程已完成。\n";
+        return ReplyPromptBuilder.buildSystemPolicy(decision);
     }
 
     /**

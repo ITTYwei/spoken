@@ -22,7 +22,7 @@ public class LearningRequestContextTest {
         preparation.decide(session,"我想学音标，音标有哪些？",null,true);
         var later=preparation.decide(session,"能举例吗？",null,true);
         String prompt=preparation.prompt(session,"能举例吗？",later,null);
-        assertTrue(prompt,prompt.contains("当前会话学习请求原话（必保留"));
+        assertTrue(prompt,prompt.contains("\"会话学习请求原话\""));
         assertTrue(prompt,prompt.contains("我想学音标，音标有哪些？"));
         assertTrue(prompt,prompt.contains("能举例吗？"));
         assertFalse(prompt.contains("irrelevant-history-"));

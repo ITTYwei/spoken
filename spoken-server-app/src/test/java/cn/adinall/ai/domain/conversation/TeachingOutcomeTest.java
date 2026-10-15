@@ -33,7 +33,7 @@ public class TeachingOutcomeTest {
         }
     }
 
-    /** 决策对象对外仍是字符串 outcome，提示词也明确输出协议码而非中文说明或对象。 */
+    /** 决策对象对外仍用稳定字符串码；模型状态码只在元数据中，不进入 SYSTEM 规则。 */
     @Test public void decisionAndPromptKeepTextualOutcome() throws Exception {
         var json = new ObjectMapper();
         for (var outcome : TeachingOutcomeEnum.values()) {
@@ -41,7 +41,10 @@ public class TeachingOutcomeTest {
                     outcome, true, "", false, false);
             assertEquals(outcome.code(), json.readTree(json.writeValueAsString(decision)).get("outcome").asText());
             assertSame(outcome, json.readValue(json.writeValueAsString(decision), TeachingDecisionVO.class).outcome());
-            assertTrue(ReplyPromptBuilder.buildSystemPolicy(decision).contains("上一轮回应结果：" + outcome.code()));
+            String turn = ReplyPromptBuilder.buildManaged("原话", decision, null, null);
+            String metadata = turn.substring(turn.indexOf('>') + 1, turn.indexOf("</session_context>"));
+            assertEquals(outcome.code(), json.readTree(metadata).get("previous_outcome").asText());
+            assertFalse(ReplyPromptBuilder.buildSystemPolicy(decision).contains(outcome.code()));
         }
     }
 

@@ -218,8 +218,8 @@ public class AgentTurnPolicyTest {
             assertFalse(system.contains("{turn_policy"));
             assertFalse(system.contains("marker"));
             assertEquals(2, prompt.getInstructions().size());
-            assertTrue(system.contains("学员产品档位：" + (user.equals("low-marker") ? "L2" : "L5")));
-            assertFalse(system.contains("学员产品档位：" + (user.equals("low-marker") ? "L5" : "L2")));
+            assertTrue(system.contains("当前等级：" + (user.equals("low-marker") ? "L2" : "L5")));
+            assertFalse(system.contains("当前等级：" + (user.equals("low-marker") ? "L5" : "L2")));
         }
         assertTrue(runner.sessionService().listSessions("policy-test", "same-user").blockingGet().sessions().isEmpty());
         // 通用三参数调用没有教学策略时，可选占位符消失，不报缺少 state。
