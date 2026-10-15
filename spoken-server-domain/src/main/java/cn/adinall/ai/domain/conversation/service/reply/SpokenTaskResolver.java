@@ -22,6 +22,33 @@ public final class SpokenTaskResolver {
     private SpokenTaskResolver() {
     }
 
+    /**
+     * 使用本轮冻结的已播任务对照实际新任务，同一句被再次邀请时不能当成全新跟读清零。
+     * 教学建议是 RESPOND 也不例外：模型可能仍说“请再跟读”，必须保留连续重试次数。
+     * @param planned 本轮参考建议，不代表实际播报内容
+     * @param previous 本轮输入时冻结的旧任务，不能读取异步阶段已经变化的任务
+     * @param spoken 确认完成的实际播报正文；只提到例句而未邀请，不增加次数
+     * @return 实际待完成任务；同句次数封顶，换句从零开始，不对已播放正文作替换
+     */
+    public static TeachingTaskVO resolve(TeachingTaskVO planned, TeachingTaskVO previous, String spoken) {
+        var actual = resolve(planned, spoken);
+        if (!actual.reading() || previous == null || !previous.reading()
+                || !sameTarget(actual.target(), previous.target())) return actual;
+        int retries = Math.min(TeachingPolicy.MAX_READING_RETRIES,
+                Math.max(previous.attempts() + 1, actual.attempts()));
+        return new TeachingTaskVO(actual.action(), actual.target(), actual.question(), retries);
+    }
+
+    /** 忽略大小写、空白和标点差异，避免同一句换引号或问号就被误当成新句。 */
+    private static boolean sameTarget(String left, String right) {
+        return normalize(left).equals(normalize(right));
+    }
+
+    private static String normalize(String target) {
+        return target == null ? "" : target.toLowerCase(Locale.ROOT).replace('’', '\'')
+                .replaceAll("[^a-z0-9']+", " ").trim();
+    }
+
     /** 已播报文本同时含完整目标和跟读邀请时，才提交原跟读任务。 */
     /* 例：“How are you?” 意思是你好吗。请跟读。
      * 引号中的问号不是向用户提问，必须提交 READ；否则下一轮会被误当普通问答。

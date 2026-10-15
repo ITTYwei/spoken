@@ -141,15 +141,19 @@ public class TeachingPreparation {
         // 学习请求和完整课程仍属必需数据，历史裁剪不会丢掉“我想学”或截断原题。
         var background = new java.util.LinkedHashMap<String, Object>();
         background.put("会话学习请求原话", session.teaching().learningRequest());
+        var scene = "free".equals(session.getScenarioId()) ? ConversationSceneEnum.FREE_ENGLISH : ConversationSceneEnum.ROLE_PRACTICE;
         if (practice != null && textbooks != null) {
             var state = practice.state(session.getSessionId()).snapshot();
             background.put("练习模式", "COURSE".equals(state.mode()) ? "课程陪练" : "自由英语交流");
             background.put("待确认继续上次课程", state.pendingContinue());
             background.put("最近课程名称", state.recentLessonTitle());
             if ("COURSE".equals(state.mode())) {
+                scene = ConversationSceneEnum.TEXTBOOK_PRACTICE;
                 background.put("当前文本课程数据", textbooks.lesson(state.textbookId(), state.lessonId()).context());
             }
         }
+        // 场景与任务分开：课程中也能跟读或问知识；场景不能强制覆盖用户新问题。
+        background.put("对话场景", java.util.Map.of("场景编号", session.getScenarioId(), "场景说明", scene.description()));
         // 原话只在最后一个 user_input 块中出现；课程、旧目标和学习背景都在它之前。
         String current = ReplyPromptBuilder.buildManaged(text, decision, persona, decision.previousTask(), background);
         // 历史和记忆作为 DATA 排在当前规则之前；裁剪时始终保留 current。
@@ -227,7 +231,7 @@ public class TeachingPreparation {
             if (!session.acceptsReply(reply) || session.isFinished()) return;
             replies.complete(turn, reply, text);
             // 只有目标句和跟读邀请都实际播出，才把 READ/CORRECT 留给用户下一轮完成。
-            session.teaching().commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(), text));
+            session.teaching().commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(), decision.previousTask(), text));
         }
     }
 

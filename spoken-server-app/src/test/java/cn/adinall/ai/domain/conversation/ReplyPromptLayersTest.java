@@ -28,7 +28,7 @@ public class ReplyPromptLayersTest {
         var json = new ObjectMapper();
         String metadata = turn.substring("<session_context>\n".length(), turn.indexOf("\n</session_context>"));
         String actual = turn.substring(turn.indexOf("<user_input>\n") + "<user_input>\n".length(), turn.lastIndexOf("\n</user_input>"));
-        assertEquals(target, json.readTree(metadata).get("previous_target").asText());
+        assertEquals(target, json.readTree(metadata).get("current_task").get("target").asText());
         assertEquals(input, json.readValue(actual, String.class));
         assertEquals(turn.indexOf("</user_input>"), turn.lastIndexOf("</user_input>"));
         assertFalse(turn.contains("<system_rules>"));

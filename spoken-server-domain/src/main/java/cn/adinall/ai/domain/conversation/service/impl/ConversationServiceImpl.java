@@ -532,7 +532,7 @@ public class ConversationServiceImpl implements IConversationService {
                     teachingReplies.complete(pending.turnId(), pending.replyId(), text);
                     // 整段播报回调与流式回调采用同一核验规则，避免把未说出的跟读任务提交。
                     session.teaching().commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(
-                            pending.decision().nextTask(), text));
+                            pending.decision().nextTask(), pending.decision().previousTask(), text));
                 }
                 // 在规整为字幕字符串前保留原始回复编号；文本生成结束不能打开继续选择窗口。
                 if(replyCompletion!=null && event.data() instanceof Map<?,?> completed && completed.get("replyId")!=null)

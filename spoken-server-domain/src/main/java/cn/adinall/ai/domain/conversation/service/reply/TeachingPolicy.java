@@ -13,6 +13,8 @@ import java.util.Locale;
  * 保留硬边界：没有实际目标尝试就不纠音；练习素材不作为偏好；同一目标最多建议重试两次。
  */
 public final class TeachingPolicy {
+    /** 同一句连续跟读最多建议两次纠音重试；首次示范不计入，换句后重新计数。 */
+    public static final int MAX_READING_RETRIES = 2;
     private TeachingPolicy() { }
 
     /**
@@ -40,7 +42,7 @@ public final class TeachingPolicy {
                 .findFirst().orElse(null) : null;
         if (usable && feedback.score() >= 80 && issue == null)
             return result(level, TeachingTaskVO.response(), TeachingOutcomeEnum.READ_PASS, chinese, "", true, true);
-        if (issue != null && previous.attempts() < 2) {
+        if (issue != null && previous.attempts() < MAX_READING_RETRIES) {
             // 高总分不能遮蔽具体可信错词；只是建议指导一个细节，不强制用户继续重读。
             String hint = "可示范单词 " + issue.word() + " 的读法。";
             if (issue.word().toLowerCase(Locale.ROOT).endsWith("ed") && issue.expected().endsWith("t"))
