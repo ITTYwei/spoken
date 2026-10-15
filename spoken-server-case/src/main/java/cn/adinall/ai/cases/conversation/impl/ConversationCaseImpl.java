@@ -487,8 +487,8 @@ public class ConversationCaseImpl implements IConversationCase {
         String replyId = sessionId + ":reply:" + turnId + ":" + java.util.UUID.randomUUID();
         StringBuilder spoken = new StringBuilder();
         AtomicReference<Long> firstDelta = new AtomicReference<>();
-        // 仅在当前回复内保存重生成标志；不给新模型调用重复提交完全相同的失败上下文。
-        var regenerated = new java.util.concurrent.atomic.AtomicBoolean(false);
+        // 仅在当前回复内保存固定业务修正原因；重生成收到具体约束，不携带失败草稿或异常堆栈。
+        var regenerated = new java.util.concurrent.atomic.AtomicReference<String>("");
         Flux<String> tokens = Flux.defer(() -> {
                     if (round.isDisposed()) return Flux.empty();
                     // 先登记“待播回复”，此时并未证明用户听到了新任务。
@@ -503,7 +503,7 @@ public class ConversationCaseImpl implements IConversationCase {
                 }).subscribeOn(Schedulers.boundedElastic())
                 // Agent 的原始增量先经过任务护栏，再交给数字人播报。
                 .transform(source -> TeachingReplyGuard.apply(source, decision))
-                .transform(source -> teaching.guard(session, decision, source, () -> regenerated.set(true)))
+                .transform(source -> teaching.guard(session, decision, source, reason -> regenerated.set(reason.correction())))
                 .filter(delta -> delta != null && !delta.isEmpty())
                 .doOnNext(delta -> {
                     if (spoken.length()+delta.length()>32768) throw new IllegalStateException("reply_too_large");

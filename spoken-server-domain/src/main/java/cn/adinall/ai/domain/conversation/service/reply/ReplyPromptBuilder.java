@@ -141,6 +141,11 @@ public final class ReplyPromptBuilder {
      * @return 本轮 SYSTEM 任务块；调用方必须连同等级策略一起计入预算，不加入用户聊天记录
      */
     public static String buildGuidedReadingTask(TeachingDecisionVO decision, boolean regenerated) {
+        return buildGuidedReadingTask(decision, regenerated ? "请检查唯一英文目标及讲解要求" : "");
+    }
+
+    /** 以领域校验的固定修正建议替代笼统失败标志；原因不含用户文本或模型草稿。 */
+    public static String buildGuidedReadingTask(TeachingDecisionVO decision, String rejectionReason) {
         if (!decision.nextTask().reading()) return "";
         String progress = switch (decision.outcome()) {
             case READ_PASS -> "上一句已通过，简短肯定后立即示范新的英文句子。";
@@ -160,7 +165,8 @@ public final class ReplyPromptBuilder {
                 + "以上难度范围只指导新目标生成，纠音重读必须保持原句，不为调整难度擅自换题。\n"
                 + "说明适用情境，用双引号标出唯一英文目标，按当前档位解释含义，最后明确邀请用户朗读。"
                 + "英文不超过180个字符；引号只标目标，不再把译文或其他英文放进引号。只输出可直接播报的教学正文。\n"
-                + (regenerated ? "上次回复未满足跟读要求，本次重新组织完整示范，不只回答可以帮你练英语，不重复失败结果。\n" : "")
+                + (!rejectionReason.isBlank() ? "上次回复未满足跟读要求，具体原因：" + rejectionReason
+                        + "。请修正该问题后重新输出完整示范，不解释内部校验过程。\n" : "")
                 + "</reply_task>";
     }
 

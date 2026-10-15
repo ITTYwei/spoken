@@ -79,24 +79,25 @@ public final class GuidedReadingPolicy {
             return all.append(delta);
         }).map(all -> {
             String spoken = all.toString();
-            var actual = SpokenTaskResolver.resolve(TeachingTaskVO.response(), spoken);
+            var actual = SpokenTaskResolver.resolveGuided(decision.nextTask(), spoken);
             String planned = decision.nextTask().target();
             boolean newSentence = planned == null || planned.isBlank();
-            if (!actual.reading() || (newSentence
-                    ? recent.stream().anyMatch(old -> sameTarget(old, actual.target()))
-                    : !sameTarget(planned, actual.target())))
-                throw new IllegalStateException("跟读生成结果未给出有效且符合当前任务的唯一英文句子");
+            if (newSentence && recent.stream().anyMatch(old -> sameTarget(old, actual.target())))
+                throw new ReadingGenerationException(ReadingGenerationErrorEnum.RECENT_DUPLICATE);
+            if (!newSentence && !sameTarget(planned, actual.target()))
+                throw new ReadingGenerationException(ReadingGenerationErrorEnum.TARGET_CHANGED);
             // 引号外必须有教学交流，避免仅输出待跟读英文。L1/L2 还必须含中文支援。
-            String narration = spoken.replaceAll("\"[^\"]*\"|“[^”]*”", "").trim();
-            if (narration.length() < 8 || (decision.level().ordinal() <= EnglishLevelEnum.L2.ordinal()
-                    && !narration.matches("(?s).*\\p{IsHan}.*")))
-                throw new IllegalStateException("跟读生成结果缺少情境讲解或中文含义");
+            String narration = spoken.replaceAll("\"[^\"]*\"|“[^”]*”|‘[^’]*’", "").trim();
+            if (narration.length() < 8)
+                throw new ReadingGenerationException(ReadingGenerationErrorEnum.MISSING_EXPLANATION);
+            if (decision.level().ordinal() <= EnglishLevelEnum.L2.ordinal() && !narration.matches("(?s).*\\p{IsHan}.*"))
+                throw new ReadingGenerationException(ReadingGenerationErrorEnum.MISSING_CHINESE);
             // 没有具体证据时只允许通用重读邀请；不信任模型凭空编造的音素指导。
             if (decision.outcome() == TeachingOutcomeEnum.READ_RETRY && decision.correctionHint().isBlank())
                 return "我们把这句再连贯地读一次：“" + actual.target() + "”。你来试着读一读吧。";
             if (decision.outcome() == TeachingOutcomeEnum.NO_EVIDENCE)
                 return "这次暂时没有拿到可用的评测结果，我们再试一次：“" + actual.target() + "”。你来试着读一读吧。";
-            return spoken;
+            return SpokenTaskResolver.ensureReadingInvitation(spoken);
         }).flux());
     }
 

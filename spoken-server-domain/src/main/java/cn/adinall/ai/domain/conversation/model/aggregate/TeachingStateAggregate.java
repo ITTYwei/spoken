@@ -53,7 +53,15 @@ public final class TeachingStateAggregate {
             commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(), decision.previousTask(), text));
             return;
         }
-        var actual = cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(TeachingTaskVO.response(), text);
+        // 跟读计划来自服务端；完成提交与播前校验使用相同的唯一目标解析，不能再按问号猜状态。
+        TeachingTaskVO actual;
+        try {
+            actual = decision.nextTask().reading()
+                    ? cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolveGuided(decision.nextTask(), text)
+                    : cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(TeachingTaskVO.response(), text);
+        } catch (cn.adinall.ai.domain.conversation.service.reply.ReadingGenerationException invalid) {
+            return; // 不接受未经校验或格式失真的迟到完成内容，保留既有任务。
+        }
         if (!actual.reading()) { commit(actual); return; }
         String planned = decision.nextTask().target();
         boolean newSentence = decision.nextTask().reading() && (planned == null || planned.isBlank());

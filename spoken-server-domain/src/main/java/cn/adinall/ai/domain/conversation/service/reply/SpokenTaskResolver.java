@@ -70,6 +70,39 @@ public final class SpokenTaskResolver {
         return TeachingTaskVO.question(lastQuestion(spoken));
     }
 
+    /**
+     * 显式跟读模式已有服务端任务，不再从邀请用词或最后一个问号反推是否在聊天。
+     * 只解析唯一英文题面：允许常规数字标点和中英文双引号、中文单引号，同句重复引用合并。
+     * 普通聊天继续使用 resolve 的保守判断，避免把知识例句误登记为练习任务。
+     */
+    public static TeachingTaskVO resolveGuided(TeachingTaskVO planned, String spoken) {
+        String line = spoken == null ? "" : spoken;
+        if (declinesReading(line.toLowerCase(Locale.ROOT)))
+            throw new ReadingGenerationException(ReadingGenerationErrorEnum.READING_DECLINED);
+        var matcher = Pattern.compile("[\"“]([^\"”\\r\\n]{1,180})[\"”]|‘([^‘’\\r\\n]{1,180})’").matcher(line);
+        var targets = new java.util.ArrayList<String>();
+        while (matcher.find()) {
+            String target = (matcher.group(1) == null ? matcher.group(2) : matcher.group(1)).trim();
+            if (!target.matches("[A-Za-z0-9][A-Za-z0-9\\s’',.!?;:()\\-/…–—]*") || !target.matches("(?s).*[A-Za-z].*")) continue;
+            if (targets.stream().noneMatch(old -> GuidedReadingPolicy.sameTarget(old, target))) targets.add(target);
+        }
+        if (targets.isEmpty()) throw new ReadingGenerationException(ReadingGenerationErrorEnum.MISSING_TARGET);
+        if (targets.size() > 1) throw new ReadingGenerationException(ReadingGenerationErrorEnum.MULTIPLE_TARGETS);
+        return new TeachingTaskVO(planned.action(), targets.get(0), "", planned.attempts());
+    }
+
+    /** 显式任务缺少邀请措辞时可补一个邀请，不把自然问句误判成新聊天任务。 */
+    public static String ensureReadingInvitation(String spoken) {
+        return invitesReading(spoken.toLowerCase(Locale.ROOT)) ? spoken : spoken + " 你来试着读一读吧。";
+    }
+
+    /** 明确否定仍优先，不能通过放宽解析把“不用读”改成邀请；只识别教学指令而非目标内容。 */
+    private static boolean declinesReading(String line) {
+        String narration = line.replaceAll("\"[^\"]*\"|“[^”]*”|‘[^’]*’", "");
+        return narration.matches("(?s).*(?:不需要|不用|不必|无需|不要)(?:再|先|你|进行)?(?:跟读|重复|朗读|读).*" )
+                || narration.matches("(?s).*(?:don't|do not|no need to) (?:read|repeat).*" );
+    }
+
     public static String lastQuestion(String spoken) {
         if (spoken == null) return "";
         // 引号中的问句可能是跟读目标或中文译文，不能被提升为真实聊天问题。
@@ -99,7 +132,7 @@ public final class SpokenTaskResolver {
     private static boolean invitesReading(String line) {
         if (line.matches("(?s).*(?:不需要|不用|不必|无需|不要)(?:再|先|你|进行)?(?:跟读|重复|读).*")) return false;
         if (line.matches("(?s).*(?:don't|do not|no need to) (?:read|repeat).*")) return false;
-        return line.contains("请跟读") || line.contains("请再跟读") || line.contains("跟我读") || line.contains("跟我念")
+        return line.contains("请朗读") || line.contains("朗读一下") || line.contains("跟着读") || line.contains("请跟读") || line.contains("请再跟读") || line.contains("跟我读") || line.contains("跟我念")
                 || line.contains("读一遍") || line.contains("请读") || line.contains("试着读") || line.contains("你来读")
                 || line.contains("跟读一次") || line.contains("跟读这") || line.contains("请重复")
                 || line.contains("repeat after") || line.contains("please repeat") || line.contains("please read")

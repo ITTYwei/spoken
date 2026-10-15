@@ -300,7 +300,10 @@ public class ConversationVoiceCaseTest {
         verify(conversation, timeout(3000)).say(eq("s1"), command.capture());
         assertEquals(generated, command.getValue().text());
         var prompts = ArgumentCaptor.forClass(String.class);
-        verify(chat, times(2)).handlePreparedTextStream(anyString(), anyString(), prompts.capture(), anyString());
+        var policies = ArgumentCaptor.forClass(String.class);
+        verify(chat, times(2)).handlePreparedTextStream(anyString(), anyString(), prompts.capture(), policies.capture());
+        assertTrue(policies.getAllValues().get(1).contains("新目标与近期已练英文重复"));
+        assertFalse(policies.getAllValues().get(0).contains("具体原因："));
         assertTrue(prompts.getAllValues().get(0).contains("上次跟读生成未通过校验"));
         assertNotEquals(prompts.getAllValues().get(0), prompts.getAllValues().get(1));
     }
@@ -322,6 +325,8 @@ public class ConversationVoiceCaseTest {
         assertTrue(policies.getAllValues().stream().allMatch(p -> p.contains("<reply_task>") && p.contains("不是普通聊天开场")));
         assertFalse(policies.getAllValues().get(0).contains("上次回复未满足跟读要求"));
         assertTrue(policies.getAllValues().get(1).contains("上次回复未满足跟读要求"));
+        assertTrue(policies.getAllValues().get(1).contains("没有可识别的英文目标"));
+        assertTrue(prompts.getAllValues().get(1).contains("没有可识别的英文目标"));
         verify(conversation, never()).recordUserText(anyString(), anyString());
     }
 

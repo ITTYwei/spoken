@@ -101,6 +101,44 @@ public class GuidedReadingPolicyTest {
         }
         assertTrue(GuidedReadingPolicy.isAttempt("How are you?", "How you"));
     }
+    /** 真实失败日志：请朗读与目标问号均属于示范，不能当作普通聊天问题。 */
+    @Test public void acceptsActualLoggedReadingAndCommitsTheSameTarget() {
+        String logged = "We are in a free English chat. Let's practice a simple everyday question.\n\n\"Where do you live?\"\n中文含义：你住在哪里？\n\n请朗读：Where do you live?";
+        String checked = GuidedReadingPolicy.guard(Flux.just(logged), fresh(), List.of()).blockFirst();
+        assertEquals(logged, checked);
+        var state = new TeachingStateAggregate(); state.guidedReading(true);
+        state.commitSpoken(fresh(), checked);
+        assertEquals("Where do you live?", state.pending().target());
+        assertTrue(SpokenTaskResolver.resolve(TeachingTaskVO.response(), logged).reading());
+    }
+
+    /** 重复引用合并；允许常规数字标点，任务明确时缺少邀请可以补齐而非重跑模型。 */
+    @Test public void toleratesRepeatedTargetAndAddsMissingInvitation() {
+        for (String quote : List.of("\"I finish at 7:30; then I walk.\"", "‘I finish at 7:30; then I walk.’")) {
+            String spoken = "描述下班后的安排，可以说：" + quote + "，中文是我七点半结束，然后散步。再次示范：" + quote;
+            String checked = GuidedReadingPolicy.guard(Flux.just(spoken), fresh(), List.of()).blockFirst();
+            assertTrue(checked.endsWith("你来试着读一读吧。"));
+            var state = new TeachingStateAggregate(); state.guidedReading(true); state.commitSpoken(fresh(), checked);
+            assertEquals("I finish at 7:30; then I walk.", state.pending().target());
+        }
+    }
+
+    /** 不能为了降低失败率容忍多题、改题或明确拒绝；业务原因分别可用于模型修正。 */
+    @Test public void reportsSpecificTypedReasonsInsteadOfOneGenericFailure() {
+        assertReason("只有中文讲解，没有英文题面。", fresh(), List.of(), ReadingGenerationErrorEnum.MISSING_TARGET);
+        assertReason(demo("I like tea.") + demo("I like coffee."), fresh(), List.of(), ReadingGenerationErrorEnum.MULTIPLE_TARGETS);
+        assertReason(demo("How are you?"), fresh(), List.of("How are you?"), ReadingGenerationErrorEnum.RECENT_DUPLICATE);
+        var retry = new TeachingDecisionVO(EnglishLevelEnum.L2, new TeachingTaskVO("READ", "How are you?", "", 1), TeachingOutcomeEnum.NO_EVIDENCE,true,"",false,true);
+        assertReason(demo("I like tea."), retry, List.of(), ReadingGenerationErrorEnum.TARGET_CHANGED);
+        assertReason("不用跟读，只解释：\"I like tea.\"，意思是我喜欢茶。", fresh(), List.of(), ReadingGenerationErrorEnum.READING_DECLINED);
+        assertReason("\"I like tea.\"", fresh(), List.of(), ReadingGenerationErrorEnum.MISSING_EXPLANATION);
+        assertReason("At a cafe say \"I like tea.\". Please read.", fresh(), List.of(), ReadingGenerationErrorEnum.MISSING_CHINESE);
+    }
+    private void assertReason(String text, TeachingDecisionVO decision, List<String> recent, ReadingGenerationErrorEnum reason) {
+        var failure = assertThrows(ReadingGenerationException.class, () -> GuidedReadingPolicy.guard(Flux.just(text),decision,recent).blockFirst());
+        assertEquals(reason, failure.reason());
+    }
+
     private void rejected(String generated, TeachingDecisionVO d, List<String> recent) {
         try { GuidedReadingPolicy.guard(Flux.just(generated), d, recent).blockFirst(); fail("无效结果不应进入播报"); }
         catch (IllegalStateException expected) { assertTrue(expected.getMessage().startsWith("跟读生成结果")); }

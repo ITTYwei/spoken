@@ -32,11 +32,18 @@ public class TeachingPreparation {
 
     /** 情境跟读先核验目标再播报，普通聊天保留原始流式体验。 */
     public reactor.core.publisher.Flux<String> guard(ConversationSessionAggregate session, TeachingDecisionVO decision, reactor.core.publisher.Flux<String> source, Runnable rejected) {
+        return guard(session, decision, source, reason -> rejected.run());
+    }
+    /** 校验原因逐项反馈给同轮模型；只重生成业务格式错误，不重试网络、超长、权限或取消错误。 */
+    public reactor.core.publisher.Flux<String> guard(ConversationSessionAggregate session, TeachingDecisionVO decision,
+            reactor.core.publisher.Flux<String> source, java.util.function.Consumer<ReadingGenerationErrorEnum> rejected) {
         return session.teaching().guidedReading() ? GuidedReadingPolicy.guard(source, decision, session.teaching().recentReadingTargets())
-                .doOnError(error -> { if (error instanceof IllegalStateException && error.getMessage() != null
-                        && error.getMessage().startsWith("跟读生成结果")) rejected.run(); })
-                .retryWhen(reactor.util.retry.Retry.max(1).filter(error -> error instanceof IllegalStateException
-                        && error.getMessage() != null && error.getMessage().startsWith("跟读生成结果"))) : source;
+                .doOnError(ReadingGenerationException.class, error -> {
+                    log.warn("跟读校验失败 session={} reason={}", session.getSessionId(), error.reason());
+                    rejected.accept(error.reason());
+                })
+                .retryWhen(reactor.util.retry.Retry.max(1).filter(ReadingGenerationException.class::isInstance)
+                        .onRetryExhaustedThrow((spec, signal) -> signal.failure())) : source;
     }
     /** 当前课程由 practice 管理，Case 组合领域，不让 conversation 直接读取教材仓储。 */
     @org.springframework.beans.factory.annotation.Autowired(required=false)
@@ -156,6 +163,11 @@ public class TeachingPreparation {
 
     /** 上次草稿被校验拒绝时仅附加可信布尔状态，原始失败草稿不作为用户指令重新注入。 */
     public String prompt(ConversationSessionAggregate session, String text, TeachingDecisionVO decision, String persona, boolean regenerated) {
+        return prompt(session, text, decision, persona, regenerated ? "请检查唯一英文目标及讲解要求" : "");
+    }
+
+    /** 修正原因仅来自领域枚举，作为本轮必需数据与可信任务一起保留，不附带失败草稿。 */
+    public String prompt(ConversationSessionAggregate session, String text, TeachingDecisionVO decision, String persona, String rejectionReason) {
         // 所有业务状态统一作为背景编码，不能混成给模型执行的自然语言命令。
         // 学习请求和完整课程仍属必需数据，历史裁剪不会丢掉“我想学”或截断原题。
         var background = new java.util.LinkedHashMap<String, Object>();
@@ -163,7 +175,8 @@ public class TeachingPreparation {
         if (session.teaching().guidedReading()) {
             background.put("情境跟读", session.teaching().readingMode());
             background.put("近期已练英文（避免重复）", session.teaching().recentReadingTargets());
-            background.put("上次跟读生成未通过校验", regenerated);
+            background.put("上次跟读生成未通过校验", !rejectionReason.isBlank());
+            background.put("上次跟读生成的具体原因", rejectionReason);
             background.put("跟读生成阶段", decision.nextTask().reading()
                     ? decision.nextTask().target() == null || decision.nextTask().target().isBlank()
                     ? "根据等级、学习请求和当前场景生成新的连贯一句，不重复近期目标" : "保留当前英文目标，按真实评测反馈示范和指导"
@@ -186,7 +199,7 @@ public class TeachingPreparation {
         String current = ReplyPromptBuilder.buildManaged(text, decision, persona, decision.previousTask(), background);
         // 历史和记忆作为 DATA 排在当前规则之前；裁剪时始终保留 current。
         return context.build(new ChatContextRequestVO(subject(session), session.getSessionId(), text, current,
-                systemPolicy(session, decision, regenerated)));
+                systemPolicy(session, decision, rejectionReason)));
     }
 
     /** 本轮课程背景与通用响应准则：当前用户需求优先，提问范围来自完整课数据，不把原题当系统指令。 */
@@ -199,8 +212,13 @@ public class TeachingPreparation {
      * 重生成时使用更新后的同一策略计入预算并发送；真实知识提问的非跟读计划不附加任务。
      */
     public String systemPolicy(ConversationSessionAggregate session, TeachingDecisionVO decision, boolean regenerated) {
+        return systemPolicy(session, decision, regenerated ? "请检查唯一英文目标及讲解要求" : "");
+    }
+
+    /** SYSTEM 中使用固定业务修正原因，模型能据此修正具体问题；不会注入任意异常或旧草稿。 */
+    public String systemPolicy(ConversationSessionAggregate session, TeachingDecisionVO decision, String rejectionReason) {
         return ReplyPromptBuilder.buildSystemPolicy(decision)
-                + (session.teaching().guidedReading() ? ReplyPromptBuilder.buildGuidedReadingTask(decision, regenerated) : "");
+                + (session.teaching().guidedReading() ? ReplyPromptBuilder.buildGuidedReadingTask(decision, rejectionReason) : "");
     }
 
     /**
