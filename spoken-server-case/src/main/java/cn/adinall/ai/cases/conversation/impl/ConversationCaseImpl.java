@@ -15,6 +15,9 @@ import cn.adinall.ai.domain.conversation.model.entity.SayCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.SpeakCommandEntity;
 import cn.adinall.ai.domain.conversation.model.entity.StartConversationCommandEntity;
 import cn.adinall.ai.domain.conversation.model.valobj.EventTypeEnum;
+import cn.adinall.ai.domain.conversation.model.valobj.TeachingTaskVO;
+import cn.adinall.ai.domain.conversation.model.valobj.TeachingActionEnum;
+import cn.adinall.ai.domain.conversation.model.valobj.TeachingOutcomeEnum;
 import cn.adinall.ai.cases.conversation.model.ConversationTurnResultVO;
 import cn.adinall.ai.domain.conversation.model.valobj.UserUtteranceVO;
 import cn.adinall.ai.domain.learner.model.valobj.LearnerLevelEnum;
@@ -455,6 +458,23 @@ public class ConversationCaseImpl implements IConversationCase {
     }
 
     /**
+     * 跟读按钮生成首句：复用同一可取消轮次、提示词、短会话模型和媒体完成链路。
+     * turnId 为空表示系统主动示范，不写入用户回合、偏好或能力证据；工具能力按练习素材隔离。
+     */
+    @Override
+    public void startGuidedReading(String sessionId) {
+        var session = conversationService.requireSession(sessionId);
+        session.requireOpen();
+        if (!session.teaching().guidedReading()) return;
+        var round = reserveReply(sessionId);
+        var next = new TeachingTaskVO(TeachingActionEnum.READ.code(), "", "", 0);
+        var decision = new TeachingDecisionVO(teaching.level(session), next, TeachingOutcomeEnum.RESPONDED,
+                true, "", false, true, session.teaching().pending(), java.time.Instant.now());
+        var scenario = scenarioRepository.findById(session.getScenarioId());
+        startReply(session, null, "", decision, scenario == null ? null : scenario.systemPromptHint(), round);
+    }
+
+    /**
      * 编排一轮回复：Agent 负责生成，conversation 消费文本并管理播报。
      * <pre>prepare -> Agent Flux -> conversation stream -> playback end
      * interrupt -> dispose -> cancel Agent + close text socket</pre>
@@ -467,21 +487,23 @@ public class ConversationCaseImpl implements IConversationCase {
         String replyId = sessionId + ":reply:" + turnId + ":" + java.util.UUID.randomUUID();
         StringBuilder spoken = new StringBuilder();
         AtomicReference<Long> firstDelta = new AtomicReference<>();
+        // 仅在当前回复内保存重生成标志；不给新模型调用重复提交完全相同的失败上下文。
+        var regenerated = new java.util.concurrent.atomic.AtomicBoolean(false);
         Flux<String> tokens = Flux.defer(() -> {
                     if (round.isDisposed()) return Flux.empty();
                     // 先登记“待播回复”，此时并未证明用户听到了新任务。
                     // begin 还可能启动独立回答的后台能力观察；该观察与本轮教练回复不是同一次模型请求。
                     teaching.begin(session, turnId, replyId, decision, userText, replyAgentId);
                     // 教学策略只给任务与证据；后续对话统一由 Agent 生成。
-                    String prompt = teaching.prompt(session, userText, decision, persona);
+                    String prompt = teaching.prompt(session, userText, decision, persona, regenerated.get());
                     // 可信等级/任务进入 SYSTEM；原话、场景与裁剪历史保留在 USER。
                     if(agentReplies==null) return chatService.handlePreparedTextStream(replyAgentId,sessionId,prompt,teaching.systemPolicy(session,decision));
-                    return agentReplies.reply(replyAgentId,session,turnId,userText,prompt,teaching.systemPolicy(session,decision),decision,
+                    return agentReplies.reply(replyAgentId, session, turnId == null ? 0L : turnId, userText, prompt, teaching.systemPolicy(session, decision), decision,
                             ()->!round.isDisposed()&&replyRounds.get(sessionId)==round&&!session.isFinished());
                 }).subscribeOn(Schedulers.boundedElastic())
                 // Agent 的原始增量先经过任务护栏，再交给数字人播报。
                 .transform(source -> TeachingReplyGuard.apply(source, decision))
-                .transform(source -> teaching.guard(session, decision, source))
+                .transform(source -> teaching.guard(session, decision, source, () -> regenerated.set(true)))
                 .filter(delta -> delta != null && !delta.isEmpty())
                 .doOnNext(delta -> {
                     if (spoken.length()+delta.length()>32768) throw new IllegalStateException("reply_too_large");

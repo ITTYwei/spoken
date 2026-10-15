@@ -118,4 +118,4 @@ Agent 的工具参数没有账号、会话、轮次、操作版本或操作标�
 
 ## 情境跟读（2026-10-15）
 
-`GET /api/v1/sessions/{id}/reading` 查询已播英文目标，`POST` 同一路径以 `{"enabled":true/false}` 显式设置模式；需当前账号拥有会话。返回 enabled、target、correctionRetries、maxCorrections、version，并通过 reading.changed 同步。target 为空不能用完整字幕补齐。详见 [情境跟读说明](guided-reading-2026-10-15.md)。
+`GET /api/v1/sessions/{id}/reading` 查询已播英文目标，`POST` 同一路径以 `{"enabled":true/false}` 显式设置模式；需当前账号拥有会话。返回 enabled、target、correctionRetries、maxCorrections、version，并通过 reading.changed 同步。target 为空不能用完整字幕补齐。首句和后续新句由现有 Agent 动态生成，服务端确认播完才更新目标，接口字段不变。详见 [情境跟读说明](guided-reading-2026-10-15.md)。

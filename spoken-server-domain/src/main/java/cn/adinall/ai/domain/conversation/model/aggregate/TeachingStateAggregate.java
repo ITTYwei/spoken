@@ -16,42 +16,26 @@ import java.util.regex.Pattern;
  * <ul><li>等级在本会话内不升级。</li><li>方法同步；旧轮次提交还需要外层 replyId 校验。</li></ul>
  */
 public final class TeachingStateAggregate {
+    /** 在必需上下文预算内保留近期八句，避免开关切换或历史裁剪导致立即重复。 */
+    private static final int MAX_RECENT_TARGETS = 8;
     /** 用户主动选择的情境跟读状态，只存于当前业务会话，不从模型历史推断。 */
     private boolean guidedReading;
-    /** 已完整播出的句组索引；重复播放同句不前进，未播完的新句也不前进。 */
-    private int readingIndex;
+    /** 近期已播出的模型生成目标，最多八句；开关切换不清空，以免本场反复打开就重复首句。 */
+    private final java.util.Deque<String> recentReadingTargets = new java.util.ArrayDeque<>();
     /** 单调快照版本，防止手机用迟到 HTTP 响应覆盖新 SSE 状态。 */
     private long readingVersion;
-    /** 首次脚本示范的回复标识；空表示没有等待完成的首次示范。 */
-    private String readingOpeningId;
 
     /** 显式开关具有幂等性；变更清空旧任务，防止普通聊天字幕误成为题面。 */
     public synchronized boolean guidedReading(boolean enabled) {
         if (guidedReading == enabled) return false;
         guidedReading = enabled;
-        readingIndex = 0;
-        readingOpeningId = null;
         pending = TeachingTaskVO.response();
         readingVersion++;
         return true;
     }
     public synchronized boolean guidedReading() { return guidedReading; }
-    public synchronized int readingIndex() { return readingIndex; }
-
-    /** 首句下发前登记标识，只有匹配且完整说完的回调才提交英文目标。 */
-    public synchronized void readingOpening(String replyId) { readingOpeningId = replyId; }
-
-    /** 接收真实媒体完成事件；旧回复、被打断示范及未说出的目标均不能产生任务。 */
-    public synchronized boolean completeReadingOpening(String replyId, String text) {
-        if (!guidedReading || readingOpeningId == null || !readingOpeningId.equals(replyId)) return false;
-        var sentence = cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy.sentence(level, readingIndex);
-        var task = new TeachingTaskVO(cn.adinall.ai.domain.conversation.model.valobj.TeachingActionEnum.READ.code(), sentence.english(), "", 0);
-        var actual = cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(task, text);
-        readingOpeningId = null;
-        if (!actual.reading()) return false;
-        commit(actual);
-        return true;
-    }
+    /** 返回不可变的近期目标快照，作为每轮必需数据；未播完的模型草稿不会进入。 */
+    public synchronized java.util.List<String> recentReadingTargets() { return java.util.List.copyOf(recentReadingTargets); }
 
     /** 已播任务快照；尚无任务时不把首次待播文本或整段讲解暴露成目标。 */
     public synchronized cn.adinall.ai.domain.conversation.model.valobj.ReadingModeVO readingMode() {
@@ -65,14 +49,27 @@ public final class TeachingStateAggregate {
      * 不再经过普通聊天的两次建议计数器，避免三次纠音被重置或重复回调多加一次。
      */
     public synchronized void commitSpoken(cn.adinall.ai.domain.conversation.model.valobj.TeachingDecisionVO decision, String text) {
-        var actual = cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(), text);
-        if (guidedReading && decision.nextTask().reading() && actual.reading()
-                && actual.target().equals(decision.nextTask().target())) {
-            var current = cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy.sentence(level, readingIndex);
-            var next = cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy.sentence(level, readingIndex + 1);
-            if (!actual.target().equals(current.english()) && actual.target().equals(next.english())) readingIndex++;
-            commit(decision.nextTask());
-        } else commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(), decision.previousTask(), text));
+        if (!guidedReading) {
+            commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(), decision.previousTask(), text));
+            return;
+        }
+        var actual = cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(TeachingTaskVO.response(), text);
+        if (!actual.reading()) { commit(actual); return; }
+        String planned = decision.nextTask().target();
+        boolean newSentence = decision.nextTask().reading() && (planned == null || planned.isBlank());
+        if (newSentence) {
+            // 同一回复可能收到流式/媒体两次完成；仅相同已提交任务允许幂等确认，旧句不得重用。
+            boolean duplicate = recentReadingTargets.stream().anyMatch(old ->
+                    cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy.sameTarget(old, actual.target()));
+            if (duplicate) return;
+            recentReadingTargets.addLast(actual.target());
+            if (recentReadingTargets.size() > MAX_RECENT_TARGETS) recentReadingTargets.removeFirst();
+            commit(new TeachingTaskVO(actual.action(), actual.target(), "", 0));
+        } else if (decision.nextTask().reading() &&
+                cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy.sameTarget(planned, actual.target())) {
+            // 纠音次数来自服务端计划，不让模型重置；重复完成也不会再加一次。
+            commit(new TeachingTaskVO(decision.nextTask().action(), actual.target(), "", decision.nextTask().attempts()));
+        } else commit(actual);
     }
     /** 仅提取明确学习诉求作为引用数据，不借此决定模型动作或学习等级。 */
     private static final Pattern LEARNING_REQUEST = Pattern.compile(
@@ -117,5 +114,5 @@ public final class TeachingStateAggregate {
         pending = task;
     }
     /** 不能认为被打断回复中的新任务已经被用户听到。 */
-    public synchronized void interrupt() { readingOpeningId = null; commit(TeachingTaskVO.question("")); }
+    public synchronized void interrupt() { commit(TeachingTaskVO.question("")); }
 }

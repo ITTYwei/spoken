@@ -512,7 +512,10 @@ public class ConversationServiceImpl implements IConversationService {
                     log.warn("assistant.done 无文本（上游未给整段、本轮也没有累积字幕）session={}",
                             session.getSessionId());
                 }
-                completeAssistantTurn(session.getSessionId(), text, session.responseLatencyMs());
+                // 跟读按钮主动示范没有对应用户回合；字幕仍下发，但不能覆盖最后一条真实聊天答案。
+                var playback = session.pendingTeaching();
+                if (playback == null || playback.turnId() != null)
+                    completeAssistantTurn(session.getSessionId(), text, session.responseLatencyMs());
                 var opening = session.getOpeningDecision();
                 if (opening != null && session.isOpeningSpoken() && event.data() instanceof java.util.Map<?, ?> data
                         && (session.getSessionId() + ":opening").equals(data.get("replyId"))
@@ -527,12 +530,10 @@ public class ConversationServiceImpl implements IConversationService {
                         log.warn("开场完成记录降级 type={}", e.getClass().getSimpleName());
                     }
                 }
-                // 首次跟读示范沿脚本轨，仍只在真实媒体完成后登记唯一英文目标。
-                if (event.data() instanceof Map<?, ?> readingData && session.acceptsReply(String.valueOf(readingData.get("replyId"))))
-                    session.teaching().completeReadingOpening(String.valueOf(readingData.get("replyId")), text);
                 var pending = session.pendingTeaching();
                 if (pending != null && session.acceptsReply(pending.replyId()) && text != null && !text.isBlank()) {
-                    teachingReplies.complete(pending.turnId(), pending.replyId(), text);
+                    // 主动示范无用户回合，不能把 null 交给持久化；任务仍按真实媒体完成提交。
+                    if (pending.turnId() != null) teachingReplies.complete(pending.turnId(), pending.replyId(), text);
                     // 整段播报回调与流式回调采用同一核验规则，避免把未说出的跟读任务提交。
                     session.teaching().commitSpoken(pending.decision(), text);
                 }

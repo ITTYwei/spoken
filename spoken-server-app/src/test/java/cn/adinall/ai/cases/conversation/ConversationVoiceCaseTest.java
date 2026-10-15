@@ -241,9 +241,11 @@ public class ConversationVoiceCaseTest {
         var session = conversation.requireSession("s1");
         session.teaching().initialize(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2);
         session.teaching().guidedReading(true);
-        session.teaching().readingOpening("intro");
-        session.teaching().completeReadingOpening("intro", cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy.sentence(
-                cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2, 0).demonstration());
+        session.teaching().commitSpoken(new TeachingDecisionVO(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2,
+                new TeachingTaskVO("READ", "", "", 0), TeachingOutcomeEnum.RESPONDED, true, "", false, true),
+                "想问近况可以说：“How are you?”，意思是你好吗。你来试着读一读吧。");
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(Flux.just("这次评测暂不可用，请读：“How are you?”，意思是你好吗。你来试着读一读吧。"));
         when(conversation.transcribeUploadedAndRecord("s1", wav)).thenReturn(new UserUtteranceVO("How you", 42L));
         useCase.voice("s1", pcm, 16000, "如果你想问对方最近怎么样可以说 How are you 意思是你好吗");
         var command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
@@ -265,6 +267,67 @@ public class ConversationVoiceCaseTest {
         verify(pronunciation).assess(eq("s1"), eq(42L), command.capture());
         assertEquals("What does this mean?", command.getValue().expectedText());
         assertTrue(generatedPrompt().contains("\"practice_input\":false"));
+    }
+
+    /** 按钮首句通过同一 Agent 生成，不能写死开场或伪造“用户说了开始跟读”。 */
+    @Test public void initialReadingUsesModelAndDoesNotRecordFakeUserTurn() {
+        var session = conversation.requireSession("s1"); session.teaching().guidedReading(true);
+        String generated = "想邀请朋友坐下，可以说：“Would you like to sit here?”，意思是你想坐这里吗。你来试着读一读吧。";
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString())).thenReturn(Flux.just(generated));
+        useCase.startGuidedReading("s1");
+        String prompt = generatedPrompt();
+        assertTrue(prompt.contains("根据等级、学习请求和当前场景生成新的连贯一句"));
+        verify(conversation, never()).recordUserText(anyString(), anyString());
+        var command = ArgumentCaptor.forClass(SayCommandEntity.class);
+        verify(conversation, timeout(3000)).say(eq("s1"), command.capture());
+        assertEquals(generated, command.getValue().text());
+        assertEquals("", session.teaching().readingMode().target()); // say 受理尚未播完。
+        assertNull(session.pendingTeaching().turnId());
+    }
+
+    /** 生成重复句时有限重生成，失败草稿不可流到数字人；合格新句仍由模型决定。 */
+    @Test public void duplicateInitialGenerationRegeneratesOnceWithoutPlayingOldSentence() {
+        var session = conversation.requireSession("s1"); session.teaching().guidedReading(true);
+        var d = new TeachingDecisionVO(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2,
+                new TeachingTaskVO("READ", "", "", 0), TeachingOutcomeEnum.RESPONDED, true, "", false, true);
+        session.teaching().commitSpoken(d, "问近况可以说：“How are you?”，意思是你好吗。请跟读。");
+        session.teaching().interrupt();
+        String generated = "接着聊近况，可以说：“I just got back from a walk.”，意思是我刚散步回来。请跟读。";
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(Flux.just("问近况可以说：“HOW ARE YOU!”，意思是你好吗。请跟读。"), Flux.just(generated));
+        useCase.startGuidedReading("s1");
+        var command = ArgumentCaptor.forClass(SayCommandEntity.class);
+        verify(conversation, timeout(3000)).say(eq("s1"), command.capture());
+        assertEquals(generated, command.getValue().text());
+        var prompts = ArgumentCaptor.forClass(String.class);
+        verify(chat, times(2)).handlePreparedTextStream(anyString(), anyString(), prompts.capture(), anyString());
+        assertTrue(prompts.getAllValues().get(0).contains("上次跟读生成未通过校验"));
+        assertNotEquals(prompts.getAllValues().get(0), prompts.getAllValues().get(1));
+    }
+
+    /** 两次生成都不合规则报告失败，不能默默回退到固定题库。 */
+    @Test public void invalidInitialGenerationStopsAfterOneRegenerationAndNeverUsesCannedSentence() {
+        conversation.requireSession("s1").teaching().guidedReading(true);
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString())).thenReturn(Flux.just("无英文目标"));
+        useCase.startGuidedReading("s1");
+        verify(events, timeout(3000)).publish(eq("s1"), argThat(e -> e.type() == EventTypeEnum.ERROR));
+        verify(chat, times(2)).handlePreparedTextStream(anyString(), anyString(), anyString(), anyString());
+        verify(conversation, never()).say(anyString(), any());
+    }
+
+    /** 新模式首句尚未生成完时关闭，旧模型流必须可取消，迟到内容不播报。 */
+    @Test public void generatedInitialReadingCanBeCancelledBeforePlayback() throws Exception {
+        conversation.requireSession("s1").teaching().guidedReading(true);
+        var sink = reactor.core.publisher.Sinks.many().unicast().<String>onBackpressureBuffer();
+        var cancelled = new java.util.concurrent.CountDownLatch(1);
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(sink.asFlux().doOnCancel(cancelled::countDown));
+        useCase.startGuidedReading("s1"); generatedPrompt();
+        sink.tryEmitNext("还没生成完");
+        useCase.interrupt("s1");
+        assertTrue(cancelled.await(3, java.util.concurrent.TimeUnit.SECONDS));
+        sink.tryEmitNext("迟到结果");
+        verify(conversation, never()).say(anyString(), any());
     }
 
 }

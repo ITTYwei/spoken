@@ -31,8 +31,12 @@ public class TeachingPreparation {
     private cn.adinall.ai.domain.conversation.adapter.port.IConversationEventBusPort readingEvents;
 
     /** 情境跟读先核验目标再播报，普通聊天保留原始流式体验。 */
-    public reactor.core.publisher.Flux<String> guard(ConversationSessionAggregate session, TeachingDecisionVO decision, reactor.core.publisher.Flux<String> source) {
-        return session.teaching().guidedReading() ? GuidedReadingPolicy.guard(source, decision, session.teaching().readingIndex()) : source;
+    public reactor.core.publisher.Flux<String> guard(ConversationSessionAggregate session, TeachingDecisionVO decision, reactor.core.publisher.Flux<String> source, Runnable rejected) {
+        return session.teaching().guidedReading() ? GuidedReadingPolicy.guard(source, decision, session.teaching().recentReadingTargets())
+                .doOnError(error -> { if (error instanceof IllegalStateException && error.getMessage() != null
+                        && error.getMessage().startsWith("跟读生成结果")) rejected.run(); })
+                .retryWhen(reactor.util.retry.Retry.max(1).filter(error -> error instanceof IllegalStateException
+                        && error.getMessage() != null && error.getMessage().startsWith("跟读生成结果"))) : source;
     }
     /** 当前课程由 practice 管理，Case 组合领域，不让 conversation 直接读取教材仓储。 */
     @org.springframework.beans.factory.annotation.Autowired(required=false)
@@ -134,7 +138,7 @@ public class TeachingPreparation {
         Instant inputAt = session.getLastUserSpeechEndedAt() > 0 ? Instant.ofEpochMilli(session.getLastUserSpeechEndedAt()) : Instant.now();
         // 策略只整理建议与跟读证据，不强制决定下一步；原话中的学习请求独立保留。
         var decision = session.teaching().guidedReading()
-                ? GuidedReadingPolicy.decide(level(session), previous, text, feedback, voice, session.teaching().readingIndex())
+                ? GuidedReadingPolicy.decide(level(session), previous, text, feedback, voice)
                 : TeachingPolicy.decide(level(session), previous, text, feedback, voice);
         // 学习目标属于本场状态，与 ADK 短会话和可裁剪历史分离；练习例句不更新目标。
         session.teaching().captureLearningRequest(text, decision.practiceInput() || !"free".equals(session.getScenarioId()), inputAt);
@@ -147,16 +151,23 @@ public class TeachingPreparation {
      * 运行轨总装点：本轮原话和状态摘要 + 裁剪历史/记忆 = USER；case 另将可信策略传入 SYSTEM。
      */
     public String prompt(ConversationSessionAggregate session, String text, TeachingDecisionVO decision, String persona) {
+        return prompt(session, text, decision, persona, false);
+    }
+
+    /** 上次草稿被校验拒绝时仅附加可信布尔状态，原始失败草稿不作为用户指令重新注入。 */
+    public String prompt(ConversationSessionAggregate session, String text, TeachingDecisionVO decision, String persona, boolean regenerated) {
         // 所有业务状态统一作为背景编码，不能混成给模型执行的自然语言命令。
         // 学习请求和完整课程仍属必需数据，历史裁剪不会丢掉“我想学”或截断原题。
         var background = new java.util.LinkedHashMap<String, Object>();
         background.put("会话学习请求原话", session.teaching().learningRequest());
         if (session.teaching().guidedReading()) {
             background.put("情境跟读", session.teaching().readingMode());
-            var sentence = GuidedReadingPolicy.sentence(decision.level(), session.teaching().readingIndex());
-            if (decision.nextTask().reading() && !sentence.english().equals(decision.nextTask().target()))
-                sentence = GuidedReadingPolicy.sentence(decision.level(), session.teaching().readingIndex() + 1);
-            background.put("跟读句子用途与译意", sentence);
+            background.put("近期已练英文（避免重复）", session.teaching().recentReadingTargets());
+            background.put("上次跟读生成未通过校验", regenerated);
+            background.put("跟读生成阶段", decision.nextTask().reading()
+                    ? decision.nextTask().target() == null || decision.nextTask().target().isBlank()
+                    ? "根据等级、学习请求和当前场景生成新的连贯一句，不重复近期目标" : "保留当前英文目标，按真实评测反馈示范和指导"
+                    : "先回答本轮真实问题，不强制跟读");
         }
         var scene = "free".equals(session.getScenarioId()) ? ConversationSceneEnum.FREE_ENGLISH : ConversationSceneEnum.ROLE_PRACTICE;
         if (practice != null && textbooks != null) {
@@ -194,8 +205,10 @@ public class TeachingPreparation {
      * <li>能力观察为后台异步，任何写入失败只降级记日志，不阻塞本轮播报。</li></ul>
      */
     public void begin(ConversationSessionAggregate session, Long turn, String reply, TeachingDecisionVO decision, String text, String agentId) {
-        replies.begin(subject(session), session.getSessionId(), turn, reply, decision);
+        if (turn != null) replies.begin(subject(session), session.getSessionId(), turn, reply, decision);
         session.pendingTeaching(new TeachingPlaybackVO(turn, reply, decision));
+        // 按钮主动示范没有用户输入，不进入用户事实、待聊话题或能力观察链路。
+        if (turn == null) return;
         // 场景角色扮演中的陈述也不是用户现实偏好；首版仅自由对话提取事实。
         if(!agentActionsEnabled) memory.record(subject(session), session.getSessionId(), turn, text,
                 decision.practiceInput() || !"free".equals(session.getScenarioId()) ||
@@ -246,7 +259,7 @@ public class TeachingPreparation {
     public void complete(ConversationSessionAggregate session, Long turn, String reply, TeachingDecisionVO decision, String text) {
         synchronized (session) {
             if (!session.acceptsReply(reply) || session.isFinished()) return;
-            replies.complete(turn, reply, text);
+            if (turn != null) replies.complete(turn, reply, text);
             // 只有目标句和跟读邀请都实际播出，才把 READ/CORRECT 留给用户下一轮完成。
             session.teaching().commitSpoken(decision, text);
             if (readingEvents != null) readingEvents.publish(session.getSessionId(),

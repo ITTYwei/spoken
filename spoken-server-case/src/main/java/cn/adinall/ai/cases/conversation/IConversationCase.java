@@ -120,6 +120,9 @@ public interface IConversationCase {
      */
     ConversationTurnResponseDTO voice(String sessionId, byte[] pcm, int sampleRate, String expectedText);
 
+    /** 按钮开启情境跟读：模型根据真实等级和场景生成首句，不创建虚构用户回合。 */
+    void startGuidedReading(String sessionId);
+
     /** 打断当前这句。 */
     void interrupt(String sessionId);
 

@@ -5,9 +5,9 @@ import cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum;
 import java.util.List;
 
 /**
- * 情境跟读领域规则：控制级别、连续句组、评测准入及三次纠音上限，不访问仓储或模型。
- * 首版使用原创日常见面句组，各档内容按认识、近况、兴趣、邀约连续展开。
- * Agent 负责自然讲解，服务端确定唯一英文目标；不依赖模型数次数或从历史猜题。
+ * 情境跟读领域规则：控制评测准入及三次纠音上限，不访问仓储或模型。
+ * 英文句子、译意和情境说明全部由现有模型按真实等级及上下文生成，此处不保存题库。
+ * Agent 负责自然讲解，服务端核验并保存实际播出的唯一英文目标；不依赖模型数次数或从历史猜题。
  * 与普通聊天的建议策略分开：只有用户主动打开跟读才使用此处规则。
  */
 public final class GuidedReadingPolicy {
@@ -16,47 +16,7 @@ public final class GuidedReadingPolicy {
     /** 评测原始总分的过关线；用于本练习进度，不修改综合英语水平。 */
     public static final double PASS_SCORE = 80;
 
-    /** 原创单句及用途、中文意思；用途用于保持聊天形式，不只是朗读题面。 */
-    public record Sentence(String english, String meaning, String situation) {
-        /** 缺少可用模型输出时的完整教学示范，只将英文加引号。 */
-        public String demonstration() {
-            return situation + "，可以说：“" + english + "”，意思是“" + meaning + "”。你来试着读一读吧。";
-        }
-    }
-
     private GuidedReadingPolicy() { }
-
-    /** 按真实档位选择句组；每组从见面延伸到告别，完成一组后可重新练习。 */
-    public static List<Sentence> sentences(EnglishLevelEnum level) {
-        return switch (level) {
-            case L1 -> List.of(s("Hello!", "你好", "见到朋友时打个招呼"), s("I'm fine.", "我很好", "朋友问起你的近况"),
-                    s("My name is Sam.", "我叫山姆", "接着介绍自己的名字"), s("I like books.", "我喜欢书", "聊到自己的兴趣"),
-                    s("Let's go!", "我们走吧", "想邀请朋友一起走"), s("See you!", "再见", "最后和朋友道别"));
-            case L2 -> List.of(s("How are you?", "你好吗", "想问朋友最近怎么样"), s("I'm doing well, thanks.", "我很好，谢谢", "朋友也问起你的近况"),
-                    s("What do you like to do?", "你喜欢做什么", "接着了解朋友的兴趣"), s("I like reading books.", "我喜欢读书", "轮到你分享爱好"),
-                    s("Would you like some coffee?", "你想喝点咖啡吗", "想边喝咖啡边聊"), s("See you next time!", "下次见", "聊天结束时期待再见"));
-            case L3 -> List.of(s("How has your day been?", "你今天过得怎么样", "傍晚遇到朋友"), s("It's been busy, but pretty good.", "挺忙的，不过还不错", "朋友问你今天怎么样"),
-                    s("I've been reading a new book.", "我最近在读一本新书", "接着分享最近的生活"), s("What kind of books do you enjoy?", "你喜欢哪类书", "想了解朋友的阅读喜好"),
-                    s("Shall we visit the bookshop together?", "我们一起去书店好吗", "想把共同兴趣变成邀约"), s("Let's catch up again soon.", "我们改天再聊", "道别时约好再联系"));
-            case L4 -> List.of(s("It's been a while. How have you been?", "好久不见，你最近怎么样", "偶遇许久未见的朋友"), s("I've been keeping busy with a new project.", "我最近在忙一个新项目", "接着分享近况"),
-                    s("Reading helps me unwind after a long day.", "忙碌一天后读书能让我放松", "话题转到下班后的爱好"), s("Have you read anything interesting lately?", "你最近读过什么有趣的书吗", "邀请朋友分享阅读经历"),
-                    s("We should check out that new bookshop sometime.", "我们找时间去看看那家新书店吧", "顺着阅读话题发出邀请"), s("It was lovely catching up with you.", "很高兴和你聊聊近况", "结束这次轻松的见面"));
-            case L5 -> List.of(s("What have you been up to since we last met?", "上次见面后你都在忙什么", "和老朋友重逢"), s("I've taken up reading as a way to switch off.", "我开始通过阅读放松下来", "分享自己新培养的习惯"),
-                    s("The story gave me a fresh perspective on friendship.", "这个故事让我对友谊有了新的看法", "进一步介绍一本书带来的感受"), s("Is there a book you'd recommend without hesitation?", "有没有一本你会毫不犹豫推荐的书", "邀请朋友推荐读物"),
-                    s("Why don't we swap recommendations over coffee?", "不如我们喝咖啡时交换书单", "自然提出下一次见面"), s("I'll look forward to hearing what you think.", "我很期待听听你的想法", "为下次交流留下话题"));
-            case L6 -> List.of(s("How has life been treating you since we last caught up?", "上次聊过之后你过得怎么样", "和老朋友自然地寒暄"), s("I've been trying to strike a better balance between work and leisure.", "我一直在努力更好地平衡工作与休闲", "深入分享近期生活变化"),
-                    s("A novel I read recently challenged some of my assumptions.", "最近读的一部小说挑战了我的一些固有看法", "话题延伸到阅读和思考"), s("What struck you most about the author's perspective?", "作者的视角最让你印象深刻的是什么", "围绕共同读物展开讨论"),
-                    s("Perhaps we could turn these conversations into a regular book club.", "也许我们可以把这样的交流变成定期读书会", "把共同兴趣变成持续的约定"), s("Let's pick this up next time once we've both finished the book.", "等我们都读完这本书，下次接着聊", "为下次见面自然收尾"));
-        };
-    }
-
-    private static Sentence s(String english, String meaning, String situation) { return new Sentence(english, meaning, situation); }
-
-    /** 只取当前目标的后一句；重试返回原句。索引保存在会话聚合，播报完成后才前进。 */
-    public static Sentence sentence(EnglishLevelEnum level, int index) {
-        var group = sentences(level);
-        return group.get(Math.floorMod(index, group.size()));
-    }
 
     /**
      * 跟读模式允许不完整、误识别的英文尝试；明确提问、暂停和新需求仍不按旧目标评测。
@@ -85,7 +45,7 @@ public final class GuidedReadingPolicy {
      * 缺评测不能宣称不合格或通过；保留原句让用户重试，不消耗纠音配额。
      */
     public static TeachingDecisionVO decide(EnglishLevelEnum level, TeachingTaskVO previous, String text,
-                                             PronunciationFeedbackVO feedback, boolean voice, int index) {
+                                             PronunciationFeedbackVO feedback, boolean voice) {
         if (previous == null || !previous.reading() || !voice || !isAttempt(previous.target(), text))
             return TeachingPolicy.decide(level, previous, text, null, false);
         boolean usable = feedback != null && feedback.score() != null && Double.isFinite(feedback.score())
@@ -93,8 +53,8 @@ public final class GuidedReadingPolicy {
         var issue = usable ? PronunciationEvidencePolicy.credibleIssue(previous.target(), feedback) : null;
         boolean pass = usable && feedback.score() >= PASS_SCORE && issue == null;
         if (pass || previous.attempts() >= MAX_CORRECTIONS) {
-            var next = sentence(level, index + 1);
-            return new TeachingDecisionVO(level, new TeachingTaskVO(TeachingActionEnum.READ.code(), next.english(), "", 0),
+            // 空目标表示请求模型生成新句，绝不能拿旧目标或固定例句补齐。
+            return new TeachingDecisionVO(level, new TeachingTaskVO(TeachingActionEnum.READ.code(), "", "", 0),
                     pass ? TeachingOutcomeEnum.READ_PASS : TeachingOutcomeEnum.READ_LIMIT_REACHED, true,
                     "", usable, true);
         }
@@ -106,30 +66,44 @@ public final class GuidedReadingPolicy {
     }
 
     /**
-     * 情境模式必须在播报前核验整段，防止模型换错目标或超三次继续旧句。
-     * 只在确有练习计划时启用；知识讲解仍走原流式链路，不截断用户问题的答案。
+     * 情境模式先核验整段再播报：新句必须由模型生成且不重复近期目标；重试必须保留原句。
+     * 无效结果显式失败，由 Case 限定重生成次数；没有固定教学内容的降级题库。
+     * @param recent 本轮冻结的近期已播目标，最多八句，不依赖可裁剪聊天历史
      */
     public static reactor.core.publisher.Flux<String> guard(reactor.core.publisher.Flux<String> source,
-                                                           TeachingDecisionVO decision, int index) {
+                                                           TeachingDecisionVO decision, List<String> recent) {
         if (!decision.nextTask().reading()) return source;
-        return source.reduce(new StringBuilder(), (all, delta) -> {
+        // 每次重生成都重新分配缓冲，不能把被拒绝的旧草稿拼进下一次结果。
+        return reactor.core.publisher.Flux.defer(() -> source.reduce(new StringBuilder(), (all, delta) -> {
             if (all.length() + delta.length() > 32768) throw new IllegalStateException("reply_too_large");
             return all.append(delta);
         }).map(all -> {
             String spoken = all.toString();
             var actual = SpokenTaskResolver.resolve(TeachingTaskVO.response(), spoken);
-            // 没有可信错词时使用不含具体纠错的示范，避免模型凭空猜测发音问题。
-            if (decision.outcome() != TeachingOutcomeEnum.READ_LIMIT_REACHED && actual.reading() && actual.target().equals(decision.nextTask().target())
-                    && (decision.outcome() != TeachingOutcomeEnum.READ_RETRY || !decision.correctionHint().isBlank())) return spoken;
-            var next = sentence(decision.level(), index);
-            if (!next.english().equals(decision.nextTask().target())) next = sentence(decision.level(), index + 1);
-            String prefix = switch (decision.outcome()) {
-                case READ_PASS -> "这句读得很清楚，我们接着聊。";
-                case READ_LIMIT_REACHED -> "这句先练到这里，我们换一句。";
-                case NO_EVIDENCE -> "这次暂时没有拿到可用的评测结果，我们再试一次。";
-                default -> decision.correctionHint().isBlank() ? "我们把这句再连贯地读一次。" : decision.correctionHint();
-            };
-            return prefix + next.demonstration();
-        }).flux();
+            String planned = decision.nextTask().target();
+            boolean newSentence = planned == null || planned.isBlank();
+            if (!actual.reading() || (newSentence
+                    ? recent.stream().anyMatch(old -> sameTarget(old, actual.target()))
+                    : !sameTarget(planned, actual.target())))
+                throw new IllegalStateException("跟读生成结果未给出有效且符合当前任务的唯一英文句子");
+            // 引号外必须有教学交流，避免仅输出待跟读英文。L1/L2 还必须含中文支援。
+            String narration = spoken.replaceAll("\"[^\"]*\"|“[^”]*”", "").trim();
+            if (narration.length() < 8 || (decision.level().ordinal() <= EnglishLevelEnum.L2.ordinal()
+                    && !narration.matches("(?s).*\\p{IsHan}.*")))
+                throw new IllegalStateException("跟读生成结果缺少情境讲解或中文含义");
+            // 没有具体证据时只允许通用重读邀请；不信任模型凭空编造的音素指导。
+            if (decision.outcome() == TeachingOutcomeEnum.READ_RETRY && decision.correctionHint().isBlank())
+                return "我们把这句再连贯地读一次：“" + actual.target() + "”。你来试着读一读吧。";
+            if (decision.outcome() == TeachingOutcomeEnum.NO_EVIDENCE)
+                return "这次暂时没有拿到可用的评测结果，我们再试一次：“" + actual.target() + "”。你来试着读一读吧。";
+            return spoken;
+        }).flux());
+    }
+
+    /** 同一句换大小写、标点或空格不算新题；不把同义的新表达粗暴归并。 */
+    public static boolean sameTarget(String left, String right) { return normalize(left).equals(normalize(right)); }
+    private static String normalize(String text) {
+        return text == null ? "" : text.toLowerCase(java.util.Locale.ROOT).replace('’', '\'')
+                .replaceAll("[^a-z0-9']+", " ").trim();
     }
 }

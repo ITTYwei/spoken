@@ -114,4 +114,26 @@ public class ConversationPlaybackTest {
         assertEquals(EventTypeEnum.TTS_START, media.type());
         assertEquals("r1", ((Map<?, ?>) media.data()).get("replyId"));
     }
+    /** 主动首句无用户回合，媒体完成照常登记模型生成目标，不能覆盖历史或持久化 null 回合。 */
+    @Test public void proactiveGeneratedReadingCommitsOnlyAfterMediaAndNeverOverwritesLastUserTurn() throws Exception {
+        var session = new ConversationSessionAggregate("s", "p", "d", "a", "m", "v", "free", SessionStatusEnum.ACTIVE);
+        session.teaching().initialize(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2);
+        session.teaching().guidedReading(true); session.beginReply("reading-initial");
+        var decision = new cn.adinall.ai.domain.conversation.model.valobj.TeachingDecisionVO(
+                cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2,
+                new cn.adinall.ai.domain.conversation.model.valobj.TeachingTaskVO("READ", "", "", 0), TeachingOutcomeEnum.RESPONDED, true, "", false, true);
+        session.pendingTeaching(new cn.adinall.ai.domain.conversation.model.valobj.TeachingPlaybackVO(null, "reading-initial", decision));
+        var driver = mock(IAvatarDriverPort.class); var turns = mock(IConversationTurnRepository.class);
+        var replies = mock(cn.adinall.ai.domain.conversation.adapter.repository.ITeachingReplyRepository.class);
+        var service = new ConversationServiceImpl(driver, mock(IConversationSessionRepository.class), turns, mock(IConversationEventBusPort.class));
+        var field = ConversationServiceImpl.class.getDeclaredField("teachingReplies"); field.setAccessible(true); field.set(service, replies);
+        String generated = "想去公园可以说：“Let's go to the park.”，意思是我们去公园吧。你来试着读一读吧。";
+        when(driver.events("p")).thenReturn(Flux.just(ConversationEventVO.of(EventTypeEnum.ASSISTANT_DONE,
+                Map.of("replyId", "reading-initial", "text", generated))));
+        assertEquals("", session.teaching().readingMode().target());
+        service.streamDriverEvents(session).collectList().block(Duration.ofSeconds(2));
+        assertEquals("Let's go to the park.", session.teaching().readingMode().target());
+        verifyNoInteractions(turns, replies);
+    }
+
 }

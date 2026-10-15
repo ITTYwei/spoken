@@ -5,24 +5,22 @@ import cn.adinall.ai.cases.conversation.IConversationCase;
 import cn.adinall.ai.domain.account.support.AccountContext;
 import cn.adinall.ai.domain.conversation.adapter.port.IConversationEventBusPort;
 import cn.adinall.ai.domain.conversation.model.aggregate.ConversationSessionAggregate;
-import cn.adinall.ai.domain.conversation.model.entity.SayCommandEntity;
 import cn.adinall.ai.domain.conversation.model.valobj.*;
 import cn.adinall.ai.domain.conversation.service.IConversationService;
-import cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy;
 import cn.adinall.ai.types.exception.AppException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 /**
- * 跟读按钮用例：校验账号归属、取消旧回复、切换领域状态并播出首次情境示范。
- * 首次示范走既有脚本轨，不伪造用户发言或调用新模型；后续反馈仍沿现有 Agent 装配链路。
+ * 跟读按钮用例：校验账号归属、取消旧回复、切换领域状态并请求模型生成首次情境示范。
+ * 首次及后续示范均沿现有 Agent 装配链路生成，不伪造用户发言或另建模型客户端。
  * 失败关闭跟读并发布真实状态；按钮重复打开不会重复示范，画面连接保持不变。
  */
 @Service
 public class GuidedReadingCase {
     /** 当前 LLM 归属配置；旧上游一体化模式没有本地跟读反馈链路，不能假装可用。 */
     private final cn.adinall.ai.domain.shared.adapter.port.IAppConfigPort config;
-    /** 会话入口，提供现有媒体连接和脚本播报。 */
+    /** 会话入口，提供现有会话状态与媒体连接。 */
     private final IConversationService conversations;
     /** 复用现有取消能力，包含识别/评测中的迟到轮次。 */
     private final IConversationCase conversationCase;
@@ -66,10 +64,9 @@ public class GuidedReadingCase {
             session.teaching().guidedReading(enabled);
             publish(session);
             if (enabled) {
-                String reply = id + ":reading:" + session.teaching().readingMode().version();
-                session.teaching().readingOpening(reply);
                 try {
-                    conversations.say(id, new SayCommandEntity(GuidedReadingPolicy.sentence(session.teaching().level(), 0).demonstration(), session.getVoice(), reply));
+                    // 首句沿现有 Agent/媒体轮次链路生成，不写固定句子，也不伪造用户聊天回合。
+                    conversationCase.startGuidedReading(id);
                 } catch (RuntimeException failed) {
                     session.teaching().guidedReading(false);
                     publish(session);

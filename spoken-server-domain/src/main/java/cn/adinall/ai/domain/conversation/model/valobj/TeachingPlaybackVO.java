@@ -9,6 +9,6 @@ package cn.adinall.ai.domain.conversation.model.valobj;
  * <ul><li>只有当前replyId可提交。</li><li>结束语义是服务器媒体排空。</li></ul>
  */
 public record TeachingPlaybackVO(
-        /** 关联用户回合。 */ Long turnId,
+        /** 关联用户回合；按钮主动示范为空，不写用户回合或教学回合表。 */ Long turnId,
         /** 回复唯一ID。 */ String replyId,
         /** 本轮唯一动作。 */ TeachingDecisionVO decision) {}
