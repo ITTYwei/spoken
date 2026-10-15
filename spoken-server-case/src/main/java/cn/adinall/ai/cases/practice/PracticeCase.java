@@ -81,6 +81,9 @@ public class PracticeCase {
             if (cancelRound) conversationCase.interrupt(session.getSessionId());
             else session.teaching().interrupt();
             if (lesson!=null) practice.remember(session.teachingSubject(),request.textbookId(),request.lessonId());
+            // 切换课程/自由对话退出独立情境跟读，防止旧句盖过新课程。
+            session.teaching().guidedReading(false);
+            events.publish(session.getSessionId(),ConversationEventVO.of(EventTypeEnum.READING_CHANGED,session.teaching().readingMode()));
             var result=aggregate.change(mode,request.textbookId(),request.lessonId(),lesson==null?null:lesson.title(),request.operationId(),fingerprint);
             changed(session.getSessionId(),result);
             // 两种按钮都按真实选择播报，不伪造用户回合，也不将选择当作个人事实或能力证据。

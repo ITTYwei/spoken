@@ -428,16 +428,22 @@ public class ConversationCaseImpl implements IConversationCase {
         var round = reserveReply(sessionId);
         byte[] wav = audioFormat.toWav(pcm, sampleRate);
         UserUtteranceVO utterance = conversationService.transcribeUploadedAndRecord(sessionId, wav);
+        if (round.isDisposed() || replyRounds.get(sessionId) != round)
+            return new ConversationTurnResponseDTO(utterance.userText(), utterance.turnId(), null);
         var previousTask = session.teaching().pending();
         // 客户端 expectedText 不能改写服务端任务；自由对话分仅作参考，不进入教学决策。
         // 当前话语不像目标句时按自由发言评测，避免将中文招呼对照英文跟读句打分。
         String serverTarget = previousTask.reading()
-                && cn.adinall.ai.domain.conversation.service.reply.ReadingAttemptPolicy.isAttempt(previousTask.target(), utterance.userText())
+                && (session.teaching().guidedReading()
+                ? cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy.isAttempt(previousTask.target(), utterance.userText())
+                : cn.adinall.ai.domain.conversation.service.reply.ReadingAttemptPolicy.isAttempt(previousTask.target(), utterance.userText()))
                 ? previousTask.target() : null;
         PronunciationAssessmentAggregate assessment = assessQuietly(sessionId, utterance.turnId(), wav,
                 utterance.userText(), serverTarget);
         ScenarioVO scenario = scenarioRepository.findById(session.getScenarioId());
         PronunciationFeedbackVO feedback = teachingFeedback(assessment);
+        if (round.isDisposed() || replyRounds.get(sessionId) != round)
+            return new ConversationTurnResponseDTO(utterance.userText(), utterance.turnId(), assessment == null ? null : PronunciationAssembler.toResponse(assessment));
         var decision = teaching.decide(session, utterance.userText(), feedback, true);
         startReply(session, utterance.turnId(), utterance.userText(), decision,
                 scenario == null ? null : scenario.systemPromptHint(), round);
@@ -475,6 +481,7 @@ public class ConversationCaseImpl implements IConversationCase {
                 }).subscribeOn(Schedulers.boundedElastic())
                 // Agent 的原始增量先经过任务护栏，再交给数字人播报。
                 .transform(source -> TeachingReplyGuard.apply(source, decision))
+                .transform(source -> teaching.guard(session, decision, source))
                 .filter(delta -> delta != null && !delta.isEmpty())
                 .doOnNext(delta -> {
                     if (spoken.length()+delta.length()>32768) throw new IllegalStateException("reply_too_large");
@@ -560,7 +567,9 @@ public class ConversationCaseImpl implements IConversationCase {
         var result = assessment.getResult();
         return new PronunciationFeedbackVO(result.score(), result.errors() == null ? List.of()
                 : result.errors().stream().map(error -> new PronunciationFeedbackVO.IssueVO(
-                        error.word(), error.expected(), error.actual(), error.confidence())).toList());
+                        error.word(), error.expected(), error.actual(), error.confidence(), error.phones() == null ? List.of()
+                        : error.phones().stream().map(phone -> new PronunciationFeedbackVO.PhoneVO(
+                                phone.expected(), phone.heard(), phone.confidence())).toList())).toList());
     }
 
     private static Map<String, Object> assessmentData(PronunciationAssessmentAggregate assessment) {
@@ -585,6 +594,8 @@ public class ConversationCaseImpl implements IConversationCase {
         cancelReply(sessionId);
         if (practice != null) practice.state(sessionId).dismissInvitation();
         conversationService.interrupt(sessionId);
+        eventBus.publish(sessionId, ConversationEventVO.of(EventTypeEnum.READING_CHANGED,
+                conversationService.requireSession(sessionId).teaching().readingMode()));
     }
 
     @Override
@@ -633,7 +644,7 @@ public class ConversationCaseImpl implements IConversationCase {
         Flux<ServerEventDTO> local = conversationService.subscribeLocalEvents(sessionId)
                 .map(event -> ServerEventDTO.of(event.type().wire(), sessionId, event.data()));
 
-        return Flux.concat(head, Flux.merge(body, local, heartbeat));
+        return Flux.concat(head, Flux.just(ServerEventDTO.of(EventTypeEnum.READING_CHANGED.wire(), sessionId, session.teaching().readingMode())), Flux.merge(body, local, heartbeat));
     }
 
     // ------------------------------------------------------------------ 工具

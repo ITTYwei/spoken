@@ -67,7 +67,9 @@ public enum EventTypeEnum {
     /** 练习模式和继续选择状态快照；仅更新界面，不进入 TTS。 */
     PRACTICE_CHANGED("practice.changed"),
     /** 伙伴配置已保存，手机在当前回应播放结束后应用；不能当语音文本。 */
-    PARTNER_CHANGED("partner.changed");
+    PARTNER_CHANGED("partner.changed"),
+    /** 情境跟读模式、已播英文目标和纠音次数；仅更新界面，不进入语音播报。 */
+    READING_CHANGED("reading.changed");
 
     private final String wire;
 

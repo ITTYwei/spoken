@@ -23,7 +23,7 @@ public class TeachingOutcomeTest {
         var json = new ObjectMapper();
         // 这里的字面量是既有协议契约快照，刻意不从枚举生成，避免误改协议码后测试仍自洽通过。
         assertEquals(java.util.Set.of("RESPONDED", "DECLINED", "HELP", "NO_AUDIO", "READ_NOT_ATTEMPTED",
-                "READ_UNCERTAIN", "NO_EVIDENCE", "READ_PASS", "READ_RETRY", "ENGLISH_QUESTION"),
+                "READ_UNCERTAIN", "NO_EVIDENCE", "READ_PASS", "READ_RETRY", "ENGLISH_QUESTION", "READ_LIMIT_REACHED"),
                 java.util.Arrays.stream(TeachingOutcomeEnum.values()).map(TeachingOutcomeEnum::code)
                         .collect(java.util.stream.Collectors.toSet()));
         for (var outcome : TeachingOutcomeEnum.values()) {

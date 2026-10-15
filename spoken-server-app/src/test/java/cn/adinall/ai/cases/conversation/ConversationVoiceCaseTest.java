@@ -236,4 +236,35 @@ public class ConversationVoiceCaseTest {
         verify(conversation, never()).streamReply(anyString(), anyString(), any());
     }
 
+    /** 手机即使上传整段字幕，也只能以服务端已播英文目标评测；不完整朗读仍可进评测。 */
+    @Test public void guidedReadingAssessesOnlyServerEnglishAndKeepsQuestionAsMaterial() {
+        var session = conversation.requireSession("s1");
+        session.teaching().initialize(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2);
+        session.teaching().guidedReading(true);
+        session.teaching().readingOpening("intro");
+        session.teaching().completeReadingOpening("intro", cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy.sentence(
+                cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2, 0).demonstration());
+        when(conversation.transcribeUploadedAndRecord("s1", wav)).thenReturn(new UserUtteranceVO("How you", 42L));
+        useCase.voice("s1", pcm, 16000, "如果你想问对方最近怎么样可以说 How are you 意思是你好吗");
+        var command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
+        verify(pronunciation).assess(eq("s1"), eq(42L), command.capture());
+        assertEquals("How are you?", command.getValue().expectedText());
+        assertTrue(generatedPrompt().contains("\"practice_input\":true"));
+        assertTrue(generatedPrompt().contains("\"target\":\"How are you?\""));
+    }
+
+    /** 新英语知识问题不能拿旧目标对照评测，更不能强制继续读旧句。 */
+    @Test public void guidedReadingAllowsEnglishQuestionInsteadOfForcingPronunciation() {
+        var session = conversation.requireSession("s1");
+        session.teaching().initialize(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2);
+        session.teaching().guidedReading(true);
+        session.teaching().commit(new TeachingTaskVO("READ", "How are you?", "", 1));
+        when(conversation.transcribeUploadedAndRecord("s1", wav)).thenReturn(new UserUtteranceVO("What does this mean?", 42L));
+        useCase.voice("s1", pcm, 16000, "How are you?");
+        var command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
+        verify(pronunciation).assess(eq("s1"), eq(42L), command.capture());
+        assertEquals("What does this mean?", command.getValue().expectedText());
+        assertTrue(generatedPrompt().contains("\"practice_input\":false"));
+    }
+
 }

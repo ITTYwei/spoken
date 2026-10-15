@@ -16,6 +16,64 @@ import java.util.regex.Pattern;
  * <ul><li>等级在本会话内不升级。</li><li>方法同步；旧轮次提交还需要外层 replyId 校验。</li></ul>
  */
 public final class TeachingStateAggregate {
+    /** 用户主动选择的情境跟读状态，只存于当前业务会话，不从模型历史推断。 */
+    private boolean guidedReading;
+    /** 已完整播出的句组索引；重复播放同句不前进，未播完的新句也不前进。 */
+    private int readingIndex;
+    /** 单调快照版本，防止手机用迟到 HTTP 响应覆盖新 SSE 状态。 */
+    private long readingVersion;
+    /** 首次脚本示范的回复标识；空表示没有等待完成的首次示范。 */
+    private String readingOpeningId;
+
+    /** 显式开关具有幂等性；变更清空旧任务，防止普通聊天字幕误成为题面。 */
+    public synchronized boolean guidedReading(boolean enabled) {
+        if (guidedReading == enabled) return false;
+        guidedReading = enabled;
+        readingIndex = 0;
+        readingOpeningId = null;
+        pending = TeachingTaskVO.response();
+        readingVersion++;
+        return true;
+    }
+    public synchronized boolean guidedReading() { return guidedReading; }
+    public synchronized int readingIndex() { return readingIndex; }
+
+    /** 首句下发前登记标识，只有匹配且完整说完的回调才提交英文目标。 */
+    public synchronized void readingOpening(String replyId) { readingOpeningId = replyId; }
+
+    /** 接收真实媒体完成事件；旧回复、被打断示范及未说出的目标均不能产生任务。 */
+    public synchronized boolean completeReadingOpening(String replyId, String text) {
+        if (!guidedReading || readingOpeningId == null || !readingOpeningId.equals(replyId)) return false;
+        var sentence = cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy.sentence(level, readingIndex);
+        var task = new TeachingTaskVO(cn.adinall.ai.domain.conversation.model.valobj.TeachingActionEnum.READ.code(), sentence.english(), "", 0);
+        var actual = cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(task, text);
+        readingOpeningId = null;
+        if (!actual.reading()) return false;
+        commit(actual);
+        return true;
+    }
+
+    /** 已播任务快照；尚无任务时不把首次待播文本或整段讲解暴露成目标。 */
+    public synchronized cn.adinall.ai.domain.conversation.model.valobj.ReadingModeVO readingMode() {
+        return new cn.adinall.ai.domain.conversation.model.valobj.ReadingModeVO(guidedReading,
+                guidedReading && pending.reading() ? pending.target() : "", pending.reading() ? pending.attempts() : 0,
+                cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy.MAX_CORRECTIONS, readingVersion);
+    }
+
+    /**
+     * 所有播报完成路径统一提交任务；情境模式次数由已冻结的服务端计划决定。
+     * 不再经过普通聊天的两次建议计数器，避免三次纠音被重置或重复回调多加一次。
+     */
+    public synchronized void commitSpoken(cn.adinall.ai.domain.conversation.model.valobj.TeachingDecisionVO decision, String text) {
+        var actual = cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(), text);
+        if (guidedReading && decision.nextTask().reading() && actual.reading()
+                && actual.target().equals(decision.nextTask().target())) {
+            var current = cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy.sentence(level, readingIndex);
+            var next = cn.adinall.ai.domain.conversation.service.reply.GuidedReadingPolicy.sentence(level, readingIndex + 1);
+            if (!actual.target().equals(current.english()) && actual.target().equals(next.english())) readingIndex++;
+            commit(decision.nextTask());
+        } else commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(), decision.previousTask(), text));
+    }
     /** 仅提取明确学习诉求作为引用数据，不借此决定模型动作或学习等级。 */
     private static final Pattern LEARNING_REQUEST = Pattern.compile(
             "(?s).*(我(?:现在|今天)?想(?:学|练)|我(?:现在|今天)?要学|教我|i (?:want|would like) to (?:learn|study|practice)|i'd like to (?:learn|study|practice)).*");
@@ -54,7 +112,10 @@ public final class TeachingStateAggregate {
 
     public synchronized TeachingTaskVO pending() { return pending; }
     public synchronized EnglishLevelEnum level() { return level; }
-    public synchronized void commit(TeachingTaskVO task) { pending = task; }
+    public synchronized void commit(TeachingTaskVO task) {
+        if (!java.util.Objects.equals(pending, task)) readingVersion++;
+        pending = task;
+    }
     /** 不能认为被打断回复中的新任务已经被用户听到。 */
-    public synchronized void interrupt() { pending = TeachingTaskVO.question(""); }
+    public synchronized void interrupt() { readingOpeningId = null; commit(TeachingTaskVO.question("")); }
 }

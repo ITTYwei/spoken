@@ -527,13 +527,16 @@ public class ConversationServiceImpl implements IConversationService {
                         log.warn("开场完成记录降级 type={}", e.getClass().getSimpleName());
                     }
                 }
+                // 首次跟读示范沿脚本轨，仍只在真实媒体完成后登记唯一英文目标。
+                if (event.data() instanceof Map<?, ?> readingData && session.acceptsReply(String.valueOf(readingData.get("replyId"))))
+                    session.teaching().completeReadingOpening(String.valueOf(readingData.get("replyId")), text);
                 var pending = session.pendingTeaching();
                 if (pending != null && session.acceptsReply(pending.replyId()) && text != null && !text.isBlank()) {
                     teachingReplies.complete(pending.turnId(), pending.replyId(), text);
                     // 整段播报回调与流式回调采用同一核验规则，避免把未说出的跟读任务提交。
-                    session.teaching().commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(
-                            pending.decision().nextTask(), pending.decision().previousTask(), text));
+                    session.teaching().commitSpoken(pending.decision(), text);
                 }
+                eventBus.publish(session.getSessionId(), ConversationEventVO.of(EventTypeEnum.READING_CHANGED, session.teaching().readingMode()));
                 // 在规整为字幕字符串前保留原始回复编号；文本生成结束不能打开继续选择窗口。
                 if(replyCompletion!=null && event.data() instanceof Map<?,?> completed && completed.get("replyId")!=null)
                     replyCompletion.completed(session.getSessionId(),String.valueOf(completed.get("replyId")),text);

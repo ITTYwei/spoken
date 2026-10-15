@@ -114,3 +114,8 @@
 Agent 的工具参数没有账号、会话、轮次、操作版本或操作标识；可信能力由服务端每轮捕获并通过 Spring AI ToolContext 传递，不依赖 HTTP 线程变量。查询工具返回实际目录/状态；写工具走 Case，主体/活性/版本责任链检查后执行。工具结构化回执和系统标识不进入 TTS。Agent 负责自然语言调用，规则只对当前任务中的明确短选择兜底，失败不自动重试。
 
 开发库已应用 V16 最近课程迁移。本次本机验证实例为 8092，旧 8091 仍在运行；新 Android 的课程功能须连接新版本后端。生产上线和迁移执行不属于本次交付。
+
+
+## 情境跟读（2026-10-15）
+
+`GET /api/v1/sessions/{id}/reading` 查询已播英文目标，`POST` 同一路径以 `{"enabled":true/false}` 显式设置模式；需当前账号拥有会话。返回 enabled、target、correctionRetries、maxCorrections、version，并通过 reading.changed 同步。target 为空不能用完整字幕补齐。详见 [情境跟读说明](guided-reading-2026-10-15.md)。

@@ -29,7 +29,14 @@ public record PronunciationFeedbackVO(
             /** 对照目标中的词。 */ String word,
             /** 参考音素，仅供内部判断。 */ String expected,
             /** 检测到的音素，可能为空。 */ String actual,
-            /** 上游错词可信度，缺失不能当作确定。 */ Double confidence) {
+            /** 上游错词可信度，缺失不能当作确定。 */ Double confidence,
+            /** 上游逐音素的期望、实听和置信度；保留结构供可信准入，不拼接原始反馈正文。 */
+            List<PhoneVO> phones) {
+        public IssueVO { phones = phones == null ? List.of() : List.copyOf(phones); }
+        public IssueVO(String word, String expected, String actual, Double confidence) { this(word, expected, actual, confidence, List.of()); }
         public IssueVO(String word, String expected, String actual) { this(word, expected, actual, null); }
     }
+
+    /** 对话域所需的最小音素证据；Case 从发音评测域映射，避免两域直接依赖内部结构。 */
+    public record PhoneVO(String expected, String heard, Double confidence) { }
 }

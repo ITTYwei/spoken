@@ -102,6 +102,21 @@ import java.util.Map;
 @RequestMapping("/api/v1/sessions")
 public class SessionController {
 
+    /** 按钮只调用跟读用例，身份校验和状态转换不放在 Controller。 */
+    @org.springframework.beans.factory.annotation.Autowired
+    private cn.adinall.ai.cases.conversation.impl.GuidedReadingCase reading;
+
+    @GetMapping("/{sessionId}/reading")
+    public cn.adinall.ai.api.dto.ReadingModeResponseDTO reading(@PathVariable String sessionId) {
+        return reading.get(sessionId);
+    }
+
+    @PostMapping("/{sessionId}/reading")
+    public cn.adinall.ai.api.dto.ReadingModeResponseDTO reading(@PathVariable String sessionId,
+            @Valid @RequestBody cn.adinall.ai.api.dto.ReadingModeRequestDTO request) {
+        return reading.change(sessionId, request.enabled());
+    }
+
     private final IConversationCase conversationCase;
     private final cn.adinall.ai.domain.account.service.IHomeService home;
 

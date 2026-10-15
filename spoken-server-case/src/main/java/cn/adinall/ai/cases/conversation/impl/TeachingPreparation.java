@@ -26,6 +26,14 @@ import java.time.Instant;
  */
 @Component
 public class TeachingPreparation {
+    /** 跟读任务实际播完后通知手机；缺省端口仅用于无事件设施的领域测试。 */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private cn.adinall.ai.domain.conversation.adapter.port.IConversationEventBusPort readingEvents;
+
+    /** 情境跟读先核验目标再播报，普通聊天保留原始流式体验。 */
+    public reactor.core.publisher.Flux<String> guard(ConversationSessionAggregate session, TeachingDecisionVO decision, reactor.core.publisher.Flux<String> source) {
+        return session.teaching().guidedReading() ? GuidedReadingPolicy.guard(source, decision, session.teaching().readingIndex()) : source;
+    }
     /** 当前课程由 practice 管理，Case 组合领域，不让 conversation 直接读取教材仓储。 */
     @org.springframework.beans.factory.annotation.Autowired(required=false)
     private cn.adinall.ai.domain.practice.service.PracticeService practice;
@@ -125,7 +133,9 @@ public class TeachingPreparation {
         // 证据时间戳取话音结束时刻，不是决策时刻
         Instant inputAt = session.getLastUserSpeechEndedAt() > 0 ? Instant.ofEpochMilli(session.getLastUserSpeechEndedAt()) : Instant.now();
         // 策略只整理建议与跟读证据，不强制决定下一步；原话中的学习请求独立保留。
-        var decision = TeachingPolicy.decide(level(session), previous, text, feedback, voice);
+        var decision = session.teaching().guidedReading()
+                ? GuidedReadingPolicy.decide(level(session), previous, text, feedback, voice, session.teaching().readingIndex())
+                : TeachingPolicy.decide(level(session), previous, text, feedback, voice);
         // 学习目标属于本场状态，与 ADK 短会话和可裁剪历史分离；练习例句不更新目标。
         session.teaching().captureLearningRequest(text, decision.practiceInput() || !"free".equals(session.getScenarioId()), inputAt);
         // 中文支援两个来源：低档/求援主动给，或长期记忆里有 LANGUAGE 偏好
@@ -141,6 +151,13 @@ public class TeachingPreparation {
         // 学习请求和完整课程仍属必需数据，历史裁剪不会丢掉“我想学”或截断原题。
         var background = new java.util.LinkedHashMap<String, Object>();
         background.put("会话学习请求原话", session.teaching().learningRequest());
+        if (session.teaching().guidedReading()) {
+            background.put("情境跟读", session.teaching().readingMode());
+            var sentence = GuidedReadingPolicy.sentence(decision.level(), session.teaching().readingIndex());
+            if (decision.nextTask().reading() && !sentence.english().equals(decision.nextTask().target()))
+                sentence = GuidedReadingPolicy.sentence(decision.level(), session.teaching().readingIndex() + 1);
+            background.put("跟读句子用途与译意", sentence);
+        }
         var scene = "free".equals(session.getScenarioId()) ? ConversationSceneEnum.FREE_ENGLISH : ConversationSceneEnum.ROLE_PRACTICE;
         if (practice != null && textbooks != null) {
             var state = practice.state(session.getSessionId()).snapshot();
@@ -231,7 +248,9 @@ public class TeachingPreparation {
             if (!session.acceptsReply(reply) || session.isFinished()) return;
             replies.complete(turn, reply, text);
             // 只有目标句和跟读邀请都实际播出，才把 READ/CORRECT 留给用户下一轮完成。
-            session.teaching().commit(cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.resolve(decision.nextTask(), decision.previousTask(), text));
+            session.teaching().commitSpoken(decision, text);
+            if (readingEvents != null) readingEvents.publish(session.getSessionId(),
+                    ConversationEventVO.of(EventTypeEnum.READING_CHANGED, session.teaching().readingMode()));
         }
     }
 

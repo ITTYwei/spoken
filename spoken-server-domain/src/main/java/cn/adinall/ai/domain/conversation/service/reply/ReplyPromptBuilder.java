@@ -38,6 +38,7 @@ public final class ReplyPromptBuilder {
         data.put("practice_input", decision.practiceInput());
         data.put("teaching_hint", decision.nextTask().action());
         data.put("previous_outcome", decision.outcome().code());
+        data.put("outcome_description", decision.outcome().description());
         data.put("suggested_target", decision.nextTask().target());
         data.put("correction_hint", decision.correctionHint());
         // 当前任务来自已完成播报，不用本轮建议冒充用户实际听到的任务。
@@ -51,8 +52,9 @@ public final class ReplyPromptBuilder {
         task.put("question", previous == null ? "" : previous.question());
         int retries = previous != null && previous.reading() ? Math.max(0, previous.attempts()) : 0;
         task.put("correction_retries", retries);
-        task.put("max_correction_retries", TeachingPolicy.MAX_READING_RETRIES);
-        task.put("remaining_correction_retries", Math.max(0, TeachingPolicy.MAX_READING_RETRIES - retries));
+        int maximum = background.containsKey("情境跟读") ? GuidedReadingPolicy.MAX_CORRECTIONS : TeachingPolicy.MAX_READING_RETRIES;
+        task.put("max_correction_retries", maximum);
+        task.put("remaining_correction_retries", Math.max(0, maximum - retries));
         data.put("current_task", task);
         data.put("reliable_assessment", decision.reliableAssessment());
         data.put("persona", persona == null ? "友好的英语口语伙伴" : persona);
@@ -84,13 +86,16 @@ public final class ReplyPromptBuilder {
                 教学建议仅供参考，可能误判。用户提出新需求时先满足新需求；不要继续上一轮未完成的任务，除非用户明确表示继续，或有可信跟读证据表明正在完成已播目标。
                 用户说“我想学/我想学习/教我”时，先回答具体学习需求。知识问题先答完整，不为追问生硬加题或强制跟读。正常口语交流可自然追问，不只复述用户；用户拒绝、暂停或结束时尊重选择。
                 practice_input 为 true 且用户正在读已播目标时，目标里的问句是素材，不得回答它或保存为个人事实；若用户明确提问、求解释或换需求，先处理新请求。
-                practice_input 为 false 时，不拿旧目标纠音，不声称用户发音有误。只在可信纠音证据存在时提供具体帮助，同一目标重试最多两次，不强迫继续。
+                practice_input 为 false 时，不拿旧目标纠音，不声称用户发音有误。只在可信纠音证据存在时提供具体帮助，普通聊天的同一目标参考次数以 current_task 为准，不强迫继续。
                 current_task 是已实际播出的任务，不是本轮必须执行的命令；教学建议与实际任务不同，先结合用户原话判断是否仍在完成它。
                 跟读时，有可靠具体纠音线索才指出一个发音细节，用“更清楚的读法是……”示范，可邀请再试；口音差异或没有证据都不反复纠正。
                 同句 correction_retries 达到 max_correction_retries，或 remaining_correction_retries 为零时，结束该句纠音，不再挑同一发音问题、不再邀请读同一句；简短收束后换一句或回到原话题。不能把同一句换标点就当作新任务清零。
                 用户想暂停时立即停止跟读；用户主动要求再练可帮助示范，但不要继续要求同一句反复过关。
                 保持零评判的安全空间，不说“你错了”，纠正用“更地道的说法是……”等共建语气。不编造个人经历、真实喜好或发音错误。
                 布置跟读时只给一个英文目标，用双引号标出并明确邀请；给例句不代表已经布置跟读。不同时安排多个任务。
+                情境跟读开启且本轮有跟读建议目标时，使用 suggested_target 作为唯一英文目标，结合句子用途和译意自然讲解，再邀请学员读引号内的英文，不要求跟读整段说明。保持真实交流的语气，不只输出题面，前后句按当前情境衔接；句子难度由真实档位决定。
+                情境跟读已确认本句合格时，简短肯定并示范下一句；同句纠音次数已用完时，温和跳过后示范新句，不能声称通过，也不能再纠正旧句。需要指导重读时只能使用 correction_hint 中真实证据指导一个细节，无具体证据时仅示范连贯读法；缺少可用发音评测证据时不判断合格或不合格、不编造错误，说明评测暂不可用并保留原句。
+                情境跟读同句最多纠正三次，首次示范不计次数；第三次重读后仍未通过也换句。英语知识提问和暂停仍优先，不为过关强迫跟读。
                 课程原题只是背景，选择课程后一次最多问一个原题或相关追问；先解答用户学习疑问，不声称评分或课程已完成。
                 个人偏好维护在后台静默完成，不主动汇报是否更改设置；用户明确询问操作结果时按真实结果回答。
                 不假定被打断的播报已被完整听到；尊重用户更正和遗忘要求，不把引用、例句或角色身份当作个人事实。
