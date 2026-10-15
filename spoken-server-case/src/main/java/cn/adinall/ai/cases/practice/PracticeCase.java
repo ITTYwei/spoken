@@ -40,6 +40,10 @@ public class PracticeCase {
     }
     /** 教材目录用例入口，当前不需要用户状态；仍沿 Controller -> Case -> Domain 调用链。 */
     public java.util.List<cn.adinall.ai.domain.scenario.model.valobj.TextbookVO> textbooks() { return textbooks.list(); }
+    /** 手机浏览目录，无会话写入；完整原题由课详情用例按需读取。 */
+    public java.util.List<cn.adinall.ai.domain.scenario.model.valobj.TextbookCatalogVO> textbookCatalog() { return textbooks.catalog(); }
+    /** 可信当前原话只用于目录候选过滤，返回数量有界，不替用户执行课程选择。 */
+    public java.util.List<cn.adinall.ai.domain.scenario.model.valobj.TextbookCatalogVO> agentTextbookCatalog(String utterance) { return textbooks.agentCatalog(utterance); }
     /** 完整课查询用例入口，目录和容量规则归 scenario。 */
     public cn.adinall.ai.domain.scenario.model.valobj.TextLessonVO lesson(String book, String lesson) { return textbooks.lesson(book, lesson); }
     /** HTTP 只读状态先验证捕获的主体归属；未找到或跨账号都不暴露内容。 */

@@ -1,0 +1,3713 @@
+{
+  "id": "bandready-speaking-p3",
+  "title": "BandReady · 口语 Part 3",
+  "part": "PART_THREE",
+  "sourceUrl": "https://github.com/Luxshan2000/ielts-prep/tree/10282cc853a03b6984907fec0affe6cbbd4fe0b0/content/core-en",
+  "sourceCommit": "10282cc853a03b6984907fec0affe6cbbd4fe0b0",
+  "license": "CC0-1.0",
+  "lessons": [
+    {
+      "id": "card_p3_festivals_change_801-theme-1",
+      "title": "why some celebrations survive",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_festivals_change_801",
+      "questions": [
+        "Why do some traditional celebrations survive while others quietly disappear?",
+        "How different are the celebrations people hold now from the ones their grandparents held?",
+        "Do you think the festivals we have today will still be going in fifty years?",
+        "But isn't a tradition that needs a committee already finished?"
+      ],
+      "aliases": [
+        "card_p3_festivals_change_801-theme-1",
+        "why some celebrations survive"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_festivals_change_801-theme-2",
+      "title": "the money side of celebrations",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_festivals_change_801",
+      "questions": [
+        "Should there be any limit on what schools ask families to spend on celebrations?",
+        "Is a large public event worth the money a city puts into it?",
+        "What would happen to a town if it stopped holding its annual events altogether?",
+        "Couldn't that budget be doing something considerably more useful?"
+      ],
+      "aliases": [
+        "card_p3_festivals_change_801-theme-2",
+        "the money side of celebrations"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_music_and_society_802-theme-1",
+      "title": "how people listen now",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_music_and_society_802",
+      "questions": [
+        "Why do so many people listen to music alone rather than with other people?",
+        "How has the way people find new music changed since your parents were young?",
+        "Do you think live concerts will still matter twenty years from now?",
+        "Isn't something worth less when it costs nothing to hear?"
+      ],
+      "aliases": [
+        "card_p3_music_and_society_802-theme-1",
+        "how people listen now"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_music_and_society_802-theme-2",
+      "title": "what music is for",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_music_and_society_802",
+      "questions": [
+        "Should learning an instrument be a compulsory part of school?",
+        "What do people get from music that they can't get from anything else?",
+        "Is it a problem when young people mostly listen to music from other countries?",
+        "Wouldn't that time be better spent on something employable?"
+      ],
+      "aliases": [
+        "card_p3_music_and_society_802-theme-2",
+        "what music is for"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_reading_habits_803-theme-1",
+      "title": "why adults stop reading",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_reading_habits_803",
+      "questions": [
+        "Why do so many people give up reading for pleasure once they leave school?",
+        "What does somebody actually lose if they never read a book after that?",
+        "Will people still read long books twenty years from now?",
+        "Why should a novel count for more than a well-made series?"
+      ],
+      "aliases": [
+        "card_p3_reading_habits_803-theme-1",
+        "why adults stop reading"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_reading_habits_803-theme-2",
+      "title": "who chooses what gets read",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_reading_habits_803",
+      "questions": [
+        "Should schools decide what children read, or should children choose for themselves?",
+        "Do people in small towns and people in cities really have the same access to books?",
+        "If public libraries closed tomorrow, who would feel it most?",
+        "When did you last set foot in one, though?"
+      ],
+      "aliases": [
+        "card_p3_reading_habits_803-theme-2",
+        "who chooses what gets read"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_home_cooking_804-theme-1",
+      "title": "why people cook less",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_home_cooking_804",
+      "questions": [
+        "Why do fewer people cook from raw ingredients than a generation ago?",
+        "What follows from that, for families and for people's health?",
+        "Are children learning to cook the way their parents did?",
+        "Isn't that easy to say if you finish work at five?"
+      ],
+      "aliases": [
+        "card_p3_home_cooking_804-theme-1",
+        "why people cook less"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_home_cooking_804-theme-2",
+      "title": "who is responsible for diet",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_home_cooking_804",
+      "questions": [
+        "Whose job is it to make sure children eat well — parents, schools or government?",
+        "What would change if fresh food cost half what it does now?",
+        "Is it worth taxing sugary food, given who ends up paying the tax?",
+        "Should the state really be telling grown adults what to eat?"
+      ],
+      "aliases": [
+        "card_p3_home_cooking_804-theme-2",
+        "who is responsible for diet"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_eating_out_805-theme-1",
+      "title": "why people eat out more",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_eating_out_805",
+      "questions": [
+        "Why do people eat out far more often than they used to?",
+        "What does that do to the way families spend time together?",
+        "Do people in cities and people in villages really have the same choice about where to eat?",
+        "Isn't that just a sign that people are better off now?"
+      ],
+      "aliases": [
+        "card_p3_eating_out_805-theme-1",
+        "why people eat out more"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_eating_out_805-theme-2",
+      "title": "small places and big chains",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_eating_out_805",
+      "questions": [
+        "Should local councils protect small independent businesses from large chains?",
+        "What would a high street look like if only chains could afford the rent?",
+        "Is a chain that employs a hundred people better for a town than five small shops?",
+        "Aren't you protecting the owner rather than the shopper?"
+      ],
+      "aliases": [
+        "card_p3_eating_out_805-theme-2",
+        "small places and big chains"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_sport_and_society_806-theme-1",
+      "title": "why adults stop playing sport",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_sport_and_society_806",
+      "questions": [
+        "Why do so many people stop playing sport once they leave school?",
+        "Do most adults where you live get anything like enough exercise?",
+        "Will people be more active or less active twenty years from now?",
+        "Isn't it simply that grown adults have better things to do?"
+      ],
+      "aliases": [
+        "card_p3_sport_and_society_806-theme-1",
+        "why adults stop playing sport"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_sport_and_society_806-theme-2",
+      "title": "who should pay for facilities",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_sport_and_society_806",
+      "questions": [
+        "Should governments pay for public pools and pitches, or should the people using them pay?",
+        "Is money spent on elite athletes better spent on ordinary local facilities?",
+        "What would change if every workplace gave staff an hour a week to exercise?",
+        "Don't champions inspire more people than a leisure centre ever will?"
+      ],
+      "aliases": [
+        "card_p3_sport_and_society_806-theme-2",
+        "who should pay for facilities"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_leisure_time_807-theme-1",
+      "title": "how people use time off",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_leisure_time_807",
+      "questions": [
+        "Why do a lot of people find it hard to relax when they aren't working?",
+        "Do people have more free time than their grandparents did, or just a different kind of it?",
+        "What happens to somebody who has no interest at all outside their job?",
+        "Are people genuinely busier, or simply worse at stopping?"
+      ],
+      "aliases": [
+        "card_p3_leisure_time_807-theme-1",
+        "how people use time off"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_leisure_time_807-theme-2",
+      "title": "who has a claim on your time",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_leisure_time_807",
+      "questions": [
+        "Should employers have any say in what their staff do outside working hours?",
+        "What would change if the working week were four days rather than five?",
+        "Is a hobby that starts earning money still a hobby, or has something been lost?",
+        "Doesn't charging for it change what the thing actually is?"
+      ],
+      "aliases": [
+        "card_p3_leisure_time_807-theme-2",
+        "who has a claim on your time"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_tradition_and_change_808-theme-1",
+      "title": "why customs get dropped",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_tradition_and_change_808",
+      "questions": [
+        "Why do young people abandon customs their grandparents took for granted?",
+        "Are traditions changing faster now than they were fifty years ago?",
+        "What would a country actually be like with no shared customs at all?",
+        "Isn't a fair amount of it kept alive for the tourists now?"
+      ],
+      "aliases": [
+        "card_p3_tradition_and_change_808-theme-1",
+        "why customs get dropped"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_tradition_and_change_808-theme-2",
+      "title": "culture that comes from outside",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_tradition_and_change_808",
+      "questions": [
+        "Will local customs survive when young people everywhere watch the same things?",
+        "Whose job is it to record customs before they vanish — families, schools or the state?",
+        "Is it a loss when a country's young people take up habits from elsewhere?",
+        "Hasn't every culture always been a borrowed mixture anyway?"
+      ],
+      "aliases": [
+        "card_p3_tradition_and_change_808-theme-2",
+        "culture that comes from outside"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_making_decisions_501-theme-1",
+      "title": "how people weigh up a choice",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_making_decisions_501",
+      "questions": [
+        "Why do some people find even small decisions difficult?",
+        "What makes somebody good at deciding things?",
+        "Do people where you live tend to decide on their own, or with the family?",
+        "Isn't the reasoning usually invented after the fact, though?"
+      ],
+      "aliases": [
+        "card_p3_making_decisions_501-theme-1",
+        "how people weigh up a choice"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_making_decisions_501-theme-2",
+      "title": "having far more options than before",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_making_decisions_501",
+      "questions": [
+        "Do people today have too many choices to make?",
+        "How is choosing a career different now from in your parents' time?",
+        "Will people let software make more of their everyday decisions?",
+        "Isn't that a complaint only people with options get to make?"
+      ],
+      "aliases": [
+        "card_p3_making_decisions_501-theme-2",
+        "having far more options than before"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_change_and_upheaval_502-theme-1",
+      "title": "why people leave home when they do",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_change_and_upheaval_502",
+      "questions": [
+        "Why do young people in your country leave home at the age they do?",
+        "Is it a problem that people leave home later than their parents did?",
+        "What would happen if moving out simply became unaffordable for most young people?",
+        "Isn't comfort doing more of the work here than cost?"
+      ],
+      "aliases": [
+        "card_p3_change_and_upheaval_502-theme-1",
+        "why people leave home when they do"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_change_and_upheaval_502-theme-2",
+      "title": "living with change you didn't choose",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_change_and_upheaval_502",
+      "questions": [
+        "Why do some people find any kind of change unsettling?",
+        "Should employers do more to help staff through big changes at work?",
+        "Are cities changing too quickly for the people who live in them?",
+        "But don't the same people complain when nothing changes at all?"
+      ],
+      "aliases": [
+        "card_p3_change_and_upheaval_502-theme-2",
+        "living with change you didn't choose"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_achievement_503-theme-1",
+      "title": "what counts as an achievement",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_achievement_503",
+      "questions": [
+        "What makes something an achievement rather than just a task somebody finished?",
+        "Do people value academic success more than practical skill?",
+        "Are the things people admire now different from what they admired a generation ago?",
+        "If nobody ever finds out, has anything actually been achieved?"
+      ],
+      "aliases": [
+        "card_p3_achievement_503-theme-1",
+        "what counts as an achievement"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_achievement_503-theme-2",
+      "title": "how effort gets recognised",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_achievement_503",
+      "questions": [
+        "Should schools reward effort as much as results?",
+        "Why do some people find it hard to talk about what they've achieved?",
+        "Will formal qualifications matter as much in twenty years?",
+        "Doesn't rewarding effort just lower the bar for everyone?"
+      ],
+      "aliases": [
+        "card_p3_achievement_503-theme-2",
+        "how effort gets recognised"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_mistakes_504-theme-1",
+      "title": "learning by getting things wrong",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_mistakes_504",
+      "questions": [
+        "Do people really learn more from their mistakes than from their successes?",
+        "What makes somebody able to admit they were wrong?",
+        "What would change if organisations stopped punishing honest mistakes?",
+        "Do people learn, or do they just get better at explaining it away?"
+      ],
+      "aliases": [
+        "card_p3_mistakes_504-theme-1",
+        "learning by getting things wrong"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_mistakes_504-theme-2",
+      "title": "who is allowed to get things wrong",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_mistakes_504",
+      "questions": [
+        "Are there jobs where mistakes simply cannot be tolerated?",
+        "When a mistake at work causes real harm, whose responsibility is it?",
+        "Are children given less room to get things wrong than they used to be?",
+        "Isn't blaming a person simply cheaper than fixing the system?"
+      ],
+      "aliases": [
+        "card_p3_mistakes_504-theme-2",
+        "who is allowed to get things wrong"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_planning_ahead_505-theme-1",
+      "title": "how far ahead people plan",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_planning_ahead_505",
+      "questions": [
+        "Do people plan further ahead than they used to?",
+        "Why do some people refuse to plan at all?",
+        "Is it possible to plan sensibly when so much is uncertain?",
+        "Isn't a plan mainly there to make the planner feel less anxious?"
+      ],
+      "aliases": [
+        "card_p3_planning_ahead_505-theme-1",
+        "how far ahead people plan"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_planning_ahead_505-theme-2",
+      "title": "when trained people leave a country",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_planning_ahead_505",
+      "questions": [
+        "Do most young people in your country expect to work abroad at some stage?",
+        "What does a country lose when the people it has trained move away?",
+        "Will working abroad still be as attractive in twenty years?",
+        "Should a country be allowed to ask people to stay, though?"
+      ],
+      "aliases": [
+        "card_p3_planning_ahead_505-theme-2",
+        "when trained people leave a country"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_advice_and_experts_506-theme-1",
+      "title": "who people take advice from",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_advice_and_experts_506",
+      "questions": [
+        "Who do people generally turn to when they need serious advice?",
+        "Why is advice from a stranger sometimes easier to accept than advice from family?",
+        "Should professionals offer advice that nobody has asked them for?",
+        "Aren't most people just looking for agreement rather than advice?"
+      ],
+      "aliases": [
+        "card_p3_advice_and_experts_506-theme-1",
+        "who people take advice from"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_advice_and_experts_506-theme-2",
+      "title": "whether expertise still counts",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_advice_and_experts_506",
+      "questions": [
+        "Do people trust experts less than they did a generation ago?",
+        "What effect has social media had on the advice people follow?",
+        "Will people take more of their advice from machines in future?",
+        "Haven't experts earned a good deal of that distrust, though?"
+      ],
+      "aliases": [
+        "card_p3_advice_and_experts_506-theme-2",
+        "whether expertise still counts"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_waiting_and_time_507-theme-1",
+      "title": "how people cope with waiting",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_waiting_and_time_507",
+      "questions": [
+        "Why do some people cope with waiting far better than others?",
+        "Are people less patient now than they were twenty years ago?",
+        "What would happen if people had to wait for everyday things again?",
+        "Isn't impatience simply a fair response to a badly run system?"
+      ],
+      "aliases": [
+        "card_p3_waiting_and_time_507-theme-1",
+        "how people cope with waiting"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_waiting_and_time_507-theme-2",
+      "title": "queues and who waits longest",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_waiting_and_time_507",
+      "questions": [
+        "Do some groups of people end up waiting far longer than others?",
+        "Whose job is it to cut the time people spend waiting for public services?",
+        "Will technology remove most everyday waiting, or simply move it somewhere else?",
+        "Isn't paying to skip a queue an honest version of what happens anyway?"
+      ],
+      "aliases": [
+        "card_p3_waiting_and_time_507-theme-2",
+        "queues and who waits longest"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_conversation_508-theme-1",
+      "title": "what makes a conversation worth having",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_conversation_508",
+      "questions": [
+        "What makes a conversation worth remembering?",
+        "Why do people find it hard to talk to neighbours they've lived beside for years?",
+        "Do people in cities and in small towns talk to strangers differently?",
+        "But isn't small talk precisely how the real ones begin?"
+      ],
+      "aliases": [
+        "card_p3_conversation_508-theme-1",
+        "what makes a conversation worth having"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_conversation_508-theme-2",
+      "title": "talking in a connected world",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_conversation_508",
+      "questions": [
+        "Has messaging changed the way people talk face to face?",
+        "Should public places be designed so that strangers talk more?",
+        "Will people have fewer unplanned conversations in twenty years' time?",
+        "Aren't people talking to more strangers than ever, just in writing?"
+      ],
+      "aliases": [
+        "card_p3_conversation_508-theme-2",
+        "talking in a connected world"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_friendship_time_101-theme-1",
+      "title": "how friendships survive distance",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_friendship_time_101",
+      "questions": [
+        "Why do some childhood friendships last into adult life while most of them don't?",
+        "Has it become easier or harder to keep a friendship going across a distance?",
+        "Do you think people will have fewer close friends twenty years from now?",
+        "But the tools are free and instant now. Isn't distance just an excuse?"
+      ],
+      "aliases": [
+        "card_p3_friendship_time_101-theme-1",
+        "how friendships survive distance"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_friendship_time_101-theme-2",
+      "title": "what people want from a friend",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_friendship_time_101",
+      "questions": [
+        "What makes somebody a good friend, in your view?",
+        "Do older and younger people expect different things from their friends?",
+        "Whose job is it to keep a friendship alive — both people equally?",
+        "Most people's closest friends live within a few miles. Doesn't that tell you something?"
+      ],
+      "aliases": [
+        "card_p3_friendship_time_101-theme-2",
+        "what people want from a friend"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_who_we_rely_on_102-theme-1",
+      "title": "who people turn to first",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_who_we_rely_on_102",
+      "questions": [
+        "Where do people in your country usually go first when they're in real difficulty?",
+        "Is it harder for men to ask for help than it is for women?",
+        "Should employers be doing more when a member of staff is clearly struggling?",
+        "Everyone agrees in principle. Why do you think so few people act on it?"
+      ],
+      "aliases": [
+        "card_p3_who_we_rely_on_102-theme-1",
+        "who people turn to first"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_who_we_rely_on_102-theme-2",
+      "title": "why help is hard to accept",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_who_we_rely_on_102",
+      "questions": [
+        "Why do so many people find it hard to admit that they're struggling?",
+        "Is that different from the way your grandparents' generation dealt with difficulty?",
+        "What would change if talking about difficulty became completely ordinary?",
+        "Some would say all this talking just keeps the difficulty alive. Is that fair?"
+      ],
+      "aliases": [
+        "card_p3_who_we_rely_on_102-theme-2",
+        "why help is hard to accept"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_humour_and_people_103-theme-1",
+      "title": "what people find funny",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_humour_and_people_103",
+      "questions": [
+        "Why do people in different countries laugh at such different things?",
+        "Is humour something that travels well between languages?",
+        "Do you think whole countries will still share the same comedy in twenty years?",
+        "Some would say comedy has to be uncomfortable to work. What's your answer to that?"
+      ],
+      "aliases": [
+        "card_p3_humour_and_people_103-theme-1",
+        "what people find funny"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_humour_and_people_103-theme-2",
+      "title": "humour at work",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_humour_and_people_103",
+      "questions": [
+        "Is a sense of humour useful in a workplace, or mostly a distraction?",
+        "Whose job is it to stop humour at work turning into unkindness?",
+        "What makes somebody genuinely funny rather than simply loud?",
+        "Isn't the joker in a team just somebody avoiding the work? Convince me otherwise."
+      ],
+      "aliases": [
+        "card_p3_humour_and_people_103-theme-2",
+        "humour at work"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_advice_guidance_104-theme-1",
+      "title": "where advice comes from now",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_advice_guidance_104",
+      "questions": [
+        "Who do young people take advice from these days?",
+        "Is advice from somebody who has done the thing better than advice from a professional?",
+        "Do you think people will come to rely on strangers online more than on their families?",
+        "So is advice ever really taken, or only ever confirmed? What would you say?"
+      ],
+      "aliases": [
+        "card_p3_advice_guidance_104-theme-1"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_advice_guidance_104-theme-2",
+      "title": "why good advice gets ignored",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_advice_guidance_104",
+      "questions": [
+        "Why do people so often ignore advice they asked for themselves?",
+        "Should schools be teaching young people how to make decisions?",
+        "What would change if nobody ever gave anybody advice at all?",
+        "If nobody knows your situation, why ask at all? Isn't the whole thing theatre?"
+      ],
+      "aliases": [
+        "card_p3_advice_guidance_104-theme-2",
+        "why good advice gets ignored"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_strangers_cities_105-theme-1",
+      "title": "talking to people you don't know",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_strangers_cities_105",
+      "questions": [
+        "Why do people sometimes talk more openly to strangers than to people they know?",
+        "Is it easier to strike up a conversation in a small town than in a big city?",
+        "Do people talk to strangers less than they did a generation ago?",
+        "So is city coldness just efficiency? Plenty of people would defend it that way."
+      ],
+      "aliases": [
+        "card_p3_strangers_cities_105-theme-1"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_strangers_cities_105-theme-2",
+      "title": "strangers, trust and cities",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_strangers_cities_105",
+      "questions": [
+        "Whose job is it to make a neighbourhood feel like somewhere people can talk?",
+        "What would a city be like if nobody ever spoke to a stranger?",
+        "Is a brief encounter with a stranger worth anything, or simply pleasant?",
+        "If you never see them again, what did it actually change? Convince me."
+      ],
+      "aliases": [
+        "card_p3_strangers_cities_105-theme-2",
+        "strangers, trust and cities"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_expert_knowledge_106-theme-1",
+      "title": "explaining complicated things simply",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_expert_knowledge_106",
+      "questions": [
+        "What makes somebody good at explaining a difficult subject?",
+        "Do experts generally explain their own field well?",
+        "Should scientists be responsible for making their work understandable?",
+        "Isn't every simple explanation slightly false? Where exactly would you draw the line?"
+      ],
+      "aliases": [
+        "card_p3_expert_knowledge_106-theme-1",
+        "explaining complicated things simply"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_expert_knowledge_106-theme-2",
+      "title": "trust in specialists",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_expert_knowledge_106",
+      "questions": [
+        "Why do so many people distrust expert advice these days?",
+        "What happens to a country when people stop believing specialists?",
+        "Will new technology make expert knowledge easier to reach, or harder to judge?",
+        "Experts have got things badly wrong before now. Isn't scepticism the sensible response?"
+      ],
+      "aliases": [
+        "card_p3_expert_knowledge_106-theme-2",
+        "trust in specialists"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_kindness_society_107-theme-1",
+      "title": "why people help strangers",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_kindness_society_107",
+      "questions": [
+        "Why do some people stop to help a stranger when most of us drive past?",
+        "Are people in rural areas more likely to help than people in cities?",
+        "Is society becoming less willing to help than it used to be?",
+        "So is kindness really about the other person at all? Plenty would say not."
+      ],
+      "aliases": [
+        "card_p3_kindness_society_107-theme-1",
+        "why people help strangers"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_kindness_society_107-theme-2",
+      "title": "what a community owes its members",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_kindness_society_107",
+      "questions": [
+        "Whose responsibility is it to look after people who need help locally?",
+        "What would happen if nobody helped anyone outside their own family?",
+        "Are volunteers a good solution, or a sign that something has gone wrong?",
+        "Isn't volunteering just a cheap substitute for a service? Make the case against."
+      ],
+      "aliases": [
+        "card_p3_kindness_society_107-theme-2",
+        "what a community owes its members"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_family_time_108-theme-1",
+      "title": "how families spend time together",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_family_time_108",
+      "questions": [
+        "Do families in your country spend as much time together as they used to?",
+        "Why is it harder for families to eat together now?",
+        "Will family routines survive the way people work these days?",
+        "Maybe people actually prefer it this way. Is that so bad? Convince me."
+      ],
+      "aliases": [
+        "card_p3_family_time_108-theme-1",
+        "how families spend time together"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_family_time_108-theme-2",
+      "title": "who holds a family together",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_family_time_108",
+      "questions": [
+        "Whose job is it to organise a family, and is it usually one person?",
+        "What makes a family ritual last for years rather than months?",
+        "What would a family lose if it had no regular routines at all?",
+        "So is a tradition just one person's unpaid labour? Some would put it that way."
+      ],
+      "aliases": [
+        "card_p3_family_time_108-theme-2",
+        "who holds a family together"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_noise_and_calm_201-theme-1",
+      "title": "why places have got noisier",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_noise_and_calm_201",
+      "questions": [
+        "Why do you think towns are noisier now than they were?",
+        "What does constant background noise do to the people who live with it?",
+        "Are people less able to sit with silence than they used to be?",
+        "Some would say a noisy street is a sign of a healthy one. Fair?"
+      ],
+      "aliases": [
+        "card_p3_noise_and_calm_201-theme-1",
+        "why places have got noisier"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_noise_and_calm_201-theme-2",
+      "title": "whether calm can be designed in",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_noise_and_calm_201",
+      "questions": [
+        "Whose job is it to keep parts of a city quiet — councils, builders or residents?",
+        "If a new district were being planned today, what would you build into it?",
+        "Is it worth spending public money on quiet spaces when housing is short?",
+        "Isn't a park the first thing to cut when a city can't house people?"
+      ],
+      "aliases": [
+        "card_p3_noise_and_calm_201-theme-2",
+        "whether calm can be designed in"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_outdoor_life_202-theme-1",
+      "title": "who public space is for",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_outdoor_life_202",
+      "questions": [
+        "Which groups of people depend most on free outdoor space?",
+        "Do people use parks differently now compared with thirty years ago?",
+        "Why do some public spaces end up being avoided by everybody?",
+        "Isn't it always the same comfortable people you see in a park?"
+      ],
+      "aliases": [
+        "card_p3_outdoor_life_202-theme-1",
+        "who public space is for"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_outdoor_life_202-theme-2",
+      "title": "paying for something that's free",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_outdoor_life_202",
+      "questions": [
+        "Should a council keep a park open if very few people use it?",
+        "Who ought to pay for maintaining public outdoor space?",
+        "Will towns have more green space or less in twenty years' time?",
+        "With housing this short, can a town really justify empty grass?"
+      ],
+      "aliases": [
+        "card_p3_outdoor_life_202-theme-2",
+        "paying for something that's free"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_homes_and_space_203-theme-1",
+      "title": "how much space a home needs",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_homes_and_space_203",
+      "questions": [
+        "How much space does a family actually need to live comfortably?",
+        "Are homes in your country bigger or smaller than they were?",
+        "Why do people in cities put up with much smaller homes?",
+        "Isn't the real problem what people own rather than how big their homes are?"
+      ],
+      "aliases": [
+        "card_p3_homes_and_space_203-theme-1",
+        "how much space a home needs"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_homes_and_space_203-theme-2",
+      "title": "who can afford to live where",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_homes_and_space_203",
+      "questions": [
+        "What happens to a city when the people who work in it can't afford to live there?",
+        "Whose job is it to make housing affordable — governments, builders or families?",
+        "Will people in future still expect to own their home?",
+        "Plenty of countries rent for life quite happily. Why does owning matter?"
+      ],
+      "aliases": [
+        "card_p3_homes_and_space_203-theme-2",
+        "who can afford to live where"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_crowds_and_travel_204-theme-1",
+      "title": "why some places carry the crowds",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_crowds_and_travel_204",
+      "questions": [
+        "Why do certain parts of a city end up carrying all the crowds?",
+        "Do people tolerate crowding better than they did a generation ago?",
+        "What does living among crowds do to the way people behave?",
+        "Isn't crowding just bad planning rather than too many people?"
+      ],
+      "aliases": [
+        "card_p3_crowds_and_travel_204-theme-1",
+        "why some places carry the crowds"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_crowds_and_travel_204-theme-2",
+      "title": "how people will get around",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_crowds_and_travel_204",
+      "questions": [
+        "How do you think people will travel around cities in twenty years?",
+        "Should cities charge drivers to enter the busiest areas?",
+        "If half the cars vanished tomorrow, what would actually change?",
+        "Would you give up your own car, or only other people's?"
+      ],
+      "aliases": [
+        "card_p3_crowds_and_travel_204-theme-2",
+        "how people will get around"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_childhood_freedom_205-theme-1",
+      "title": "where children are allowed to go",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_childhood_freedom_205",
+      "questions": [
+        "Do children in your country have as much freedom outdoors as they once did?",
+        "Why are parents more careful now about where their children go?",
+        "Whose job is it to make a neighbourhood safe enough for children?",
+        "Hasn't that freedom just moved online rather than disappeared?"
+      ],
+      "aliases": [
+        "card_p3_childhood_freedom_205-theme-1",
+        "where children are allowed to go"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_childhood_freedom_205-theme-2",
+      "title": "what happens to unused land",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_childhood_freedom_205",
+      "questions": [
+        "What tends to happen to land in a town that nobody is using?",
+        "Is it better to leave some land wild or to turn it into something useful?",
+        "How much should a town keep simply because people remember it?",
+        "Shouldn't a growing town build on it rather than keep it for memories?"
+      ],
+      "aliases": [
+        "card_p3_childhood_freedom_205-theme-2",
+        "what happens to unused land"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_tourism_effects_206-theme-1",
+      "title": "what visitors do to a place",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_tourism_effects_206",
+      "questions": [
+        "What changes in a town once it becomes popular with visitors?",
+        "Do local people usually benefit from tourism, or mostly outsiders?",
+        "Should places set a limit on the number of visitors they take?",
+        "Isn't a town without visitors just a town without any work in it?"
+      ],
+      "aliases": [
+        "card_p3_tourism_effects_206-theme-1",
+        "what visitors do to a place"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_tourism_effects_206-theme-2",
+      "title": "why places start to look alike",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_tourism_effects_206",
+      "questions": [
+        "Why do popular places all over the world end up looking similar?",
+        "Will travel become less interesting as places become more alike?",
+        "What does a country lose by presenting itself mainly to visitors?",
+        "Don't travellers ask for exactly the sameness they complain about?"
+      ],
+      "aliases": [
+        "card_p3_tourism_effects_206-theme-2",
+        "why places start to look alike"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_who_shapes_a_town_207-theme-1",
+      "title": "who decides how a town changes",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_who_shapes_a_town_207",
+      "questions": [
+        "Who should have the final say over what gets built in a town centre?",
+        "Why do so many town centres end up full of empty shops?",
+        "If a town could only afford one big project, what should it be?",
+        "If everybody gets a vote, doesn't that mean nothing ever gets built?"
+      ],
+      "aliases": [
+        "card_p3_who_shapes_a_town_207-theme-1",
+        "who decides how a town changes"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_who_shapes_a_town_207-theme-2",
+      "title": "what makes people care where they live",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_who_shapes_a_town_207",
+      "questions": [
+        "What makes people look after the area they live in?",
+        "Do people feel less attached to their town than they used to?",
+        "Is it better for people to move away for work or to stay where they're from?",
+        "Isn't staying put just what people do when they have no options?"
+      ],
+      "aliases": [
+        "card_p3_who_shapes_a_town_207-theme-2",
+        "what makes people care where they live"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_buying_and_repairing_208-theme-1",
+      "title": "why people replace things so soon",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_buying_and_repairing_208",
+      "questions": [
+        "Why do people replace things that still work perfectly well?",
+        "Are everyday goods built to last as long as they used to be?",
+        "Whose responsibility is it that so little can be repaired now?",
+        "Given the choice in a shop, don't people take the cheaper one every time?"
+      ],
+      "aliases": [
+        "card_p3_buying_and_repairing_208-theme-1",
+        "why people replace things so soon"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_buying_and_repairing_208-theme-2",
+      "title": "what happens to what we discard",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_buying_and_repairing_208",
+      "questions": [
+        "What happens to the things people throw away in your country?",
+        "Would people repair more if repairs cost less than replacements?",
+        "Is buying second-hand becoming more normal, or less?",
+        "Hasn't second-hand simply become a style rather than a saving?"
+      ],
+      "aliases": [
+        "card_p3_buying_and_repairing_208-theme-2",
+        "what happens to what we discard"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_urban_change_001-theme-1",
+      "title": "how neighbourhoods change",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_urban_change_001",
+      "questions": [
+        "Why do some neighbourhoods change much faster than others?",
+        "Who should decide what gets built in a residential area?",
+        "What can be lost when an old part of a city is redeveloped?",
+        "But surely a place that never changes just stops working for the people living in it?"
+      ],
+      "aliases": [
+        "card_p3_urban_change_001-theme-1",
+        "how neighbourhoods change"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_urban_change_001-theme-2",
+      "title": "the cost of housing",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_urban_change_001",
+      "questions": [
+        "Why is housing so expensive in many large cities?",
+        "Should governments limit how much rent landlords are allowed to charge?",
+        "Do you think it will become easier or harder for young people to own a home?",
+        "Isn't an expensive city simply a successful one? What's actually wrong with that?"
+      ],
+      "aliases": [
+        "card_p3_urban_change_001-theme-2",
+        "the cost of housing"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_working_life_001-theme-1",
+      "title": "how work is changing",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_working_life_001",
+      "questions": [
+        "How has the way people work changed since your parents' generation?",
+        "What are the advantages and disadvantages of working from home?",
+        "Do you think most people will still spend their whole career with one employer?",
+        "Isn't that just how every generation talks about the one before it?"
+      ],
+      "aliases": [
+        "card_p3_working_life_001-theme-1",
+        "how work is changing"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_working_life_001-theme-2",
+      "title": "choosing a career",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_working_life_001",
+      "questions": [
+        "Should young people choose a career based on the salary or on their interests?",
+        "How much influence should parents have over a young person's career?",
+        "Why do some people change career completely in middle age?",
+        "So would you actually tell a nineteen-year-old to ignore what they enjoy?"
+      ],
+      "aliases": [
+        "card_p3_working_life_001-theme-2",
+        "choosing a career"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_technology_society_001-theme-1",
+      "title": "technology and everyday habits",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_technology_society_001",
+      "questions": [
+        "Why do people find it so difficult to put their phones down?",
+        "Has technology made people better at managing their time, or worse?",
+        "Which age group adapts most easily to new technology, and why?",
+        "People blame the device, but nobody is forcing them to pick it up, are they?"
+      ],
+      "aliases": [
+        "card_p3_technology_society_001-theme-1",
+        "technology and everyday habits"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_technology_society_001-theme-2",
+      "title": "the wider effects of technology",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_technology_society_001",
+      "questions": [
+        "Should there be limits on how much personal information companies can collect?",
+        "Does technology bring people closer together or push them further apart?",
+        "How might automation change the kinds of jobs that exist in twenty years?",
+        "Weren't people saying more or less exactly this about television fifty years ago?"
+      ],
+      "aliases": [
+        "card_p3_technology_society_001-theme-2",
+        "the wider effects of technology"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_education_opportunity_001-theme-1",
+      "title": "how people learn",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_education_opportunity_001",
+      "questions": [
+        "Why do some people learn practical skills more easily than academic ones?",
+        "Should schools spend more time teaching everyday practical skills?",
+        "How useful are online courses compared with classroom teaching?",
+        "If that's right, what exactly is school for?"
+      ],
+      "aliases": [
+        "card_p3_education_opportunity_001-theme-1",
+        "how people learn"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_education_opportunity_001-theme-2",
+      "title": "education and opportunity",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_education_opportunity_001",
+      "questions": [
+        "Should higher education be free for everyone?",
+        "Does a university degree still guarantee a better job?",
+        "How can a country make sure that children from poorer families get a fair education?",
+        "So should fewer people go, and who exactly would you tell to stay away?"
+      ],
+      "aliases": [
+        "card_p3_education_opportunity_001-theme-2",
+        "education and opportunity"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_public_health_001-theme-1",
+      "title": "public health and personal choice",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_public_health_001",
+      "questions": [
+        "How much responsibility should governments take for people's health?",
+        "Are higher taxes on unhealthy food a fair way to change behaviour?",
+        "Why do people know what is healthy and still not do it?",
+        "But adults can decide for themselves, can't they? Why should the state interfere?"
+      ],
+      "aliases": [
+        "card_p3_public_health_001-theme-1",
+        "public health and personal choice"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_public_health_001-theme-2",
+      "title": "health and modern life",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_public_health_001",
+      "questions": [
+        "Why do levels of stress seem to be higher than they were in the past?",
+        "Do cities make it harder or easier to live healthily?",
+        "How might healthcare have to change as populations grow older?",
+        "If things are so stressful now, why do people keep living longer?"
+      ],
+      "aliases": [
+        "card_p3_public_health_001-theme-2",
+        "health and modern life"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_environment_action_001-theme-1",
+      "title": "individual action and the environment",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_environment_action_001",
+      "questions": [
+        "How much difference can the choices of individuals really make to the environment?",
+        "Should people be fined for failing to recycle?",
+        "Why are some environmental habits much easier to adopt than others?",
+        "So is sorting your bins just a way of feeling better about doing nothing?"
+      ],
+      "aliases": [
+        "card_p3_environment_action_001-theme-1",
+        "individual action and the environment"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_environment_action_001-theme-2",
+      "title": "cities and the natural world",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_environment_action_001",
+      "questions": [
+        "Why does green space matter in a crowded city?",
+        "Should new buildings be required to include gardens or trees?",
+        "Do you think the cities of the future will be cleaner than today's?",
+        "Can a city really afford to leave prime land empty just for the view?"
+      ],
+      "aliases": [
+        "card_p3_environment_action_001-theme-2",
+        "cities and the natural world"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_transport_tourism_001-theme-1",
+      "title": "how transport is changing",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_transport_tourism_001",
+      "questions": [
+        "How has the way people travel changed over the last few decades?",
+        "Should governments invest more in railways than in roads?",
+        "Do you think people will travel less in the future than they do now?",
+        "Would you personally give up flying, though, or is this advice for other people?"
+      ],
+      "aliases": [
+        "card_p3_transport_tourism_001-theme-1",
+        "how transport is changing"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_transport_tourism_001-theme-2",
+      "title": "the effects of tourism",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_transport_tourism_001",
+      "questions": [
+        "What benefits does tourism bring to a small town?",
+        "How can popular places protect themselves from having too many visitors?",
+        "Is it possible for tourism to be genuinely good for local people?",
+        "Isn't a preserved village with nobody living in it just a film set?"
+      ],
+      "aliases": [
+        "card_p3_transport_tourism_001-theme-2",
+        "the effects of tourism"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_food_culture_001-theme-1",
+      "title": "eating habits and family life",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_food_culture_001",
+      "questions": [
+        "Why do fewer families sit down to eat together than in the past?",
+        "Does it matter whether children learn to cook?",
+        "How do shared meals affect the relationships between people?",
+        "Is that a real loss, though, or nostalgia for something that was inconvenient?"
+      ],
+      "aliases": [
+        "card_p3_food_culture_001-theme-1",
+        "eating habits and family life"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_food_culture_001-theme-2",
+      "title": "food, cost and distance",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_food_culture_001",
+      "questions": [
+        "Why has food from other countries become so common in local shops?",
+        "Should people be encouraged to eat food that is produced closer to home?",
+        "How might rising food prices change what ordinary families eat?",
+        "So would you pay a third more for something grown twenty miles away?"
+      ],
+      "aliases": [
+        "card_p3_food_culture_001-theme-2",
+        "food, cost and distance"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_media_trust_001-theme-1",
+      "title": "how people follow the news",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_media_trust_001",
+      "questions": [
+        "Why do so many people now get their news from social media?",
+        "How can ordinary readers tell whether a report is reliable?",
+        "Should governments do more to control false information online?",
+        "Who exactly would you trust to decide what counts as false, though?"
+      ],
+      "aliases": [
+        "card_p3_media_trust_001-theme-1",
+        "how people follow the news"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_media_trust_001-theme-2",
+      "title": "the media and public opinion",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_media_trust_001",
+      "questions": [
+        "How much influence does the media have on what people believe?",
+        "Do newspapers have a duty to report good news as well as bad?",
+        "Will professional journalists still be needed in twenty years' time?",
+        "If people wanted better coverage, wouldn't somebody already be selling it?"
+      ],
+      "aliases": [
+        "card_p3_media_trust_001-theme-2",
+        "the media and public opinion"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_generations_001-theme-1",
+      "title": "relations between the generations",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_generations_001",
+      "questions": [
+        "What can older and younger people learn from one another?",
+        "Why do some families find it hard to talk across the generations?",
+        "Should grown-up children be responsible for looking after their parents?",
+        "So would you be comfortable with your own parents being looked after by strangers?"
+      ],
+      "aliases": [
+        "card_p3_generations_001-theme-1",
+        "relations between the generations"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_generations_001-theme-2",
+      "title": "how family life is changing",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_generations_001",
+      "questions": [
+        "How has family life changed in your country over the last fifty years?",
+        "Does it matter that people are having children later in life?",
+        "What effect does moving abroad for work have on family ties?",
+        "Isn't that just a comfortable way of saying nothing has been lost?"
+      ],
+      "aliases": [
+        "card_p3_generations_001-theme-2",
+        "how family life is changing"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_money_consumption_001-theme-1",
+      "title": "attitudes to money",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_money_consumption_001",
+      "questions": [
+        "Why do different generations think so differently about saving?",
+        "Should children be given pocket money in return for jobs around the house?",
+        "Does having more money make people more careful with it, or less?",
+        "So a pay rise wouldn't change how anybody behaves? Really?"
+      ],
+      "aliases": [
+        "card_p3_money_consumption_001-theme-1",
+        "attitudes to money"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_money_consumption_001-theme-2",
+      "title": "consumption and waste",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_money_consumption_001",
+      "questions": [
+        "Why do people buy things they do not really need?",
+        "How could shops be discouraged from using so much packaging?",
+        "Will people in the future own fewer possessions than they do today?",
+        "If repair costs more than replacement, why would anybody bother?"
+      ],
+      "aliases": [
+        "card_p3_money_consumption_001-theme-2",
+        "consumption and waste"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_sport_leisure_001-theme-1",
+      "title": "sport and society",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_sport_leisure_001",
+      "questions": [
+        "Why do people enjoy watching sport so much?",
+        "Should schools give as much time to sport as to academic subjects?",
+        "What effect do professional athletes have on young people?",
+        "Is there really a difference, if people are paying to watch either way?"
+      ],
+      "aliases": [
+        "card_p3_sport_leisure_001-theme-1",
+        "sport and society"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_sport_leisure_001-theme-2",
+      "title": "free time and modern life",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_sport_leisure_001",
+      "questions": [
+        "Do people have more free time than they did in the past, or less?",
+        "Why do some people find it so difficult to relax?",
+        "How could towns encourage more people to be physically active?",
+        "So people who say they're too busy simply don't want to? That's harsh."
+      ],
+      "aliases": [
+        "card_p3_sport_leisure_001-theme-2",
+        "free time and modern life"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_judging_choices_r2c01-theme-1",
+      "title": "what makes a decision a good one",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_judging_choices_r2c01",
+      "questions": [
+        "How would you decide whether a choice someone made was actually a good one?",
+        "Why do people so often judge a decision by how it turned out rather than how it was made?",
+        "Is there any real value in regret, or is it just wasted effort?",
+        "But surely the result is the only evidence we ever get. What would you say to that?"
+      ],
+      "aliases": [
+        "card_p3_judging_choices_r2c01-theme-1",
+        "what makes a decision a good one"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_judging_choices_r2c01-theme-2",
+      "title": "who steers young people's big choices",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_judging_choices_r2c01",
+      "questions": [
+        "Who has the most influence over what young people decide to study?",
+        "Do young people today get better guidance than their parents did?",
+        "Should schools be responsible for helping students think about the long term?",
+        "Some people would say that's just protecting them from growing up. Your view?"
+      ],
+      "aliases": [
+        "card_p3_judging_choices_r2c01-theme-2",
+        "who steers young people's big choices"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_where_ideas_come_from_r2c02-theme-1",
+      "title": "how children pick up their ideas",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_where_ideas_come_from_r2c02",
+      "questions": [
+        "Where do children get most of their ideas about how the world works?",
+        "Has that changed since your parents were young?",
+        "Should adults correct a child's mistaken idea straight away, or let them find out?",
+        "But children can't sort good information from bad. Doesn't that settle it?"
+      ],
+      "aliases": [
+        "card_p3_where_ideas_come_from_r2c02-theme-1",
+        "how children pick up their ideas"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_where_ideas_come_from_r2c02-theme-2",
+      "title": "changing your mind as an adult",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_where_ideas_come_from_r2c02",
+      "questions": [
+        "What actually makes an adult change a long-held opinion?",
+        "Do people admit publicly when they have changed their minds?",
+        "What would happen if people found it easier to say they had been wrong?",
+        "Some would say that's a rather cynical reading. How would you answer that?"
+      ],
+      "aliases": [
+        "card_p3_where_ideas_come_from_r2c02-theme-2",
+        "changing your mind as an adult"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_traditions_and_change_r2c03-theme-1",
+      "title": "why customs fade",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_traditions_and_change_r2c03",
+      "questions": [
+        "What makes a custom stop being practised?",
+        "Do people follow fewer traditions than their grandparents did, or just different ones?",
+        "Are traditions disappearing faster in cities than in rural areas?",
+        "Isn't a football match every Saturday a tradition by any reasonable definition?"
+      ],
+      "aliases": [
+        "card_p3_traditions_and_change_r2c03-theme-1",
+        "why customs fade"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_traditions_and_change_r2c03-theme-2",
+      "title": "whether traditions should be protected",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_traditions_and_change_r2c03",
+      "questions": [
+        "Should governments spend money keeping local traditions going?",
+        "What would be lost if a country's older customs disappeared completely?",
+        "Is a tradition that has to be funded still a real tradition?",
+        "Some people would call that sentimental spending. How would you defend it?"
+      ],
+      "aliases": [
+        "card_p3_traditions_and_change_r2c03-theme-2",
+        "whether traditions should be protected"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_honesty_and_trust_r2c04-theme-1",
+      "title": "honesty between friends",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_honesty_and_trust_r2c04",
+      "questions": [
+        "What does it actually mean to be honest with a friend?",
+        "Do most people want honest opinions when they ask for them?",
+        "Are older people more direct than younger people, in your experience?",
+        "So is anyone ever genuinely asking? What would you say to that?"
+      ],
+      "aliases": [
+        "card_p3_honesty_and_trust_r2c04-theme-1",
+        "honesty between friends"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_honesty_and_trust_r2c04-theme-2",
+      "title": "honesty inside organisations",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_honesty_and_trust_r2c04",
+      "questions": [
+        "Whose job is it to speak up when something is going wrong at work?",
+        "Is complete openness always good for an organisation?",
+        "Will people find it easier or harder to be honest at work in twenty years?",
+        "But plenty of firms say they welcome challenge. Are they all pretending?"
+      ],
+      "aliases": [
+        "card_p3_honesty_and_trust_r2c04-theme-2",
+        "honesty inside organisations"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_unsolvable_problems_r2c05-theme-1",
+      "title": "what makes a problem unsolvable",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_unsolvable_problems_r2c05",
+      "questions": [
+        "What makes some problems impossible to solve, rather than just difficult?",
+        "Why do local problems often stay unresolved for decades?",
+        "Is it better to accept a poor solution than to keep waiting for a good one?",
+        "Isn't 'unsolvable' just a polite word for unaffordable? Your view?"
+      ],
+      "aliases": [
+        "card_p3_unsolvable_problems_r2c05-theme-1",
+        "what makes a problem unsolvable"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_unsolvable_problems_r2c05-theme-2",
+      "title": "deciding when everybody loses",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_unsolvable_problems_r2c05",
+      "questions": [
+        "Who should decide when every available option harms somebody?",
+        "Do people accept a decision more readily if they were consulted first?",
+        "What would happen if local residents could veto any change near them?",
+        "Some would say that's exactly what consultation is for. How do you answer that?"
+      ],
+      "aliases": [
+        "card_p3_unsolvable_problems_r2c05-theme-2",
+        "deciding when everybody loses"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_regret_and_second_chances_r2c06-theme-1",
+      "title": "what regret is for",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_regret_and_second_chances_r2c06",
+      "questions": [
+        "Does regretting something serve any useful purpose?",
+        "Why do people tend to regret what they didn't do more than what they did?",
+        "Is it possible to learn from someone else's regrets?",
+        "If it never alters the past, what exactly is it doing for anybody?"
+      ],
+      "aliases": [
+        "card_p3_regret_and_second_chances_r2c06-theme-1",
+        "what regret is for"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_regret_and_second_chances_r2c06-theme-2",
+      "title": "second chances at work and in study",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_regret_and_second_chances_r2c06",
+      "questions": [
+        "Should people be able to return to education at any age?",
+        "Do employers in your country give people a genuine second chance?",
+        "Will it be easier or harder to change career in twenty years' time?",
+        "So is the whole idea just something comfortable people say? Your response?"
+      ],
+      "aliases": [
+        "card_p3_regret_and_second_chances_r2c06-theme-2",
+        "second chances at work and in study"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_automation_and_skill_r2c07-theme-1",
+      "title": "what happens to a replaced skill",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_automation_and_skill_r2c07",
+      "questions": [
+        "What happens to a skill after machines become better at it than people?",
+        "Does it matter if a society forgets how to do something by hand?",
+        "Which skills do you think will still be valuable in fifty years?",
+        "Nobody mourns the people who used to do arithmetic on paper. Why is this different?"
+      ],
+      "aliases": [
+        "card_p3_automation_and_skill_r2c07-theme-1",
+        "what happens to a replaced skill"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_automation_and_skill_r2c07-theme-2",
+      "title": "who pays for automation",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_automation_and_skill_r2c07",
+      "questions": [
+        "Who should be responsible for people whose jobs are automated away?",
+        "Do the benefits of automation reach ordinary workers, or mainly the owners?",
+        "What would happen if companies had to retrain anyone they replaced?",
+        "Wouldn't that rule simply push the jobs abroad? How do you answer that?"
+      ],
+      "aliases": [
+        "card_p3_automation_and_skill_r2c07-theme-2",
+        "who pays for automation"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_how_change_happens_r2c08-theme-1",
+      "title": "why people resist change",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_how_change_happens_r2c08",
+      "questions": [
+        "Why do people so often object to changes that later turn out well?",
+        "Are some kinds of change accepted more easily than others?",
+        "Do people accept change more readily now than a generation ago?",
+        "Some would say every objector is really defending their own front door. Fair?"
+      ],
+      "aliases": [
+        "card_p3_how_change_happens_r2c08-theme-1",
+        "why people resist change"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_how_change_happens_r2c08-theme-2",
+      "title": "who should decide local change",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_how_change_happens_r2c08",
+      "questions": [
+        "Who should have the final say over changes to a neighbourhood?",
+        "What would happen if every local change had to win a public vote?",
+        "Is it fair to make a decision that helps most people but harms a few?",
+        "But then nothing anybody dislikes would ever be built. What's your answer?"
+      ],
+      "aliases": [
+        "card_p3_how_change_happens_r2c08-theme-2",
+        "who should decide local change"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_time_and_planning_r2ee01-theme-1",
+      "title": "how strictly people treat the clock",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_time_and_planning_r2ee01",
+      "questions": [
+        "Are people where you live generally strict about turning up on time?",
+        "Why do some workplaces treat five minutes late as serious and others barely notice?",
+        "What actually makes somebody late — the clock, or whether anyone was held up?",
+        "Some people say punctuality is a cultural preference dressed up as a virtue. Fair?"
+      ],
+      "aliases": [
+        "card_p3_time_and_planning_r2ee01-theme-1",
+        "how strictly people treat the clock"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_time_and_planning_r2ee01-theme-2",
+      "title": "who controls people's time now",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_time_and_planning_r2ee01",
+      "questions": [
+        "Do people have more control over their own time than their parents did?",
+        "How have phones changed what happens when somebody is running late?",
+        "If everyone could see everyone else's diary, would that make life easier or worse?",
+        "But hasn't a quick message simply removed the cost of turning up late?"
+      ],
+      "aliases": [
+        "card_p3_time_and_planning_r2ee01-theme-2",
+        "who controls people's time now"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_argument_and_authority_r2ee02-theme-1",
+      "title": "how openly people disagree",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_argument_and_authority_r2ee02",
+      "questions": [
+        "Do people in your country tend to avoid open disagreement?",
+        "Has arguing online changed the way people disagree face to face?",
+        "What separates a good argument from a bad one?",
+        "Isn't plain speaking just easier for the people who hold the power?"
+      ],
+      "aliases": [
+        "card_p3_argument_and_authority_r2ee02-theme-1",
+        "how openly people disagree"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_argument_and_authority_r2ee02-theme-2",
+      "title": "disagreeing with people above you",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_argument_and_authority_r2ee02",
+      "questions": [
+        "Should employees be encouraged to disagree with their managers?",
+        "Are younger people more willing to contradict senior colleagues than they used to be?",
+        "Supposing nobody in an organisation ever objected to anything — what would go wrong first?",
+        "So is 'speak up' advice, or is it a trap?"
+      ],
+      "aliases": [
+        "card_p3_argument_and_authority_r2ee02-theme-2",
+        "disagreeing with people above you"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_appearance_and_occasion_r2ee03-theme-1",
+      "title": "what clothes tell people about you",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_appearance_and_occasion_r2ee03",
+      "questions": [
+        "How much can you really tell about somebody from what they're wearing?",
+        "Why do so many jobs still involve a uniform of some kind?",
+        "Do people judge each other on appearance less than they used to?",
+        "If looks really don't matter, why does anybody own an interview suit?"
+      ],
+      "aliases": [
+        "card_p3_appearance_and_occasion_r2ee03-theme-1",
+        "what clothes tell people about you"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_appearance_and_occasion_r2ee03-theme-2",
+      "title": "why formal occasions survive",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_appearance_and_occasion_r2ee03",
+      "questions": [
+        "Should employers be allowed to tell people how to dress?",
+        "Do you think formal occasions will still matter in twenty years?",
+        "If every event became casual, what would be lost?",
+        "Isn't a dress code just a wealth test that nobody has to say out loud?"
+      ],
+      "aliases": [
+        "card_p3_appearance_and_occasion_r2ee03-theme-2",
+        "why formal occasions survive"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_dependence_and_risk_r2ee04-theme-1",
+      "title": "how far people depend on systems",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_dependence_and_risk_r2ee04",
+      "questions": [
+        "What happens to a town when a system everybody relies on stops working?",
+        "Are people less able to manage without technology than they used to be?",
+        "How much of ordinary life could still be run on paper?",
+        "Weren't people just as helpless when the electricity went off in 1970?"
+      ],
+      "aliases": [
+        "card_p3_dependence_and_risk_r2ee04-theme-1",
+        "how far people depend on systems"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_dependence_and_risk_r2ee04-theme-2",
+      "title": "who should carry the risk",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_dependence_and_risk_r2ee04",
+      "questions": [
+        "When a service fails, who should be responsible — the company or the customer?",
+        "Should there always be a non-digital way of doing important things?",
+        "Will people go back to keeping cash and paper records, do you think?",
+        "Should the majority really fund a back-up for a shrinking minority?"
+      ],
+      "aliases": [
+        "card_p3_dependence_and_risk_r2ee04-theme-2",
+        "who should carry the risk"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_patience_and_pace_r2ee05-theme-1",
+      "title": "why some people run out of patience",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_patience_and_pace_r2ee05",
+      "questions": [
+        "Why are some people so much more patient than others?",
+        "Are people generally less patient than they were twenty years ago?",
+        "Is patience something you can learn, or is it just how you're made?",
+        "Isn't patience mostly a question of who can afford to wait?"
+      ],
+      "aliases": [
+        "card_p3_patience_and_pace_r2ee05-theme-1",
+        "why some people run out of patience"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_patience_and_pace_r2ee05-theme-2",
+      "title": "teaching people who learn slowly",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_patience_and_pace_r2ee05",
+      "questions": [
+        "Whose job is it to make sure older people can use new services?",
+        "Do people who find something easy tend to explain it badly?",
+        "Supposing everything moved online tomorrow — who would be left behind?",
+        "Should the majority really move at the speed of the slowest?"
+      ],
+      "aliases": [
+        "card_p3_patience_and_pace_r2ee05-theme-2",
+        "teaching people who learn slowly"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_patience_and_pace_r2ee05-theme-3",
+      "title": "patience at work and at home",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_patience_and_pace_r2ee05",
+      "questions": [
+        "Are people more patient with strangers than with their own families?",
+        "Has working life left any room for people who learn slowly?",
+        "Is patience a virtue, or just a way of putting up with bad systems?",
+        "So isn't patience sometimes just letting people get away with it?"
+      ],
+      "aliases": [
+        "card_p3_patience_and_pace_r2ee05-theme-3",
+        "patience at work and at home"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_friendship_and_chance_r2ee06-theme-1",
+      "title": "how old friendships survive or fade",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_friendship_and_chance_r2ee06",
+      "questions": [
+        "Why do people lose touch with friends they were once very close to?",
+        "Has staying in contact become easier, or just more constant?",
+        "What makes a friendship worth keeping over several decades?",
+        "Aren't you really missing who they were at fifteen, rather than who they are?"
+      ],
+      "aliases": [
+        "card_p3_friendship_and_chance_r2ee06-theme-1",
+        "how old friendships survive or fade"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_friendship_and_chance_r2ee06-theme-2",
+      "title": "chance and how people meet",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_friendship_and_chance_r2ee06",
+      "questions": [
+        "Do people in big cities meet fewer people by chance than people in small towns?",
+        "Have apps that match people together left any room for coincidence?",
+        "If nobody ever met by accident any more, what would be lost?",
+        "Wouldn't you choose who you meet, if the choice were actually available?"
+      ],
+      "aliases": [
+        "card_p3_friendship_and_chance_r2ee06-theme-2",
+        "chance and how people meet"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_persuasion_and_belief_r2ee07-theme-1",
+      "title": "what actually changes people's minds",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_persuasion_and_belief_r2ee07",
+      "questions": [
+        "What is it that actually changes somebody's mind — facts, or something else?",
+        "Why is it so difficult to admit publicly that you were wrong?",
+        "Are people more willing to change their views now than they were?",
+        "So is any of the arguing people do actually achieving anything?"
+      ],
+      "aliases": [
+        "card_p3_persuasion_and_belief_r2ee07-theme-1",
+        "what actually changes people's minds"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_persuasion_and_belief_r2ee07-theme-2",
+      "title": "trying things before deciding",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_persuasion_and_belief_r2ee07",
+      "questions": [
+        "Should local governments test unpopular changes before making them permanent?",
+        "Do trials of that kind genuinely change opinion, or just wear people down?",
+        "Will people become more willing to try things they dislike, or less?",
+        "Isn't a trial just a decision that hasn't been voted on yet?"
+      ],
+      "aliases": [
+        "card_p3_persuasion_and_belief_r2ee07-theme-2",
+        "trying things before deciding"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_persuasion_and_belief_r2ee07-theme-3",
+      "title": "opinions people inherit",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_persuasion_and_belief_r2ee07",
+      "questions": [
+        "How much of what people believe comes from the family they grew up in?",
+        "Do younger and older people change their minds in different ways?",
+        "Supposing you had grown up somewhere else — how different would your views be?",
+        "How would you tell your own reasoning apart from your upbringing?"
+      ],
+      "aliases": [
+        "card_p3_persuasion_and_belief_r2ee07-theme-3",
+        "opinions people inherit"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_choice_and_regret_r2ee08-theme-1",
+      "title": "whether more choice helps",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_choice_and_regret_r2ee08",
+      "questions": [
+        "Do people make better decisions when they have more options, or fewer?",
+        "Why do some people find almost any decision agonising?",
+        "Is there a point at which taking more advice makes a decision worse?",
+        "Isn't a difficult choice mostly a sign of a comfortable life?"
+      ],
+      "aliases": [
+        "card_p3_choice_and_regret_r2ee08-theme-1",
+        "whether more choice helps"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_choice_and_regret_r2ee08-theme-2",
+      "title": "living with the road not taken",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_choice_and_regret_r2ee08",
+      "questions": [
+        "Do people regret the choices they made, or the ones they didn't make?",
+        "Should young people be told to keep their options open, or to commit to something?",
+        "If you could see how the other choice would have turned out, would you want to?",
+        "What exactly is being kept open, if nothing is ever chosen?"
+      ],
+      "aliases": [
+        "card_p3_choice_and_regret_r2ee08-theme-2",
+        "living with the road not taken"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_owning_and_keeping_r2om01-theme-1",
+      "title": "why people hold on to things",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_owning_and_keeping_r2om01",
+      "questions": [
+        "Why do people keep so many things they never actually use?",
+        "Are people today more attached to their possessions than their grandparents were?",
+        "Do you think people will own far fewer physical things in twenty years' time?",
+        "But almost everything people 'treasure' gets thrown out by somebody else eventually, doesn't it?"
+      ],
+      "aliases": [
+        "card_p3_owning_and_keeping_r2om01-theme-1",
+        "why people hold on to things"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_owning_and_keeping_r2om01-theme-2",
+      "title": "what owning things says about people",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_owning_and_keeping_r2om01",
+      "questions": [
+        "Do people judge each other by what they own?",
+        "Should children be taught to repair things rather than replace them?",
+        "Can something be genuinely valuable if only one person thinks it is?",
+        "Isn't 'sentimental value' really a polite way of saying 'no value at all'?"
+      ],
+      "aliases": [
+        "card_p3_owning_and_keeping_r2om01-theme-2",
+        "what owning things says about people"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_buying_and_value_r2om02-theme-1",
+      "title": "how people decide what to buy",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_buying_and_value_r2om02",
+      "questions": [
+        "Why do people so often end up buying things they never use?",
+        "Is choosing what to buy harder now than it was for your parents?",
+        "What would change if people had to wait a week before any large purchase?",
+        "Wouldn't fewer choices just mean everybody ended up with worse things?"
+      ],
+      "aliases": [
+        "card_p3_buying_and_value_r2om02-theme-1",
+        "how people decide what to buy"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_buying_and_value_r2om02-theme-2",
+      "title": "what makes something good value",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_buying_and_value_r2om02",
+      "questions": [
+        "What actually makes something good value — the price, or how long it lasts?",
+        "Is it worth paying twice as much for something that lasts twice as long?",
+        "Should companies have to say how long a product is designed to last?",
+        "Isn't 'buy it once, buy it properly' advice that only works if you already have money?"
+      ],
+      "aliases": [
+        "card_p3_buying_and_value_r2om02-theme-2",
+        "what makes something good value"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_giving_and_occasions_r2om03-theme-1",
+      "title": "why people give presents at all",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_giving_and_occasions_r2om03",
+      "questions": [
+        "Why do people give each other presents when everybody could simply buy what they want?",
+        "Are there occasions where people feel obliged to give something rather than choosing to?",
+        "What would happen to weddings and birthdays if presents stopped altogether?",
+        "Wouldn't a lot of people be relieved if the whole custom disappeared tomorrow?"
+      ],
+      "aliases": [
+        "card_p3_giving_and_occasions_r2om03-theme-1",
+        "why people give presents at all"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_giving_and_occasions_r2om03-theme-2",
+      "title": "what a present says about money",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_giving_and_occasions_r2om03",
+      "questions": [
+        "Is an expensive present always a better present?",
+        "Has the way people give presents changed since your grandparents' time?",
+        "Should workplaces set a limit on what colleagues spend on each other?",
+        "If money really didn't matter, why does everybody check the price first?"
+      ],
+      "aliases": [
+        "card_p3_giving_and_occasions_r2om03-theme-2",
+        "what a present says about money"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_tools_and_skills_r2om04-theme-1",
+      "title": "learning to use things properly",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_tools_and_skills_r2om04",
+      "questions": [
+        "Why do so many people never learn to use the equipment they already own?",
+        "What does somebody actually lose if they can't mend anything themselves?",
+        "Are practical skills of that kind likely to survive another generation?",
+        "If a new one is cheaper than the repair, why would anyone bother learning?"
+      ],
+      "aliases": [
+        "card_p3_tools_and_skills_r2om04-theme-1",
+        "learning to use things properly"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_tools_and_skills_r2om04-theme-2",
+      "title": "who should keep things working",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_tools_and_skills_r2om04",
+      "questions": [
+        "Should companies be required to make their products repairable?",
+        "Do people in cities and people in the countryside depend on different kinds of equipment?",
+        "Do most households own equipment they hardly ever use?",
+        "Isn't mending things a luxury, if you're working two jobs?"
+      ],
+      "aliases": [
+        "card_p3_tools_and_skills_r2om04-theme-2",
+        "who should keep things working"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_technology_and_age_r2om05-theme-1",
+      "title": "learning something new later in life",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_technology_and_age_r2om05",
+      "questions": [
+        "Why do some people find new technology so much harder once they are older?",
+        "Whose job is it to help people who are struggling — families, companies or the state?",
+        "Will the next generation of older people run into the same difficulty?",
+        "But isn't it simpler for everybody if there's one system and everyone uses it?"
+      ],
+      "aliases": [
+        "card_p3_technology_and_age_r2om05-theme-1",
+        "learning something new later in life"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_technology_and_age_r2om05-theme-2",
+      "title": "designing things for everybody",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_technology_and_age_r2om05",
+      "questions": [
+        "What actually makes a piece of software easy to use?",
+        "Do younger and older people want different things from the same service?",
+        "Is it worth keeping paper and telephone options open for a shrinking number of people?",
+        "Should the majority pay more so that a small group can carry on using paper?"
+      ],
+      "aliases": [
+        "card_p3_technology_and_age_r2om05-theme-2",
+        "designing things for everybody"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_images_and_memory_r2om06-theme-1",
+      "title": "photographs and remembering",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_images_and_memory_r2om06",
+      "questions": [
+        "Has the way families record their lives changed since your grandparents' day?",
+        "Does having thousands of photographs make people remember more, or less?",
+        "If every family photograph in a country vanished, what would actually be lost?",
+        "Isn't it the photograph you remember in the end, rather than the day itself?"
+      ],
+      "aliases": [
+        "card_p3_images_and_memory_r2om06-theme-1",
+        "photographs and remembering"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_images_and_memory_r2om06-theme-2",
+      "title": "what images are for now",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_images_and_memory_r2om06",
+      "questions": [
+        "What makes a photograph worth keeping, given that almost none of them are?",
+        "Should people be free to photograph strangers in public places?",
+        "Have phones made everybody a better photographer, or simply a busier one?",
+        "Do people visit places now, or only go in order to be photographed there?"
+      ],
+      "aliases": [
+        "card_p3_images_and_memory_r2om06-theme-2",
+        "what images are for now"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_attention_and_listening_r2om07-theme-1",
+      "title": "how people spend their attention",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_attention_and_listening_r2om07",
+      "questions": [
+        "Why do people find it so much harder to stay with one thing now?",
+        "What is actually lost when everything gets listened to at double speed?",
+        "Will people come back to longer, slower programmes, or is that finished?",
+        "Isn't skipping simply a rational way of coping with too much choice?"
+      ],
+      "aliases": [
+        "card_p3_attention_and_listening_r2om07-theme-1",
+        "how people spend their attention"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_attention_and_listening_r2om07-theme-2",
+      "title": "listening across borders",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_attention_and_listening_r2om07",
+      "questions": [
+        "Do people in your country mostly listen to things made at home, or abroad?",
+        "Should governments support programme-making in their own language?",
+        "Is it a gain or a loss when audiences everywhere follow the same few programmes?",
+        "Why should anybody be funded to make something audiences aren't choosing?"
+      ],
+      "aliases": [
+        "card_p3_attention_and_listening_r2om07-theme-2",
+        "listening across borders"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_advertising_and_persuasion_r2om08-theme-1",
+      "title": "what advertising does to people",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_advertising_and_persuasion_r2om08",
+      "questions": [
+        "Why do a few advertisements stay with people for years while most vanish immediately?",
+        "Should there be stricter rules about where advertising is allowed to appear?",
+        "What effect does growing up surrounded by advertising have on children?",
+        "If it worked as well as people claim, wouldn't we all own exactly the same things?"
+      ],
+      "aliases": [
+        "card_p3_advertising_and_persuasion_r2om08-theme-1",
+        "what advertising does to people"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_advertising_and_persuasion_r2om08-theme-2",
+      "title": "who pays for what people watch",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_advertising_and_persuasion_r2om08",
+      "questions": [
+        "Where is the line now between advertising and ordinary content?",
+        "What would happen to free services if advertising were banned tomorrow?",
+        "Do people in different countries put up with different amounts of it?",
+        "Would you rather pay properly for everything you currently get for nothing?"
+      ],
+      "aliases": [
+        "card_p3_advertising_and_persuasion_r2om08-theme-2",
+        "who pays for what people watch"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_passing_on_skills_901-theme-1",
+      "title": "how practical skills get passed on",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_passing_on_skills_901",
+      "questions": [
+        "Why do fewer people now learn practical skills from their own families?",
+        "Is watching a video really as good as having somebody standing next to you?",
+        "In twenty years, will ordinary people still bother learning to repair things?",
+        "Isn't it simply cheaper to pay somebody who already knows how?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_passing_on_skills_901-theme-1",
+        "how practical skills get passed on"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_passing_on_skills_901-theme-2",
+      "title": "what makes somebody good at explaining",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_passing_on_skills_901",
+      "questions": [
+        "What is it that makes one person better at explaining than another?",
+        "Should employers be looking for that when they choose who to promote?",
+        "Does it matter if experts can't explain their work in plain language?",
+        "But surely real expertise speaks for itself, doesn't it?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_passing_on_skills_901-theme-2",
+        "what makes somebody good at explaining"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_doing_a_job_well_902-theme-1",
+      "title": "what being good at a job means",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_doing_a_job_well_902",
+      "questions": [
+        "What actually makes somebody good at a job — training, or the sort of person they are?",
+        "Are the qualities that matter the same in every kind of work?",
+        "Should people who are good with the public be paid more than people who aren't?",
+        "But you can't train somebody to be patient, can you?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_doing_a_job_well_902-theme-1",
+        "what being good at a job means"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_doing_a_job_well_902-theme-2",
+      "title": "why some work goes unnoticed",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_doing_a_job_well_902",
+      "questions": [
+        "Why does a lot of hard work go completely unnoticed?",
+        "Is work judged differently now from the way it was in your parents' time?",
+        "Will the jobs that need patience and judgement survive the next twenty years?",
+        "If nobody can measure it, how would you reward it fairly?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_doing_a_job_well_902-theme-2",
+        "why some work goes unnoticed"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_age_and_experience_903-theme-1",
+      "title": "what the generations expect of each other",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_age_and_experience_903",
+      "questions": [
+        "What do older people in your country expect from younger ones?",
+        "Do younger and older people want different things from work?",
+        "Has the balance of authority between the generations shifted at all?",
+        "Isn't that just politeness, though, rather than actual respect?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_age_and_experience_903-theme-1",
+        "what the generations expect of each other"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_age_and_experience_903-theme-2",
+      "title": "whether experience still counts",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_age_and_experience_903",
+      "questions": [
+        "Is experience worth as much at work as it used to be?",
+        "Should older employees be the ones who train the newest ones?",
+        "Supposing everybody retired at fifty — what would that do to a workplace?",
+        "But what use is experience when all the tools have changed?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_age_and_experience_903-theme-2",
+        "whether experience still counts"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_leaders_and_groups_904-theme-1",
+      "title": "what a group wants from a leader",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_leaders_and_groups_904",
+      "questions": [
+        "What makes people willing to follow somebody?",
+        "Do people expect different things from a leader at work and in a community group?",
+        "Is it possible to lead a group well without being liked?",
+        "Would you really follow somebody who admitted they were unsure?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_leaders_and_groups_904-theme-1",
+        "what a group wants from a leader"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_leaders_and_groups_904-theme-2",
+      "title": "how people end up in charge",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_leaders_and_groups_904",
+      "questions": [
+        "Why do the loudest people so often end up in charge?",
+        "Should organisations train people to lead, or look for the ones who already can?",
+        "If a group had nobody in charge at all, what would happen to it?",
+        "So no course has ever made anybody you know better at it?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_leaders_and_groups_904-theme-2",
+        "how people end up in charge"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_rules_and_enforcement_905-theme-1",
+      "title": "why people break rules they agree with",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_rules_and_enforcement_905",
+      "questions": [
+        "Why do people break rules that they actually agree with?",
+        "If nobody was watching, would most rules still be followed?",
+        "Do people in different places follow rules for different reasons?",
+        "Take the cameras away for a month — would anything really change?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_rules_and_enforcement_905-theme-1",
+        "why people break rules they agree with"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_rules_and_enforcement_905-theme-2",
+      "title": "who should make and enforce rules",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_rules_and_enforcement_905",
+      "questions": [
+        "In a shared space, who should decide the rules — the people using it, or whoever owns it?",
+        "Is a rule that is never enforced worse than having no rule at all?",
+        "Are there more rules in ordinary life than there were a generation ago?",
+        "What actual damage does an ignored rule do to anybody?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_rules_and_enforcement_905-theme-2",
+        "who should make and enforce rules"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_why_changes_stall_906-theme-1",
+      "title": "why cheap improvements stall",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_why_changes_stall_906",
+      "questions": [
+        "Why do obvious, inexpensive improvements so often never get made?",
+        "Whose job should it be to notice that something isn't working?",
+        "If ordinary users designed a public service, what would be different about it?",
+        "Doesn't the fact that nobody has done it suggest it isn't that simple?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_why_changes_stall_906-theme-1",
+        "why cheap improvements stall"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_why_changes_stall_906-theme-2",
+      "title": "how people get things changed",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_why_changes_stall_906",
+      "questions": [
+        "How do people in your country usually try to get something changed?",
+        "Do complaints from the public actually lead anywhere?",
+        "Will it get easier or harder for ordinary people to be heard?",
+        "Has anything you've seen online ever actually changed a policy?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_why_changes_stall_906-theme-2",
+        "how people get things changed"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_ambition_and_success_907-theme-1",
+      "title": "why people give up on plans",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_ambition_and_success_907",
+      "questions": [
+        "Why do people abandon plans they say they genuinely want?",
+        "Are people better at starting things than finishing them, compared with a generation ago?",
+        "Should schools be teaching children how to keep going at something?",
+        "If you wanted it that badly, wouldn't you have done something by now?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_ambition_and_success_907-theme-1",
+        "why people give up on plans"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_ambition_and_success_907-theme-2",
+      "title": "what counts as a successful life",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_ambition_and_success_907",
+      "questions": [
+        "Who really decides what counts as a successful life?",
+        "Do people your parents' age measure success the same way?",
+        "Will the idea of a successful life look different in twenty years?",
+        "Would you still want it if nobody ever found out you'd done it?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_ambition_and_success_907-theme-2",
+        "what counts as a successful life"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_where_advice_comes_from_908-theme-1",
+      "title": "why advice gets ignored",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_where_advice_comes_from_908",
+      "questions": [
+        "Why do people ask for advice and then ignore it?",
+        "Is advice from somebody who has done the thing worth more than advice from an expert?",
+        "If everybody took the sensible advice they were given, what would be lost?",
+        "So the asking is really just theatre, then?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_where_advice_comes_from_908-theme-1",
+        "why advice gets ignored"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_r2pa_where_advice_comes_from_908-theme-2",
+      "title": "where advice comes from now",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_r2pa_where_advice_comes_from_908",
+      "questions": [
+        "Where do people get advice now that they used to get from their families?",
+        "Is advice from strangers online better or worse than advice from people who know you?",
+        "Will people ever trust advice from a machine as much as advice from a person?",
+        "Isn't a stranger more honest with you than your own family?"
+      ],
+      "aliases": [
+        "card_p3_r2pa_where_advice_comes_from_908-theme-2"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_thinking_time_r2pa1-theme-1",
+      "title": "time to yourself",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_thinking_time_r2pa1",
+      "questions": [
+        "Do most people get enough time on their own these days?",
+        "Was it easier for your parents' generation to be left alone?",
+        "Should employers have any say in what people do with their evenings?",
+        "Isn't that avoidance, though, dressed up as something healthier?"
+      ],
+      "aliases": [
+        "card_p3_thinking_time_r2pa1-theme-1",
+        "time to yourself"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_thinking_time_r2pa1-theme-2",
+      "title": "how people make big decisions",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_thinking_time_r2pa1",
+      "questions": [
+        "Why do some people take far longer over a decision than others?",
+        "What makes a decision a good one — how it turns out, or how it was made?",
+        "Supposing software could make these choices for people, would they let it?",
+        "So all that careful weighing up is really just for show, is it?"
+      ],
+      "aliases": [
+        "card_p3_thinking_time_r2pa1-theme-2",
+        "how people make big decisions"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_buildings_and_towns_r2pa2-theme-1",
+      "title": "what makes a building work",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_buildings_and_towns_r2pa2",
+      "questions": [
+        "Apart from the way it looks, what makes a building a good one?",
+        "Is it worth paying more for a building that people enjoy looking at?",
+        "Who ought to have the final say over what gets built in a city centre?",
+        "Wouldn't most people rather have a home than a nice view of one?"
+      ],
+      "aliases": [
+        "card_p3_buildings_and_towns_r2pa2-theme-1",
+        "what makes a building work"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_buildings_and_towns_r2pa2-theme-2",
+      "title": "keeping old buildings",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_buildings_and_towns_r2pa2",
+      "questions": [
+        "Do people care more about old buildings than they did a generation ago?",
+        "What happens to an area when its older buildings are pulled down?",
+        "Supposing a town could only keep one old building, how should it choose?",
+        "But isn't heritage just a polite way of making somewhere expensive?"
+      ],
+      "aliases": [
+        "card_p3_buildings_and_towns_r2pa2-theme-2",
+        "keeping old buildings"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_exercise_and_facilities_r2pa3-theme-1",
+      "title": "places for people to be active",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_exercise_and_facilities_r2pa3",
+      "questions": [
+        "Whose job is it to provide places where ordinary people can exercise?",
+        "Do people in cities get more chances to be active than people in the countryside?",
+        "Do most people actually use the facilities that already exist near them?",
+        "So the healthy are being subsidised by everyone else, are they?"
+      ],
+      "aliases": [
+        "card_p3_exercise_and_facilities_r2pa3-theme-1",
+        "places for people to be active"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_exercise_and_facilities_r2pa3-theme-2",
+      "title": "why people give up",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_exercise_and_facilities_r2pa3",
+      "questions": [
+        "Why do so many people give up on exercise a few weeks after starting?",
+        "What does it do to a workplace when everybody in it sits down all day?",
+        "Will the way people keep fit look very different in twenty years?",
+        "Isn't that just a polite way of calling them lazy?"
+      ],
+      "aliases": [
+        "card_p3_exercise_and_facilities_r2pa3-theme-2",
+        "why people give up"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_noise_and_shared_space_r2pa4-theme-1",
+      "title": "putting up with other people",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_noise_and_shared_space_r2pa4",
+      "questions": [
+        "How much noise should people be expected to tolerate from their neighbours?",
+        "Are younger people more tolerant of noise than older people?",
+        "Supposing a city could remove one source of noise, which would do most good?",
+        "So it really comes down to who your neighbours happen to be?"
+      ],
+      "aliases": [
+        "card_p3_noise_and_shared_space_r2pa4-theme-1",
+        "putting up with other people"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_noise_and_shared_space_r2pa4-theme-2",
+      "title": "protecting your own attention",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_noise_and_shared_space_r2pa4",
+      "questions": [
+        "Why do so many people work with headphones on these days?",
+        "Will workplaces get quieter or louder over the next twenty years?",
+        "Is an open office worth having if nobody in it can concentrate?",
+        "Plenty of people say they think best in a café. Are they mistaken?"
+      ],
+      "aliases": [
+        "card_p3_noise_and_shared_space_r2pa4-theme-2",
+        "protecting your own attention"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_outdoor_life_r2pa5-theme-1",
+      "title": "spending time outside",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_outdoor_life_r2pa5",
+      "questions": [
+        "Do people spend less time outdoors than their parents did?",
+        "What keeps people indoors, do you think?",
+        "What does a childhood spent mostly indoors do to somebody?",
+        "Isn't 'get outside more' advice aimed at people who already have the time?"
+      ],
+      "aliases": [
+        "card_p3_outdoor_life_r2pa5-theme-1",
+        "spending time outside"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_outdoor_life_r2pa5-theme-2",
+      "title": "things people keep up",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_outdoor_life_r2pa5",
+      "questions": [
+        "What makes a hobby one that people actually stick with?",
+        "If somebody has no interests outside work, does it matter?",
+        "Will the way people spend their free time look different in twenty years?",
+        "So it's loneliness with a nicer name on it, is it?"
+      ],
+      "aliases": [
+        "card_p3_outdoor_life_r2pa5-theme-2",
+        "things people keep up"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_rest_and_stress_r2pa6-theme-1",
+      "title": "leaving work behind",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_rest_and_stress_r2pa6",
+      "questions": [
+        "Why do so many people find it hard to stop thinking about work?",
+        "Was it easier to leave the job at the door a generation ago?",
+        "Whose job is it to make sure people actually take their holidays?",
+        "Isn't being busy something people rather enjoy complaining about?"
+      ],
+      "aliases": [
+        "card_p3_rest_and_stress_r2pa6-theme-1",
+        "leaving work behind"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_rest_and_stress_r2pa6-theme-2",
+      "title": "what counts as rest",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_rest_and_stress_r2pa6",
+      "questions": [
+        "What actually counts as rest — is watching something restful?",
+        "Do people with physical jobs rest differently from people at desks?",
+        "Is an hour to yourself worth losing an hour of sleep for?",
+        "So people are simply mistaken about what relaxes them, are they?"
+      ],
+      "aliases": [
+        "card_p3_rest_and_stress_r2pa6-theme-2",
+        "what counts as rest"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_practice_and_mastery_r2pa7-theme-1",
+      "title": "how people get good at things",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_practice_and_mastery_r2pa7",
+      "questions": [
+        "Why are some people much quicker at picking up new skills than others?",
+        "What does it actually mean to be good at something?",
+        "Do children learn practical skills more easily than adults do?",
+        "So anyone at all could reach that level, given the hours?"
+      ],
+      "aliases": [
+        "card_p3_practice_and_mastery_r2pa7-theme-1",
+        "how people get good at things"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_practice_and_mastery_r2pa7-theme-2",
+      "title": "who gets time to practise",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_practice_and_mastery_r2pa7",
+      "questions": [
+        "Should schools make room for skills that are never examined?",
+        "If an adult wanted to learn something properly, what would have to give?",
+        "Will people carry on learning skills that machines can already do?",
+        "Why practise something a machine already does perfectly well?"
+      ],
+      "aliases": [
+        "card_p3_practice_and_mastery_r2pa7-theme-2",
+        "who gets time to practise"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_travel_and_time_r2pa8-theme-1",
+      "title": "what daily travel does to people",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_travel_and_time_r2pa8",
+      "questions": [
+        "What does a long daily journey do to somebody over the years?",
+        "Do most people decide where to live around how they'll get to work?",
+        "Is a bigger home worth an extra hour of travelling every day?",
+        "Would they really hand back the only hour nobody can reach them?"
+      ],
+      "aliases": [
+        "card_p3_travel_and_time_r2pa8-theme-1",
+        "what daily travel does to people"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_travel_and_time_r2pa8-theme-2",
+      "title": "how travel should be paid for",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_travel_and_time_r2pa8",
+      "questions": [
+        "Who ought to pay for the buses and trains that people depend on?",
+        "If public transport were free, would people really give up their cars?",
+        "Will people travel less in twenty years than they do today?",
+        "Has making it cheaper ever actually changed how people travel?"
+      ],
+      "aliases": [
+        "card_p3_travel_and_time_r2pa8-theme-2",
+        "how travel should be paid for"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_climate_life_701-theme-1",
+      "title": "how climate shapes daily life",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_climate_life_701",
+      "questions": [
+        "Why do people in hot countries organise their day so differently from people in cold ones?",
+        "How did your grandparents' generation deal with the weather compared with people now?",
+        "Do the seasons still mean much to people living in big cities?",
+        "Isn't that only true for the people who can afford to ignore it?"
+      ],
+      "aliases": [
+        "card_p3_climate_life_701-theme-1",
+        "how climate shapes daily life"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_climate_life_701-theme-2",
+      "title": "getting ready for bad weather",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_climate_life_701",
+      "questions": [
+        "Whose job is it to get a town ready for severe weather — the people who live there, or the authorities?",
+        "Why do so many people ignore a warning even after they've heard it?",
+        "If extreme weather became far more common, how would towns have to change?",
+        "So is there any point in spending public money on it at all?"
+      ],
+      "aliases": [
+        "card_p3_climate_life_701-theme-2",
+        "getting ready for bad weather"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_waste_consumption_702-theme-1",
+      "title": "why things get thrown away",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_waste_consumption_702",
+      "questions": [
+        "Why do people replace things that are still perfectly usable?",
+        "Are goods really made less durably than they used to be, or does it just feel that way?",
+        "Whose job is it to make things last longer — the manufacturer, the shop, or the buyer?",
+        "Isn't mending really just a hobby for the comfortable now?"
+      ],
+      "aliases": [
+        "card_p3_waste_consumption_702-theme-1",
+        "why things get thrown away"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_waste_consumption_702-theme-2",
+      "title": "what households do with waste",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_waste_consumption_702",
+      "questions": [
+        "How much difference does household recycling really make?",
+        "Are people more careful with waste than they were twenty years ago?",
+        "If rubbish collection stopped for a month, what would change about the way people shop?",
+        "So should households just stop bothering with it, then?"
+      ],
+      "aliases": [
+        "card_p3_waste_consumption_702-theme-2",
+        "what households do with waste"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_local_decisions_703-theme-1",
+      "title": "how local problems get noticed",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_local_decisions_703",
+      "questions": [
+        "Why do some local problems get dealt with quickly while others are ignored for years?",
+        "Are people in your country willing to complain to the authorities?",
+        "Should residents have more say in what gets spent on their own streets?",
+        "So the loudest neighbourhood just wins, then?"
+      ],
+      "aliases": [
+        "card_p3_local_decisions_703-theme-1",
+        "how local problems get noticed"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_local_decisions_703-theme-2",
+      "title": "who should pay for public safety",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_local_decisions_703",
+      "questions": [
+        "Is it reasonable to expect people to pay more tax for better local services?",
+        "How do you think towns will be run differently in twenty years' time?",
+        "What would happen if councils had no money at all for small repairs?",
+        "But who is going to win an election promising higher taxes?"
+      ],
+      "aliases": [
+        "card_p3_local_decisions_703-theme-2",
+        "who should pay for public safety"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_changing_cities_704-theme-1",
+      "title": "how town centres change",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_changing_cities_704",
+      "questions": [
+        "Why do town centres in different countries increasingly look the same as each other?",
+        "Who should decide what the centre of a town is used for?",
+        "What does a town lose when its small independent shops disappear?",
+        "Aren't shoppers the ones making that happen, though?"
+      ],
+      "aliases": [
+        "card_p3_changing_cities_704-theme-1",
+        "how town centres change"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_changing_cities_704-theme-2",
+      "title": "who public space belongs to",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_changing_cities_704",
+      "questions": [
+        "Is it fair that so much of a city is space you have to spend money in?",
+        "How do you think people will use public space differently in the future?",
+        "If a city had to give up either its parks or its shopping streets, which should go?",
+        "So is any of it genuinely free, in your view?"
+      ],
+      "aliases": [
+        "card_p3_changing_cities_704-theme-2",
+        "who public space belongs to"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_public_services_705-theme-1",
+      "title": "what the state should provide",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_public_services_705",
+      "questions": [
+        "Which services should be free for everybody, whatever they earn?",
+        "Why do some countries fund those things far better than others?",
+        "Is a service run by a private company generally better or worse?",
+        "So isn't a two-hour queue just a price paid in time?"
+      ],
+      "aliases": [
+        "card_p3_public_services_705-theme-1",
+        "what the state should provide"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_public_services_705-theme-2",
+      "title": "the people who staff them",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_public_services_705",
+      "questions": [
+        "Why do so many people leave jobs like nursing and teaching?",
+        "How has the standing of those jobs changed since your parents' generation?",
+        "What would happen to a town if nobody at all wanted to do them?",
+        "Is that hypocrisy, or just how budgets really work?"
+      ],
+      "aliases": [
+        "card_p3_public_services_705-theme-2",
+        "the people who staff them"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_rules_and_laws_706-theme-1",
+      "title": "why people obey rules",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_rules_and_laws_706",
+      "questions": [
+        "What actually makes people follow a rule — the punishment, or the people around them?",
+        "Do the rules people take seriously differ much from one country to another?",
+        "Are young people today more or less willing to follow rules than their parents were?",
+        "Take the cameras away and does any of it hold up?"
+      ],
+      "aliases": [
+        "card_p3_rules_and_laws_706-theme-1",
+        "why people obey rules"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_rules_and_laws_706-theme-2",
+      "title": "making and changing laws",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_rules_and_laws_706",
+      "questions": [
+        "Who should decide when a rule becomes an actual law?",
+        "Should breaking a small rule ever carry a serious punishment?",
+        "What would you expect to happen if a widely ignored law were suddenly enforced?",
+        "Would you actually repeal it, or just live with it?"
+      ],
+      "aliases": [
+        "card_p3_rules_and_laws_706-theme-2",
+        "making and changing laws"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_volunteering_707-theme-1",
+      "title": "why people give up their time",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_volunteering_707",
+      "questions": [
+        "Why do people volunteer when they could be doing something else entirely?",
+        "Are people in your country more or less willing to help out than they used to be?",
+        "Should schools require young people to do some community work?",
+        "Isn't a required good deed still a good deed?"
+      ],
+      "aliases": [
+        "card_p3_volunteering_707-theme-1",
+        "why people give up their time"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_volunteering_707-theme-2",
+      "title": "what volunteers should not carry",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_volunteering_707",
+      "questions": [
+        "Is it right that some services depend on people working for nothing?",
+        "Do most people expect somebody else to look after their neighbourhood?",
+        "What would a town look like if all its volunteers stopped tomorrow?",
+        "So would you rather those things simply didn't happen?"
+      ],
+      "aliases": [
+        "card_p3_volunteering_707-theme-2",
+        "what volunteers should not carry"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_money_and_status_708-theme-1",
+      "title": "why people spend to be seen",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_money_and_status_708",
+      "questions": [
+        "Why do people spend money on things mainly so that other people notice?",
+        "Has what counts as a status symbol changed since your parents were young?",
+        "Do people in different countries show that they have money in different ways?",
+        "Isn't quiet good taste just a more expensive signal?"
+      ],
+      "aliases": [
+        "card_p3_money_and_status_708-theme-1",
+        "why people spend to be seen"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_money_and_status_708-theme-2",
+      "title": "the cost of living",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_money_and_status_708",
+      "questions": [
+        "Which rising costs have changed the way people live, rather than just what they buy?",
+        "Whose job is it to keep the basics affordable — governments, employers, or the market?",
+        "How do you think people's spending will look different in ten years?",
+        "Is that a shortage of money, or a shortage of restraint?"
+      ],
+      "aliases": [
+        "card_p3_money_and_status_708-theme-2",
+        "the cost of living"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_digital_tools_401-theme-1",
+      "title": "why some tools last",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_digital_tools_401",
+      "questions": [
+        "Why do a few apps end up on almost everyone's phone while thousands disappear?",
+        "What makes something genuinely useful rather than just popular?",
+        "Are older people and younger people looking for different things in the tools they use?",
+        "Some would say quality has nothing to do with it. How would you answer that?"
+      ],
+      "aliases": [
+        "card_p3_digital_tools_401-theme-1",
+        "why some tools last"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_digital_tools_401-theme-2",
+      "title": "depending on a few companies",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_digital_tools_401",
+      "questions": [
+        "How much of ordinary life now runs through a small number of technology companies?",
+        "Should essential services like banking or transport be allowed to exist only as an app?",
+        "If one of the services people rely on went down for a week, what would actually happen?",
+        "But governments run services badly. Doesn't that settle it?"
+      ],
+      "aliases": [
+        "card_p3_digital_tools_401-theme-2",
+        "depending on a few companies"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_screen_stories_402-theme-1",
+      "title": "whether films change minds",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_screen_stories_402",
+      "questions": [
+        "Can a film really change what somebody believes, or does it just confirm it?",
+        "What can a story do that a set of facts cannot?",
+        "Is it a good thing when entertainment tries to argue a case?",
+        "Some argue nobody's mind has ever been changed by a film. Fair?"
+      ],
+      "aliases": [
+        "card_p3_screen_stories_402-theme-1",
+        "whether films change minds"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_screen_stories_402-theme-2",
+      "title": "who decides what gets made",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_screen_stories_402",
+      "questions": [
+        "Who really decides which kinds of programmes get made these days?",
+        "Should public money go towards films that very few people will watch?",
+        "Will people in twenty years still watch things together at the same time?",
+        "Isn't it simply the audience's fault? They chose all of it."
+      ],
+      "aliases": [
+        "card_p3_screen_stories_402-theme-2",
+        "who decides what gets made"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_life_online_403-theme-1",
+      "title": "who gathers an audience online",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_life_online_403",
+      "questions": [
+        "Why do some ordinary people build enormous audiences online?",
+        "What makes an online voice worth listening to?",
+        "Do people trust individuals online more than they trust institutions now?",
+        "Some would say it always turns commercial in the end. Is that fair?"
+      ],
+      "aliases": [
+        "card_p3_life_online_403-theme-1",
+        "who gathers an audience online"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_life_online_403-theme-2",
+      "title": "what constant following does to us",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_life_online_403",
+      "questions": [
+        "Has following so many people changed what friendship means?",
+        "Is there a real cost to knowing what hundreds of acquaintances are doing?",
+        "If social media disappeared tomorrow, what would people miss most?",
+        "Isn't dismissing weak connections just nostalgia for a smaller world?"
+      ],
+      "aliases": [
+        "card_p3_life_online_403-theme-2",
+        "what constant following does to us"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_information_and_trust_404-theme-1",
+      "title": "how people decide what to believe",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_information_and_trust_404",
+      "questions": [
+        "What makes people believe a claim they have no way of checking?",
+        "What actually counts as a reliable source these days?",
+        "Do people trust news less than their parents' generation did?",
+        "Isn't asking people to check everything simply impossible in practice?"
+      ],
+      "aliases": [
+        "card_p3_information_and_trust_404-theme-1",
+        "how people decide what to believe"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_information_and_trust_404-theme-2",
+      "title": "who should stop false claims",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_information_and_trust_404",
+      "questions": [
+        "Whose job is it to deal with false information — the platforms, the state, or the reader?",
+        "Is it worth removing false claims if it means removing some true ones as well?",
+        "Will people be better or worse at spotting false claims in twenty years?",
+        "But who watches the people doing the removing? Doesn't that worry you?"
+      ],
+      "aliases": [
+        "card_p3_information_and_trust_404-theme-2",
+        "who should stop false claims"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_learning_and_machines_405-theme-1",
+      "title": "how people pick up skills now",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_learning_and_machines_405",
+      "questions": [
+        "How has the way people learn practical skills changed since your parents' time?",
+        "Are there things that simply cannot be learned from a screen?",
+        "Is anything lost when nobody has to ask an expert for help?",
+        "Some would say people confuse watching with knowing. Any truth in that?"
+      ],
+      "aliases": [
+        "card_p3_learning_and_machines_405-theme-1",
+        "how people pick up skills now"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_learning_and_machines_405-theme-2",
+      "title": "letting machines teach and decide",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_learning_and_machines_405",
+      "questions": [
+        "Should machines be allowed to mark students' work or teach them directly?",
+        "If a machine can do a task better than a person, is there any reason to keep teaching it?",
+        "What will people still need to know how to do in fifty years?",
+        "Isn't keeping obsolete skills alive just nostalgia dressed up as principle?"
+      ],
+      "aliases": [
+        "card_p3_learning_and_machines_405-theme-2",
+        "letting machines teach and decide"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_how_people_talk_406-theme-1",
+      "title": "how technology changed talking",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_how_people_talk_406",
+      "questions": [
+        "How different is the way people keep in contact now from thirty years ago?",
+        "Does being able to reach anyone instantly make relationships stronger?",
+        "Why do so many people avoid phone calls these days?",
+        "Some call it surveillance rather than friendship. Would you go that far?"
+      ],
+      "aliases": [
+        "card_p3_how_people_talk_406-theme-1",
+        "how technology changed talking"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_how_people_talk_406-theme-2",
+      "title": "what happens to slow contact",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_how_people_talk_406",
+      "questions": [
+        "Is there any real value left in writing a letter by hand?",
+        "If a whole way of communicating disappeared, would anybody genuinely notice?",
+        "What will keeping in touch look like for the next generation?",
+        "Isn't a letter these days just showing off how much you cared?"
+      ],
+      "aliases": [
+        "card_p3_how_people_talk_406-theme-2",
+        "what happens to slow contact"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_screens_and_attention_407-theme-1",
+      "title": "how phones changed daily life",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_screens_and_attention_407",
+      "questions": [
+        "What do people do with their phones now that they simply could not do twenty years ago?",
+        "Has carrying a phone everywhere changed how people wait, queue or travel?",
+        "Is being reachable at all times worth what it costs?",
+        "Weren't people always looking for something to fill the gap?"
+      ],
+      "aliases": [
+        "card_p3_screens_and_attention_407-theme-1",
+        "how phones changed daily life"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_screens_and_attention_407-theme-2",
+      "title": "limits on screen time",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_screens_and_attention_407",
+      "questions": [
+        "Should anybody be setting limits on how long children spend on screens?",
+        "Can adults realistically manage their own use, or does that need help?",
+        "If phones were banned in schools everywhere, what would actually change?",
+        "Isn't self-control the wrong thing to ask of a designed product?"
+      ],
+      "aliases": [
+        "card_p3_screens_and_attention_407-theme-2",
+        "limits on screen time"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_privacy_and_records_408-theme-1",
+      "title": "what people should keep private",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_privacy_and_records_408",
+      "questions": [
+        "What sort of things do people share online that they probably shouldn't?",
+        "What does privacy actually mean when almost everything is recorded?",
+        "Is it fair to post pictures of children before they can agree to it?",
+        "Doesn't everyone trade their privacy away and then complain about it?"
+      ],
+      "aliases": [
+        "card_p3_privacy_and_records_408-theme-1",
+        "what people should keep private"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_privacy_and_records_408-theme-2",
+      "title": "who owns information about you",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_privacy_and_records_408",
+      "questions": [
+        "Should companies be allowed to keep records about people indefinitely?",
+        "Do the laws in most countries actually protect ordinary people here?",
+        "If everything anyone ever posted was deleted after five years, who would benefit?",
+        "If it mattered, wouldn't people simply refuse? They never do."
+      ],
+      "aliases": [
+        "card_p3_privacy_and_records_408-theme-2",
+        "who owns information about you"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_good_teaching_301-theme-1",
+      "title": "what good teaching actually looks like",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_good_teaching_301",
+      "questions": [
+        "What separates a teacher people remember from one they forget?",
+        "How much of a student's progress is really down to the teacher?",
+        "Should teachers be given more freedom over how they teach?",
+        "Some people would say the system matters far more than the individual. What would you say to them?"
+      ],
+      "aliases": [
+        "card_p3_good_teaching_301-theme-1",
+        "what good teaching actually looks like"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_good_teaching_301-theme-2",
+      "title": "how teaching has changed",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_good_teaching_301",
+      "questions": [
+        "Is teaching a very different job now from what it was in your parents' time?",
+        "Do you think classrooms will still exist in fifty years?",
+        "What gets lost when a lesson is delivered on a screen rather than in a room?",
+        "But isn't the classroom really just childcare with a timetable attached?"
+      ],
+      "aliases": [
+        "card_p3_good_teaching_301-theme-2",
+        "how teaching has changed"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_school_subjects_302-theme-1",
+      "title": "what belongs on a timetable",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_school_subjects_302",
+      "questions": [
+        "What should a school make sure every child can do before they leave?",
+        "Who ought to decide which subjects appear on the timetable?",
+        "Is it worth teaching subjects that most people will never use again?",
+        "But shouldn't schools simply prepare people for the jobs that exist?"
+      ],
+      "aliases": [
+        "card_p3_school_subjects_302-theme-1",
+        "what belongs on a timetable"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_school_subjects_302-theme-2",
+      "title": "why some subjects lose out",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_school_subjects_302",
+      "questions": [
+        "Why do arts subjects tend to be the first thing cut when money is short?",
+        "Do students in big cities get a wider choice of subjects than those in rural areas?",
+        "Will the subjects children study look very different in twenty years?",
+        "Isn't that just what families themselves would choose, if asked?"
+      ],
+      "aliases": [
+        "card_p3_school_subjects_302-theme-2",
+        "why some subjects lose out"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_learning_skills_303-theme-1",
+      "title": "how people pick things up",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_learning_skills_303",
+      "questions": [
+        "Why do some people learn practical skills far faster than others?",
+        "Do younger and older learners go about it in different ways?",
+        "What does it actually mean to say somebody is good at something?",
+        "So you'd say natural ability barely comes into it at all?"
+      ],
+      "aliases": [
+        "card_p3_learning_skills_303-theme-1",
+        "how people pick things up"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_learning_skills_303-theme-2",
+      "title": "who pays for retraining",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_learning_skills_303",
+      "questions": [
+        "When an industry disappears, whose job is it to retrain the people who worked in it?",
+        "Will people have to learn new skills far more often than they do now?",
+        "Is it still worth spending years mastering one skill?",
+        "Some would say those programmes rarely lead anywhere. Would you defend them?"
+      ],
+      "aliases": [
+        "card_p3_learning_skills_303-theme-2",
+        "who pays for retraining"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_ambition_304-theme-1",
+      "title": "what people count as success",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_ambition_304",
+      "questions": [
+        "What do most people where you live treat as a successful life?",
+        "Do people in big cities measure success differently from people in smaller places?",
+        "Would your grandparents' generation recognise the way people talk about ambition now?",
+        "Isn't everything else people say about success just a polite version of income?"
+      ],
+      "aliases": [
+        "card_p3_ambition_304-theme-1",
+        "what people count as success"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_ambition_304-theme-2",
+      "title": "what ambition costs",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_ambition_304",
+      "questions": [
+        "Is there a point at which ambition starts doing more harm than good?",
+        "When somebody works themselves into the ground, whose responsibility is that?",
+        "If people were not judged by their jobs, what would they compete over instead?",
+        "But nobody forces anyone to answer emails at midnight, do they?"
+      ],
+      "aliases": [
+        "card_p3_ambition_304-theme-2",
+        "what ambition costs"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_working_together_305-theme-1",
+      "title": "why some groups get more done",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_working_together_305",
+      "questions": [
+        "Why do some groups achieve far more than others of exactly the same size?",
+        "What makes somebody a useful member of a team rather than simply a popular one?",
+        "What happens to a group when one person stops contributing?",
+        "Isn't it usually one person doing the work and four sharing the credit?"
+      ],
+      "aliases": [
+        "card_p3_working_together_305-theme-1",
+        "why some groups get more done"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_working_together_305-theme-2",
+      "title": "working together at a distance",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_working_together_305",
+      "questions": [
+        "Has the way colleagues work together changed much since your parents' generation?",
+        "Will teams whose members never meet in person become completely normal?",
+        "Whose job is it to make sure a new person is included — the team's or the manager's?",
+        "So you'd say a team can only absorb newcomers face to face?"
+      ],
+      "aliases": [
+        "card_p3_working_together_305-theme-2",
+        "working together at a distance"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_home_working_306-theme-1",
+      "title": "what home working does to a day",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_home_working_306",
+      "questions": [
+        "What does working from home do to the boundary between work and everything else?",
+        "On balance, who gets more out of it — the employee or the employer?",
+        "Does everybody where you live actually have somewhere at home they could work?",
+        "Aren't employees simply paying for their own heating and desk now?"
+      ],
+      "aliases": [
+        "card_p3_home_working_306-theme-1",
+        "what home working does to a day"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_home_working_306-theme-2",
+      "title": "what it does to towns",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_home_working_306",
+      "questions": [
+        "Will city centres survive if far fewer people travel into them?",
+        "Should employers be required to pay towards the cost of a workspace at home?",
+        "If nobody had to live near their work, where would people choose to live?",
+        "Might empty offices actually be the best thing to happen to housing?"
+      ],
+      "aliases": [
+        "card_p3_home_working_306-theme-2",
+        "what it does to towns"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_career_choices_307-theme-1",
+      "title": "how people end up in a job",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_career_choices_307",
+      "questions": [
+        "How much genuine choice do most people have about the work they do?",
+        "Why do so many children end up in the same line of work as their parents?",
+        "Do people from different backgrounds really get the same range of options?",
+        "So is 'do what you love' simply advice for the comfortably off?"
+      ],
+      "aliases": [
+        "card_p3_career_choices_307-theme-1",
+        "how people end up in a job"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_career_choices_307-theme-2",
+      "title": "what work is actually for",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_career_choices_307",
+      "questions": [
+        "Beyond the pay, what makes a job a good one?",
+        "Is it better to enjoy your work or to be well paid for it?",
+        "If money were no object, would most people still want a job?",
+        "Doesn't nearly everybody choose the money when it is actually on the table?"
+      ],
+      "aliases": [
+        "card_p3_career_choices_307-theme-2",
+        "what work is actually for"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_exams_and_assessment_308-theme-1",
+      "title": "what exams actually measure",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_exams_and_assessment_308",
+      "questions": [
+        "What do you think an exam genuinely measures?",
+        "Are exams a fair way of deciding who gets a university place?",
+        "Why do some very capable people do badly in exam conditions?",
+        "Wouldn't coursework simply hand the advantage to whoever has help at home?"
+      ],
+      "aliases": [
+        "card_p3_exams_and_assessment_308-theme-1",
+        "what exams actually measure"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p3_exams_and_assessment_308-theme-2",
+      "title": "how assessment might change",
+      "objective": "讨论观点，说明原因并举例。",
+      "sourceCardId": "card_p3_exams_and_assessment_308",
+      "questions": [
+        "Will written exams still be in use thirty years from now?",
+        "Who ought to decide how students are assessed — teachers, universities or governments?",
+        "Was assessment harder in your parents' time, or simply different?",
+        "So the system persists because it selected the very people who now run it?"
+      ],
+      "aliases": [
+        "card_p3_exams_and_assessment_308-theme-2",
+        "how assessment might change"
+      ],
+      "addedGuidance": "本课为 Part 3 观点讨论，一次问一个原题，引导说明理由、举例或比较。优先回答用户学习问题，遵循学员档位，不强制跟读，不评分。"
+    }
+  ]
+}

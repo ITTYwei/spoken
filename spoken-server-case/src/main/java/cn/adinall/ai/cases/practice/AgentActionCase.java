@@ -52,7 +52,9 @@ public class AgentActionCase {
     public Object queryPractice(AgentInvocationVO context) {
         var session=session(context);
         synchronized(session) { guard.check(context,session);
-            return Map.of("state",practice.state(session.getSessionId()).snapshot(),"textbooks",courses.textbooks()); }
+            return Map.of("state",practice.state(session.getSessionId()).snapshot(),
+                    "textbooks",courses.agentTextbookCatalog(context.utterance()),
+                    "catalogNote","仅返回各教材的部分候选，lessonCount 为真实总量。含糊请求请澄清，手机可浏览完整目录。"); }
     }
     /**
      * 明确模式指令才执行。教材编号不明确时必须先查目录并澄清；仅继续指令可使用真实最近课。

@@ -21,8 +21,8 @@ public class SpokenPracticeTools {
     private final AgentActionCase actions;
     public SpokenPracticeTools(AgentActionCase actions) { this.actions=actions; }
 
-    /** 不明确的选课先查询；返回完整目录和真实当前/最近课，不选择默认第一课。 */
-    @Tool(description="查询真实教材、课程、当前模式和最近课程。请求未明确课程时先查询，不得编造编号或最近课程。")
+    /** 不明确的选课先查询；返回真实总量、有限课程候选和当前/最近课，不自动选择第一课。 */
+    @Tool(description="查询真实教材、课程候选、当前模式和最近课程。候选不是完整题库；请求未明确课程时先查询并澄清，不能凭候选顺序替用户选课，不得编造编号或最近课程。")
     public Object queryPractice(ToolContext context) { return call(context,null,actions::queryPractice); }
 
     /** 仅明确本次课程或自由对话选择调用；教材和课编号来自真实目录，自由模式编号留空。 */

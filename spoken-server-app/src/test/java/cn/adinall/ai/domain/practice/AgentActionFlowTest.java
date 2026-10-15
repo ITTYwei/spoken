@@ -104,7 +104,9 @@ public class AgentActionFlowTest {
         assertTrue(spoken.getAllValues().get(0).text().contains("Do you enjoy cooking?"));
         // 自由聊开场允许调整文案；仍验证两次实际播报、对应模式和课程动作幂等。
         String freeReply=spoken.getAllValues().get(1).text();
-        assertTrue(freeReply,freeReply.contains("自由聊聊") || freeReply.contains("今天过得怎么样"));
+        assertFalse(freeReply.isBlank());
+        assertFalse(freeReply,freeReply.contains("继续上次"));
+        assertFalse(freeReply,freeReply.contains("Do you enjoy cooking?"));
         assertEquals("FREE",practice.state("s").snapshot().mode());
         verify(recent,times(1)).save(eq("user:7"),any());
     }

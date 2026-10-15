@@ -1,0 +1,14 @@
+{
+  "sourceCommit": "10282cc853a03b6984907fec0affe6cbbd4fe0b0",
+  "license": "CC0-1.0",
+  "speakingCards": 496,
+  "parts": {
+    "1": 280,
+    "2": 108,
+    "3": 108
+  },
+  "retainedLessons": 3,
+  "importedLessons": 603,
+  "sourceSha256": "287f23dacdce3a60bfe6a6d4ba20f4951928f1f0339e7856c400922e5d160de3",
+  "nonSpeakingImported": false
+}

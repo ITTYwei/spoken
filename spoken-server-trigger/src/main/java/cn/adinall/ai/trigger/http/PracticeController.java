@@ -20,6 +20,8 @@ public class PracticeController {
     public PracticeController(PracticeCase practice) { this.practice=practice; }
     /** 返回本地固定教材目录，运行时不依赖 GitHub。 */
     @GetMapping("/textbooks") public List<TextbookVO> list() { return practice.textbooks(); }
+    /** 返回不含原题的完整轻量目录，浏览不要求已建立数字人会话，也不改变练习状态。 */
+    @GetMapping("/textbooks/catalog") public List<TextbookCatalogVO> catalog() { return practice.textbookCatalog(); }
     /** 读取完整课简介、目标与原题；无效编号返回不存在。 */
     @GetMapping("/textbooks/{textbookId}/lessons/{lessonId}")
     public TextLessonVO lesson(@PathVariable String textbookId,@PathVariable String lessonId) { return practice.lesson(textbookId,lessonId); }

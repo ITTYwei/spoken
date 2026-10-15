@@ -1,0 +1,2170 @@
+{
+  "id": "bandready-speaking-p2",
+  "title": "BandReady · 口语 Part 2",
+  "part": "PART_TWO",
+  "sourceUrl": "https://github.com/Luxshan2000/ielts-prep/tree/10282cc853a03b6984907fec0affe6cbbd4fe0b0/content/core-en",
+  "sourceCommit": "10282cc853a03b6984907fec0affe6cbbd4fe0b0",
+  "license": "CC0-1.0",
+  "lessons": [
+    {
+      "id": "card_p2_festival_you_joined_801",
+      "title": "A festival or celebration you took part in",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_festival_you_joined_801",
+      "questions": [
+        "Describe a festival or celebration you took part in.",
+        "what the celebration was",
+        "where it was held and who you were there with",
+        "what you did on the day itself",
+        "and explain what you enjoyed most about taking part in it.",
+        "Would you do the same thing again next year?",
+        "Do many people your age still go to it?"
+      ],
+      "aliases": [
+        "card_p2_festival_you_joined_801",
+        "A festival or celebration you took part in"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_music_and_place_802",
+      "title": "A piece of music you connect with a particular place",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_music_and_place_802",
+      "questions": [
+        "Describe a piece of music you connect with a particular place.",
+        "what the music is",
+        "which place it reminds you of",
+        "when and how you first heard it",
+        "and explain why the two are joined together in your mind.",
+        "Do you still listen to it now?",
+        "Does anyone else you know feel the same way about it?"
+      ],
+      "aliases": [
+        "card_p2_music_and_place_802",
+        "A piece of music you connect with a particular place"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_book_you_recommend_803",
+      "title": "A book you would recommend to someone your own age",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_book_you_recommend_803",
+      "questions": [
+        "Describe a book you would recommend to someone your own age.",
+        "what the book is",
+        "how it came into your hands",
+        "what happens in it",
+        "and explain why you would recommend it to someone at your stage of life.",
+        "Have you lent it to anybody?",
+        "Would it work as well for a much older reader?"
+      ],
+      "aliases": [
+        "card_p2_book_you_recommend_803",
+        "A book you would recommend to someone your own age"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_dish_you_learned_804",
+      "title": "A dish you have learned to cook",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_dish_you_learned_804",
+      "questions": [
+        "Describe a dish you have learned to cook.",
+        "what the dish is",
+        "who or what you learned it from",
+        "how often you make it these days",
+        "and explain why you wanted to learn that one in particular.",
+        "Would you cook it for guests?",
+        "Has anybody ever asked you to teach them?"
+      ],
+      "aliases": [
+        "card_p2_dish_you_learned_804",
+        "A dish you have learned to cook"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_cafe_for_visitors_805",
+      "title": "A place to eat that you would take a visitor to",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_cafe_for_visitors_805",
+      "questions": [
+        "Describe a place to eat that you would take a visitor to.",
+        "where the place is",
+        "what sort of food it serves",
+        "who you would take there",
+        "and explain why you would choose it rather than somewhere better known.",
+        "How often do you eat there yourself?",
+        "Would it suit somebody who's fussy about food?"
+      ],
+      "aliases": [
+        "card_p2_cafe_for_visitors_805",
+        "A place to eat that you would take a visitor to"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_sport_to_improve_806",
+      "title": "A sport or activity you would like to be better at",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_sport_to_improve_806",
+      "questions": [
+        "Describe a sport or physical activity you would like to be better at.",
+        "what the activity is",
+        "how good you are at it now",
+        "what improving would actually involve",
+        "and explain why getting better at it matters to you.",
+        "Is it something you could do near where you live?",
+        "Would you want to compete, or just improve?"
+      ],
+      "aliases": [
+        "card_p2_sport_to_improve_806",
+        "A sport or activity you would like to be better at"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_long_running_hobby_807",
+      "title": "A hobby you have kept up for years",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_long_running_hobby_807",
+      "questions": [
+        "Describe a hobby you have kept up for years.",
+        "what the hobby is",
+        "how you started doing it",
+        "how much of your time it takes up",
+        "and explain why you have stuck with this one when other things fell away.",
+        "Is it something you do alone or with other people?",
+        "Has it cost you much over the years?"
+      ],
+      "aliases": [
+        "card_p2_long_running_hobby_807",
+        "A hobby you have kept up for years"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_traditional_occasion_808",
+      "title": "A time you took part in a traditional occasion",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_traditional_occasion_808",
+      "questions": [
+        "Describe a time you took part in a traditional occasion in your own culture.",
+        "what the tradition was",
+        "where it happened and how old you were",
+        "what you actually had to do on the day",
+        "and explain how you felt about taking part in it.",
+        "Do you think you'll do it again?",
+        "Did anybody in your family expect you to?"
+      ],
+      "aliases": [
+        "card_p2_traditional_occasion_808",
+        "A time you took part in a traditional occasion"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_a_decision_501",
+      "title": "A decision you made that turned out well",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_a_decision_501",
+      "questions": [
+        "Describe a decision you made that turned out to be a good one.",
+        "what the decision was",
+        "when you had to make it",
+        "what made you choose the way you did",
+        "and explain why you think it was the right call.",
+        "Was there anyone you talked it over with?",
+        "Do you usually decide things that quickly?"
+      ],
+      "aliases": [
+        "card_p2_a_decision_501",
+        "A decision you made that turned out well"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_life_change_502",
+      "title": "An important change you have made in your life",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_life_change_502",
+      "questions": [
+        "Describe an important change you have made in your life.",
+        "what the change was",
+        "when you made it",
+        "who else it affected",
+        "and explain what difference it has made to you.",
+        "Did other people notice the change in you?",
+        "Would it have been easier to do earlier?"
+      ],
+      "aliases": [
+        "card_p2_life_change_502",
+        "An important change you have made in your life"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_an_achievement_503",
+      "title": "Something you achieved that you are proud of",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_an_achievement_503",
+      "questions": [
+        "Describe something you have achieved that you are proud of.",
+        "what you achieved",
+        "how long it took you",
+        "who knew about it at the time",
+        "and explain why it mattered so much to you.",
+        "Was there a point when you nearly gave up?",
+        "Has anybody asked you how you managed it?"
+      ],
+      "aliases": [
+        "card_p2_an_achievement_503",
+        "Something you achieved that you are proud of"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_a_mistake_504",
+      "title": "A mistake you made that taught you something",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_a_mistake_504",
+      "questions": [
+        "Describe a mistake you made that taught you something.",
+        "what the mistake was",
+        "where and when you made it",
+        "what happened as a result",
+        "and explain what you do differently now.",
+        "Did anybody else find out about it?",
+        "Was it a mistake you could have avoided?"
+      ],
+      "aliases": [
+        "card_p2_a_mistake_504",
+        "A mistake you made that taught you something"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_future_plan_505",
+      "title": "A plan you have for the next few years",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_future_plan_505",
+      "questions": [
+        "Describe a plan you have for the next few years.",
+        "what the plan is",
+        "when you decided on it",
+        "what you have done towards it so far",
+        "and explain why this plan matters to you.",
+        "Have you told many people about it?",
+        "What's the very next step?"
+      ],
+      "aliases": [
+        "card_p2_future_plan_505",
+        "A plan you have for the next few years"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_a_piece_advice_506",
+      "title": "A piece of advice you were given that you acted on",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_a_piece_advice_506",
+      "questions": [
+        "Describe a piece of advice you were given that you acted on.",
+        "who gave you the advice",
+        "what the advice was",
+        "what you did about it",
+        "and explain why it made a difference to you.",
+        "Do you pass that advice on to other people?",
+        "Was it advice you had asked for?"
+      ],
+      "aliases": [
+        "card_p2_a_piece_advice_506",
+        "A piece of advice you were given that you acted on"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_a_long_wait_507",
+      "title": "A time you had to wait a long time for something",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_a_long_wait_507",
+      "questions": [
+        "Describe a time when you had to wait a long time for something.",
+        "what you were waiting for",
+        "where you were waiting",
+        "how long the wait went on",
+        "and explain how you felt by the end of it.",
+        "Was there anything you could have done to speed it up?",
+        "Do you wait better on your own or with other people?"
+      ],
+      "aliases": [
+        "card_p2_a_long_wait_507",
+        "A time you had to wait a long time for something"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_a_conversation_508",
+      "title": "A conversation you still remember",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_a_conversation_508",
+      "questions": [
+        "Describe a conversation you had that you still remember.",
+        "who the conversation was with",
+        "where and when it happened",
+        "what it was about",
+        "and explain why it has stayed with you.",
+        "Have you spoken to that person since?",
+        "Was it a conversation you expected to have?"
+      ],
+      "aliases": [
+        "card_p2_a_conversation_508",
+        "A conversation you still remember"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_oldest_friend_101",
+      "title": "A friend you have known the longest",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_oldest_friend_101",
+      "questions": [
+        "Describe a friend you have known longer than anyone else.",
+        "who this person is",
+        "how the two of you first met",
+        "what you usually do together now",
+        "and explain why you think the friendship has lasted.",
+        "Do the two of you live near each other now?",
+        "Is there anybody else you've known almost as long?"
+      ],
+      "aliases": [
+        "card_p2_oldest_friend_101",
+        "A friend you have known the longest"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_someone_helped_102",
+      "title": "Someone who helped you when you were struggling",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_someone_helped_102",
+      "questions": [
+        "Describe someone who helped you at a time when you were struggling.",
+        "who the person was",
+        "what you were finding difficult at the time",
+        "what they actually did",
+        "and explain why their help made the difference it did.",
+        "Have you ever thanked them properly?",
+        "Would you have asked them yourself if they hadn't offered?"
+      ],
+      "aliases": [
+        "card_p2_someone_helped_102",
+        "Someone who helped you when you were struggling"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_makes_you_laugh_103",
+      "title": "A person who makes you laugh",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_makes_you_laugh_103",
+      "questions": [
+        "Describe somebody you know who makes you laugh.",
+        "who this person is",
+        "when you usually see them",
+        "the kind of thing they say or do",
+        "and explain why you think they have that effect on people.",
+        "Do other people find them as funny as you do?",
+        "Are you funny in the same way yourself?"
+      ],
+      "aliases": [
+        "card_p2_makes_you_laugh_103",
+        "A person who makes you laugh"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_useful_advice_104",
+      "title": "A person who gave you useful advice",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_useful_advice_104",
+      "questions": [
+        "Describe a person who once gave you a piece of advice you found useful.",
+        "who the person was",
+        "what you were trying to decide at the time",
+        "what they actually said to you",
+        "and explain what difference their advice made.",
+        "Do you still go to that person when you need to decide something?",
+        "Have you ever passed the same advice on to anybody?"
+      ],
+      "aliases": [
+        "card_p2_useful_advice_104",
+        "A person who gave you useful advice"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_met_once_105",
+      "title": "A person you met once and still remember",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_met_once_105",
+      "questions": [
+        "Describe somebody you met only once but still remember clearly.",
+        "where and when you met them",
+        "what you know about who they were",
+        "what the two of you talked about",
+        "and explain why that meeting has stayed with you.",
+        "Have you ever tried to find that person again?",
+        "Do you think they would remember you?"
+      ],
+      "aliases": [
+        "card_p2_met_once_105",
+        "A person you met once and still remember"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_explaining_hard_106",
+      "title": "A time you had to explain something difficult to someone",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_explaining_hard_106",
+      "questions": [
+        "Describe a time when you had to explain something difficult to somebody.",
+        "who you were explaining it to",
+        "what the thing was",
+        "how you went about it",
+        "and explain what you would do differently next time.",
+        "Did that person manage it on their own afterwards?",
+        "Are you usually the one people come to for that sort of thing?"
+      ],
+      "aliases": [
+        "card_p2_explaining_hard_106",
+        "A time you had to explain something difficult to someone"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_unexpected_kindness_107",
+      "title": "A time you were surprised by someone's kindness",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_unexpected_kindness_107",
+      "questions": [
+        "Describe an occasion when somebody was kinder to you than you expected.",
+        "when and where it happened",
+        "who the person was",
+        "what they did for you",
+        "and explain why it surprised you as much as it did.",
+        "Did you ever see that person again?",
+        "Would you have done the same in their position?"
+      ],
+      "aliases": [
+        "card_p2_unexpected_kindness_107",
+        "A time you were surprised by someone's kindness"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_family_routine_108",
+      "title": "Something you do with your family regularly",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_family_routine_108",
+      "questions": [
+        "Describe something you do regularly with your family.",
+        "what you do together",
+        "how often you do it and when it started",
+        "who is usually involved",
+        "and explain what you think you get out of it.",
+        "Has anybody in the family ever missed it?",
+        "Would it survive if one of you moved away?"
+      ],
+      "aliases": [
+        "card_p2_family_routine_108",
+        "Something you do with your family regularly"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_quiet_place_201",
+      "title": "A quiet place you go to think",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_quiet_place_201",
+      "questions": [
+        "Describe a quiet place you go to when you want to think.",
+        "where this place is",
+        "how you first came across it",
+        "what you usually do there",
+        "and explain why it helps you think clearly.",
+        "Do you ever take anyone else there?",
+        "Would it work as well for you in winter?"
+      ],
+      "aliases": [
+        "card_p2_quiet_place_201",
+        "A quiet place you go to think"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_green_space_202",
+      "title": "A park or green space you use",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_green_space_202",
+      "questions": [
+        "Describe a park or other green space that you use.",
+        "where it is and how you get there",
+        "how often you go",
+        "what you do while you're there",
+        "and explain what you would miss most if it were built on.",
+        "Do you go there more in summer than in winter?",
+        "Is it somewhere you'd take a visitor?"
+      ],
+      "aliases": [
+        "card_p2_green_space_202",
+        "A park or green space you use"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_favourite_room_203",
+      "title": "A room in your home you spend a lot of time in",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_favourite_room_203",
+      "questions": [
+        "Describe a room in your home where you spend a lot of time.",
+        "which room it is",
+        "what it looks like",
+        "what you do in there",
+        "and explain why you end up spending so much time in it.",
+        "Is it the same room for everyone else you live with?",
+        "Was it like that when you moved in?"
+      ],
+      "aliases": [
+        "card_p2_favourite_room_203",
+        "A room in your home you spend a lot of time in"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_crowded_place_204",
+      "title": "A place that gets very crowded",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_crowded_place_204",
+      "questions": [
+        "Describe a place you know that gets very crowded.",
+        "where this place is",
+        "when it gets crowded",
+        "why so many people go there",
+        "and explain how you feel about it when it's at its busiest.",
+        "Do you ever go there when it's quiet?",
+        "Do you know anyone who avoids it altogether?"
+      ],
+      "aliases": [
+        "card_p2_crowded_place_204",
+        "A place that gets very crowded"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_childhood_place_205",
+      "title": "A place you used to go to as a child",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_childhood_place_205",
+      "questions": [
+        "Describe a place you often went to when you were a child.",
+        "where it was",
+        "who you went there with",
+        "what you did there",
+        "and explain why you still remember it so clearly.",
+        "Have you been back there recently?",
+        "Do children still go there now?"
+      ],
+      "aliases": [
+        "card_p2_childhood_place_205",
+        "A place you used to go to as a child"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_place_surprised_206",
+      "title": "A place you visited that was different from what you expected",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_place_surprised_206",
+      "questions": [
+        "Describe a place you visited that turned out to be different from what you expected.",
+        "where you went and when",
+        "what you had expected it to be like",
+        "what it was actually like",
+        "and explain how you felt about the difference.",
+        "Would you go back at a different time of year?",
+        "Had anyone told you about it beforehand?"
+      ],
+      "aliases": [
+        "card_p2_place_surprised_206",
+        "A place you visited that was different from what you expected"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_town_change_207",
+      "title": "A change you would like to see in your town",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_town_change_207",
+      "questions": [
+        "Describe a change you would like to see in the town or city where you live.",
+        "what the change would be",
+        "why the place needs it",
+        "who would have to make it happen",
+        "and explain what difference it would make to the people there.",
+        "Is anything like that being discussed at the moment?",
+        "Would everyone welcome it?"
+      ],
+      "aliases": [
+        "card_p2_town_change_207",
+        "A change you would like to see in your town"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_needs_replacing_208",
+      "title": "Something in your home that needs replacing",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_needs_replacing_208",
+      "questions": [
+        "Describe something in your home that needs replacing.",
+        "what it is",
+        "how long you've had it",
+        "what's wrong with it now",
+        "and explain why you still haven't replaced it.",
+        "Would you buy the same thing again?",
+        "Is anything else in the house in the same state?"
+      ],
+      "aliases": [
+        "card_p2_needs_replacing_208",
+        "Something in your home that needs replacing"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_local_change_001",
+      "title": "A place near your home that has changed",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_local_change_001",
+      "questions": [
+        "Describe a place near your home that has changed in recent years.",
+        "where this place is",
+        "what it used to be like",
+        "how it has changed",
+        "and explain how you feel about the change.",
+        "Do you go there more often now than you used to?",
+        "Do most people in your area like the change?"
+      ],
+      "aliases": [
+        "card_p2_local_change_001",
+        "A place near your home that has changed"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_future_job_001",
+      "title": "A job you would like to do",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_future_job_001",
+      "questions": [
+        "Describe a job you would like to do in the future.",
+        "what the job is",
+        "what skills or training it needs",
+        "how you could prepare for it",
+        "and explain why this job appeals to you.",
+        "Is this a common job where you live?",
+        "Have you ever met someone who does it?"
+      ],
+      "aliases": [
+        "card_p2_future_job_001",
+        "A job you would like to do"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_useful_technology_001",
+      "title": "A piece of technology you find useful",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_useful_technology_001",
+      "questions": [
+        "Describe a piece of technology that has made your life easier.",
+        "what it is",
+        "when you started using it",
+        "how you use it",
+        "and explain how your life would be different without it.",
+        "Do people older than you use it as well?",
+        "Would you recommend it to a friend?"
+      ],
+      "aliases": [
+        "card_p2_useful_technology_001",
+        "A piece of technology you find useful"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_skill_learned_001",
+      "title": "A skill you learned outside school",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_skill_learned_001",
+      "questions": [
+        "Describe a useful skill that you learned outside school.",
+        "what the skill is",
+        "who or what you learned it from",
+        "how long it took you to learn",
+        "and explain why this skill has been useful to you.",
+        "Do you still use this skill often?",
+        "Would you like to teach it to someone else?"
+      ],
+      "aliases": [
+        "card_p2_skill_learned_001",
+        "A skill you learned outside school"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_healthy_habit_001",
+      "title": "A healthy habit you have kept",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_healthy_habit_001",
+      "questions": [
+        "Describe a healthy habit that you have managed to keep.",
+        "what the habit is",
+        "when you started it",
+        "how you fitted it into your routine",
+        "and explain what difference it has made to you.",
+        "Was it difficult to keep up at first?",
+        "Do the people around you have the same habit?"
+      ],
+      "aliases": [
+        "card_p2_healthy_habit_001",
+        "A healthy habit you have kept"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_helping_environment_001",
+      "title": "Something you did to help the environment",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_helping_environment_001",
+      "questions": [
+        "Describe something you have done to help the environment.",
+        "what you did",
+        "when you started doing it",
+        "how difficult it was",
+        "and explain why you decided to do it.",
+        "Do your friends do the same thing?",
+        "Will you keep doing it in the future?"
+      ],
+      "aliases": [
+        "card_p2_helping_environment_001",
+        "Something you did to help the environment"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_memorable_journey_001",
+      "title": "A journey you remember well",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_memorable_journey_001",
+      "questions": [
+        "Describe a journey that you remember well.",
+        "where you went",
+        "how you travelled",
+        "who you were with",
+        "and explain why you remember this journey so well.",
+        "Would you make the same journey again?",
+        "Do you often travel that way?"
+      ],
+      "aliases": [
+        "card_p2_memorable_journey_001",
+        "A journey you remember well"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_shared_meal_001",
+      "title": "A meal you enjoyed with other people",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_shared_meal_001",
+      "questions": [
+        "Describe a meal you enjoyed with other people.",
+        "where you ate",
+        "who you were with",
+        "what you ate",
+        "and explain why the meal was so enjoyable.",
+        "Do you often eat with those people?",
+        "Would you like to eat there again?"
+      ],
+      "aliases": [
+        "card_p2_shared_meal_001",
+        "A meal you enjoyed with other people"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_recent_news_001",
+      "title": "A piece of news that interested you",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_recent_news_001",
+      "questions": [
+        "Describe a piece of news you heard recently that interested you.",
+        "what the news was about",
+        "where you heard or read it",
+        "who you discussed it with",
+        "and explain why it interested you.",
+        "Did the story stay in the news for long?",
+        "Do you usually follow that kind of story?"
+      ],
+      "aliases": [
+        "card_p2_recent_news_001",
+        "A piece of news that interested you"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_person_you_admire_001",
+      "title": "An older person you admire",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_person_you_admire_001",
+      "questions": [
+        "Describe an older person you admire.",
+        "who the person is",
+        "how you know them",
+        "what they are like",
+        "and explain why you admire them.",
+        "Do you see this person often?",
+        "Have you ever told them how you feel?"
+      ],
+      "aliases": [
+        "card_p2_person_you_admire_001",
+        "An older person you admire"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_good_value_purchase_001",
+      "title": "Something useful you bought cheaply",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_good_value_purchase_001",
+      "questions": [
+        "Describe something useful you bought that did not cost much.",
+        "what you bought",
+        "where you bought it",
+        "how you use it",
+        "and explain why you think it was good value.",
+        "Would you buy another one?",
+        "Have you recommended it to anyone?"
+      ],
+      "aliases": [
+        "card_p2_good_value_purchase_001",
+        "Something useful you bought cheaply"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_physical_activity_001",
+      "title": "A sport or activity you enjoy",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_physical_activity_001",
+      "questions": [
+        "Describe a sport or physical activity you enjoy.",
+        "what the activity is",
+        "when and where you do it",
+        "who you do it with",
+        "and explain why you enjoy it.",
+        "Is it easy to do this activity where you live?",
+        "Would you like to do it more often?"
+      ],
+      "aliases": [
+        "card_p2_physical_activity_001",
+        "A sport or activity you enjoy"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_delayed_consequences_r2c01",
+      "title": "A decision whose consequences you only understood later",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_delayed_consequences_r2c01",
+      "questions": [
+        "Describe a decision you made whose consequences you only understood much later.",
+        "what the decision was",
+        "when you made it and what your situation was",
+        "the reason you gave yourself at the time",
+        "and explain what you eventually realised it had led to.",
+        "Did anybody else see the effect before you did?",
+        "Would you say it was a good decision or a lucky one?"
+      ],
+      "aliases": [
+        "card_p2_delayed_consequences_r2c01",
+        "A decision whose consequences you only understood later"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_childhood_belief_r2c02",
+      "title": "Something you believed as a child and no longer believe",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_childhood_belief_r2c02",
+      "questions": [
+        "Describe something you believed when you were a child that you no longer believe.",
+        "what the belief was",
+        "where you think the idea came from",
+        "how long you held on to it",
+        "and explain what made you stop believing it.",
+        "Do the children in your family believe that too?",
+        "Was it a comfortable thing to believe?"
+      ],
+      "aliases": [
+        "card_p2_childhood_belief_r2c02",
+        "Something you believed as a child and no longer believe"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_fading_tradition_r2c03",
+      "title": "A tradition you think will disappear",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_fading_tradition_r2c03",
+      "questions": [
+        "Describe a tradition in your country that you think will disappear.",
+        "what the tradition involves",
+        "who still takes part in it",
+        "how it has changed in your lifetime",
+        "and explain why you think it will not survive.",
+        "Have you taken part in it yourself?",
+        "Is there anything that could replace it?"
+      ],
+      "aliases": [
+        "card_p2_fading_tradition_r2c03",
+        "A tradition you think will disappear"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_hard_honesty_r2c04",
+      "title": "An occasion when being honest was difficult",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_hard_honesty_r2c04",
+      "questions": [
+        "Describe an occasion when being honest with someone was difficult.",
+        "what the situation was",
+        "who you had to be honest with",
+        "what you actually said to them",
+        "and explain why saying it was so hard.",
+        "Did they take it well at the time?",
+        "Would you say the same thing again?"
+      ],
+      "aliases": [
+        "card_p2_hard_honesty_r2c04",
+        "An occasion when being honest was difficult"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_no_good_solution_r2c05",
+      "title": "A problem that has no good solution",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_no_good_solution_r2c05",
+      "questions": [
+        "Describe a problem where you live that you think has no good solution.",
+        "what the problem is",
+        "who it affects most",
+        "what has already been tried",
+        "and explain why you think none of the answers work.",
+        "Does it affect you personally?",
+        "Do people there still talk about it?"
+      ],
+      "aliases": [
+        "card_p2_no_good_solution_r2c05",
+        "A problem that has no good solution"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_do_differently_r2c06",
+      "title": "Something you would do differently if you could",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_do_differently_r2c06",
+      "questions": [
+        "Describe something you would do differently if you could go back.",
+        "what it was",
+        "when in your life it happened",
+        "what you actually did at the time",
+        "and explain what you would do instead, and why.",
+        "Have you told anyone else to do it differently?",
+        "Is it something you think about often?"
+      ],
+      "aliases": [
+        "card_p2_do_differently_r2c06",
+        "Something you would do differently if you could"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_skill_machines_replace_r2c07",
+      "title": "A skill you think machines will replace",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_skill_machines_replace_r2c07",
+      "questions": [
+        "Describe a human skill you think machines will take over.",
+        "what the skill is",
+        "who uses it in their work",
+        "how people normally learn it",
+        "and explain why you think machines will take it over.",
+        "Would you learn that skill yourself now?",
+        "Is there any part of it a machine couldn't copy?"
+      ],
+      "aliases": [
+        "card_p2_skill_machines_replace_r2c07",
+        "A skill you think machines will replace"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_change_you_resisted_r2c08",
+      "title": "A change you resisted but now accept",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_change_you_resisted_r2c08",
+      "questions": [
+        "Describe a change you were against at first but have come to accept.",
+        "what the change was",
+        "the reason you were against it",
+        "what you did about it at the time",
+        "and explain what eventually changed your mind.",
+        "Do the people who agreed with you still disagree?",
+        "Was there anything you turned out to be right about?"
+      ],
+      "aliases": [
+        "card_p2_change_you_resisted_r2c08",
+        "A change you resisted but now accept"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_arrived_late_r2ee01",
+      "title": "A time you arrived later than you meant to",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_arrived_late_r2ee01",
+      "questions": [
+        "Describe a time when you arrived somewhere much later than you meant to.",
+        "where you were going and why",
+        "what made you late",
+        "what happened when you got there",
+        "and explain how you felt about it afterwards.",
+        "Did anyone else end up affected by it?",
+        "Is that a journey you'd done before?"
+      ],
+      "aliases": [
+        "card_p2_arrived_late_r2ee01",
+        "A time you arrived later than you meant to"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_a_disagreement_r2ee02",
+      "title": "A time you disagreed with somebody about something that mattered",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_a_disagreement_r2ee02",
+      "questions": [
+        "Describe a time when you disagreed with somebody about something that mattered.",
+        "who the disagreement was with",
+        "what the two of you wanted",
+        "what you said and how they reacted",
+        "and explain what you think now about the way you handled it.",
+        "Do the two of you still work together?",
+        "Would you raise it the same way again?"
+      ],
+      "aliases": [
+        "card_p2_a_disagreement_r2ee02",
+        "A time you disagreed with somebody about something that mattered"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_dressed_up_r2ee03",
+      "title": "An occasion when you dressed up",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_dressed_up_r2ee03",
+      "questions": [
+        "Describe an occasion when you dressed up for something.",
+        "what the occasion was",
+        "what you wore",
+        "how you decided what to wear",
+        "and explain how you felt about the way you looked.",
+        "Do you still have those clothes?",
+        "Was everybody else dressed in the same way?"
+      ],
+      "aliases": [
+        "card_p2_dressed_up_r2ee03",
+        "An occasion when you dressed up"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_tech_failed_r2ee04",
+      "title": "A time a piece of technology let you down",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_tech_failed_r2ee04",
+      "questions": [
+        "Describe a time when a piece of technology let you down.",
+        "what the technology was",
+        "what went wrong with it",
+        "what you did instead",
+        "and explain what the experience made you realise.",
+        "Was it ever properly fixed?",
+        "Had it given you trouble before that?"
+      ],
+      "aliases": [
+        "card_p2_tech_failed_r2ee04",
+        "A time a piece of technology let you down"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_had_to_be_patient_r2ee05",
+      "title": "A time you had to be patient with somebody",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_had_to_be_patient_r2ee05",
+      "questions": [
+        "Describe a time when you had to be patient with somebody.",
+        "who it was and how you know them",
+        "what the situation was",
+        "how you managed to stay patient",
+        "and explain what the experience showed you about yourself.",
+        "Does that person know it was hard for you?",
+        "Would you find it easier now?"
+      ],
+      "aliases": [
+        "card_p2_had_to_be_patient_r2ee05",
+        "A time you had to be patient with somebody"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_unexpected_meeting_r2ee06",
+      "title": "An occasion when you unexpectedly met somebody you knew",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_unexpected_meeting_r2ee06",
+      "questions": [
+        "Describe an occasion when you unexpectedly met somebody you knew.",
+        "who you met and where",
+        "when you had last seen them",
+        "what the two of you talked about",
+        "and explain how the meeting left you feeling.",
+        "Have you seen them since?",
+        "Was it a good place for a conversation?"
+      ],
+      "aliases": [
+        "card_p2_unexpected_meeting_r2ee06",
+        "An occasion when you unexpectedly met somebody you knew"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_changed_your_mind_r2ee07",
+      "title": "A time you changed your mind about something important",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_changed_your_mind_r2ee07",
+      "questions": [
+        "Describe a time when you changed your mind about something important.",
+        "what you originally thought",
+        "what made you reconsider",
+        "how long the change took",
+        "and explain how you feel now about having changed it.",
+        "Did anybody notice you'd changed your view?",
+        "Have you changed your mind about anything since?"
+      ],
+      "aliases": [
+        "card_p2_changed_your_mind_r2ee07",
+        "A time you changed your mind about something important"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_difficult_choice_r2ee08",
+      "title": "A difficult choice between two good options",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_difficult_choice_r2ee08",
+      "questions": [
+        "Describe a difficult choice you had to make between two good options.",
+        "what the two options were",
+        "how long you had to decide",
+        "how you finally chose",
+        "and explain whether you think you chose well.",
+        "Do you ever think about the other option?",
+        "Did anybody help you decide?"
+      ],
+      "aliases": [
+        "card_p2_difficult_choice_r2ee08",
+        "A difficult choice between two good options"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_valued_possession_r2om01",
+      "title": "Something you own that is worth very little to anyone else",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_valued_possession_r2om01",
+      "questions": [
+        "Describe something you own that is worth very little but that you would not part with.",
+        "what the object is",
+        "how it came to be yours",
+        "where you keep it",
+        "and explain why you would not part with it.",
+        "Have you ever come close to losing it?",
+        "Does anyone else in your family feel the same way about it?"
+      ],
+      "aliases": [
+        "card_p2_valued_possession_r2om01",
+        "Something you own that is worth very little to anyone else"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_recent_purchase_r2om02",
+      "title": "Something you bought recently that was worth the money",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_recent_purchase_r2om02",
+      "questions": [
+        "Describe something you bought recently that turned out to be worth the money.",
+        "what you bought",
+        "why you decided to buy it",
+        "how much use it has had since",
+        "and explain what made it worth the price.",
+        "Would you buy exactly the same one again?",
+        "Did anyone try to talk you out of it?"
+      ],
+      "aliases": [
+        "card_p2_recent_purchase_r2om02",
+        "Something you bought recently that was worth the money"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_gift_you_gave_r2om03",
+      "title": "A present you gave that went down well",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_gift_you_gave_r2om03",
+      "questions": [
+        "Describe a present you gave somebody that they were really pleased with.",
+        "who you gave it to",
+        "what the present was",
+        "how you chose it",
+        "and explain why you think it went down so well.",
+        "Do they still have it?",
+        "Are they an easy person to buy for?"
+      ],
+      "aliases": [
+        "card_p2_gift_you_gave_r2om03",
+        "A present you gave that went down well"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_equipment_you_rely_on_r2om04",
+      "title": "A piece of equipment you would struggle without",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_equipment_you_rely_on_r2om04",
+      "questions": [
+        "Describe a piece of equipment you use so often that you would struggle without it.",
+        "what the equipment is",
+        "what you use it for",
+        "how you came to have it",
+        "and explain what you would do if you no longer had it.",
+        "Does anybody else in your home use it?",
+        "Has it ever needed repairing?"
+      ],
+      "aliases": [
+        "card_p2_equipment_you_rely_on_r2om04",
+        "A piece of equipment you would struggle without"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_app_you_would_recommend_r2om05",
+      "title": "An app or website you would recommend to someone older",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_app_you_would_recommend_r2om05",
+      "questions": [
+        "Describe an app or a website you would recommend to somebody much older than you.",
+        "what the app or website is",
+        "who you would recommend it to",
+        "how you first came across it",
+        "and explain why you think it would suit that particular person.",
+        "Have you actually shown it to them?",
+        "Is there anything about it that might put them off?"
+      ],
+      "aliases": [
+        "card_p2_app_you_would_recommend_r2om05",
+        "An app or website you would recommend to someone older"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_photograph_you_keep_r2om06",
+      "title": "A photograph you would hate to lose",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_photograph_you_keep_r2om06",
+      "questions": [
+        "Describe a photograph you own that you would hate to lose.",
+        "what the photograph shows",
+        "when and where it was taken",
+        "how it came to be yours",
+        "and explain why losing it would matter to you.",
+        "Is it on display, or put away somewhere?",
+        "Have you ever had a copy made?"
+      ],
+      "aliases": [
+        "card_p2_photograph_you_keep_r2om06",
+        "A photograph you would hate to lose"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_programme_you_follow_r2om07",
+      "title": "A programme or podcast you listen to regularly",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_programme_you_follow_r2om07",
+      "questions": [
+        "Describe a radio programme or a podcast that you listen to regularly.",
+        "what it is about",
+        "when and where you listen to it",
+        "how you started following it",
+        "and explain why it holds your attention when so much else doesn't.",
+        "Have you ever recommended it to anybody?",
+        "Would you still listen if it were twice as long?"
+      ],
+      "aliases": [
+        "card_p2_programme_you_follow_r2om07",
+        "A programme or podcast you listen to regularly"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_advert_you_remember_r2om08",
+      "title": "An advertisement that stayed in your mind",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_advert_you_remember_r2om08",
+      "questions": [
+        "Describe an advertisement you saw that has stayed in your mind.",
+        "what it was advertising",
+        "where and when you saw it",
+        "what actually happened in it",
+        "and explain why you think it stayed with you when others didn't.",
+        "Did it make you buy anything?",
+        "Have you ever tried to find it again?"
+      ],
+      "aliases": [
+        "card_p2_advert_you_remember_r2om08",
+        "An advertisement that stayed in your mind"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_r2pa_taught_a_skill_901",
+      "title": "Somebody who taught you a practical skill",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_r2pa_taught_a_skill_901",
+      "questions": [
+        "Describe somebody who taught you how to do something practical.",
+        "who this person was",
+        "what they taught you to do",
+        "how they went about teaching you",
+        "and explain why you still remember the way they did it.",
+        "Do you still do it the way they showed you?",
+        "Have you ever shown anybody else how to do it?"
+      ],
+      "aliases": [
+        "card_p2_r2pa_taught_a_skill_901",
+        "Somebody who taught you a practical skill"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_r2pa_good_at_their_job_902",
+      "title": "Somebody you have watched doing their job well",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_r2pa_good_at_their_job_902",
+      "questions": [
+        "Describe somebody you have watched doing their job well.",
+        "who this person is",
+        "what their job involves",
+        "what you saw them doing",
+        "and explain what you think makes them good at it.",
+        "Would you want to do that job yourself?",
+        "Have you ever told them they're good at it?"
+      ],
+      "aliases": [
+        "card_p2_r2pa_good_at_their_job_902",
+        "Somebody you have watched doing their job well"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_r2pa_older_person_903",
+      "title": "An older person whose opinion you take seriously",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_r2pa_older_person_903",
+      "questions": [
+        "Describe an older person, outside your family, whose opinion you take seriously.",
+        "who this person is",
+        "how you came to know them",
+        "the kind of things you ask them about",
+        "and explain why you take their opinion seriously.",
+        "Have you ever disagreed with them?",
+        "Do they ever ask what you think?"
+      ],
+      "aliases": [
+        "card_p2_r2pa_older_person_903",
+        "An older person whose opinion you take seriously"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_r2pa_leading_a_group_904",
+      "title": "Somebody who leads a group of people well",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_r2pa_leading_a_group_904",
+      "questions": [
+        "Describe somebody you know who is good at leading a group of people.",
+        "who this person is",
+        "the group they are in charge of",
+        "something you have seen them do with that group",
+        "and explain what makes people willing to follow them.",
+        "Would you want to lead a group like that?",
+        "Do you think they enjoy doing it?"
+      ],
+      "aliases": [
+        "card_p2_r2pa_leading_a_group_904",
+        "Somebody who leads a group of people well"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_r2pa_a_fair_rule_905",
+      "title": "A rule you think is fair",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_r2pa_a_fair_rule_905",
+      "questions": [
+        "Describe a rule you have to follow that you think is fair, even though it makes things harder for you.",
+        "what the rule is",
+        "where it applies",
+        "the difference it makes to what you do",
+        "and explain why you think it is a fair rule even so.",
+        "Do the people around you follow it?",
+        "Would you keep it if the decision were yours?"
+      ],
+      "aliases": [
+        "card_p2_r2pa_a_fair_rule_905",
+        "A rule you think is fair"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_r2pa_a_cheap_change_906",
+      "title": "A change that would cost almost nothing",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_r2pa_a_cheap_change_906",
+      "questions": [
+        "Describe a change you would like to see in your country that would not cost much money.",
+        "what the change would be",
+        "who it would affect",
+        "how it could be done without spending much",
+        "and explain what difference you think it would make.",
+        "Do the people you know agree with you about that?",
+        "Is anybody already trying to do it?"
+      ],
+      "aliases": [
+        "card_p2_r2pa_a_cheap_change_906",
+        "A change that would cost almost nothing"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_r2pa_unfinished_ambition_907",
+      "title": "An ambition you have not achieved yet",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_r2pa_unfinished_ambition_907",
+      "questions": [
+        "Describe an ambition you have had for a long time but have not achieved yet.",
+        "what the ambition is",
+        "how long you have had it",
+        "the steps you have taken towards it so far",
+        "and explain why you think you have not achieved it yet.",
+        "Do many people know about it?",
+        "Do you still think you'll manage it?"
+      ],
+      "aliases": [
+        "card_p2_r2pa_unfinished_ambition_907",
+        "An ambition you have not achieved yet"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_r2pa_advice_ignored_908",
+      "title": "A piece of advice you decided not to take",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_r2pa_advice_ignored_908",
+      "questions": [
+        "Describe a piece of advice you were given that you decided not to take.",
+        "who gave you the advice",
+        "what they told you to do",
+        "what you did instead",
+        "and explain how you feel about that decision now.",
+        "Have you told them what you did?",
+        "Would you give the same advice to somebody else?"
+      ],
+      "aliases": [
+        "card_p2_r2pa_advice_ignored_908",
+        "A piece of advice you decided not to take"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_decision_place_r2pa1",
+      "title": "A place you go to when you have a decision to make",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_decision_place_r2pa1",
+      "questions": [
+        "Describe a place you go to when you have a decision to make.",
+        "where the place is",
+        "when you tend to go there",
+        "what you do while you are there",
+        "and explain why it helps you make your mind up.",
+        "Have you ever taken anybody there with you?",
+        "Would somewhere indoors do the same job?"
+      ],
+      "aliases": [
+        "card_p2_decision_place_r2pa1",
+        "A place you go to when you have a decision to make"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_interesting_building_r2pa2",
+      "title": "A building you find interesting to look at",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_interesting_building_r2pa2",
+      "questions": [
+        "Describe a building you find interesting to look at.",
+        "where the building is",
+        "what it looks like",
+        "what it is used for",
+        "and explain why you find it interesting to look at.",
+        "Have you ever been inside it?",
+        "Do the people you know feel the same way about it?"
+      ],
+      "aliases": [
+        "card_p2_interesting_building_r2pa2",
+        "A building you find interesting to look at"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_exercise_place_r2pa3",
+      "title": "A place you go to when you want some exercise",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_exercise_place_r2pa3",
+      "questions": [
+        "Describe a place where you go to get some exercise.",
+        "where this place is",
+        "how often you go there",
+        "what you do when you are there",
+        "and explain why this place suits you better than the alternatives.",
+        "Would you still go if it were on the other side of town?",
+        "Do you ever go with anybody else?"
+      ],
+      "aliases": [
+        "card_p2_exercise_place_r2pa3",
+        "A place you go to when you want some exercise"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_noisy_place_r2pa4",
+      "title": "A noisy place you often have to spend time in",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_noisy_place_r2pa4",
+      "questions": [
+        "Describe a noisy place that you often have to spend time in.",
+        "where this place is",
+        "what makes it noisy",
+        "how often you are there",
+        "and explain how you deal with the noise.",
+        "Does it bother everybody there, or just you?",
+        "Has it got any worse since you first went there?"
+      ],
+      "aliases": [
+        "card_p2_noisy_place_r2pa4",
+        "A noisy place you often have to spend time in"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_outdoor_activity_r2pa5",
+      "title": "An activity you enjoy doing outdoors",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_outdoor_activity_r2pa5",
+      "questions": [
+        "Describe an activity you enjoy doing outdoors.",
+        "what the activity is",
+        "where and when you do it",
+        "who you usually do it with",
+        "and explain how you first got into it.",
+        "Would you still do it if it took an hour to get there?",
+        "Is it something you'd suggest to a friend?"
+      ],
+      "aliases": [
+        "card_p2_outdoor_activity_r2pa5",
+        "An activity you enjoy doing outdoors"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_relaxing_activity_r2pa6",
+      "title": "Something you do to relax after a long day",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_relaxing_activity_r2pa6",
+      "questions": [
+        "Describe something you do to relax after a long day.",
+        "what it is",
+        "when you usually do it",
+        "how long it takes",
+        "and explain why it helps you unwind.",
+        "Does it work every time?",
+        "Would it still work if somebody joined in?"
+      ],
+      "aliases": [
+        "card_p2_relaxing_activity_r2pa6",
+        "Something you do to relax after a long day"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_practised_skill_r2pa7",
+      "title": "A skill you practise regularly",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_practised_skill_r2pa7",
+      "questions": [
+        "Describe a skill you practise regularly.",
+        "what the skill is",
+        "how and when you practise it",
+        "how long you have been doing it",
+        "and explain what has been hardest about learning it.",
+        "Do you ever do it in front of other people?",
+        "Would you have started sooner if you could?"
+      ],
+      "aliases": [
+        "card_p2_practised_skill_r2pa7",
+        "A skill you practise regularly"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_regular_journey_r2pa8",
+      "title": "A journey you make regularly",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_regular_journey_r2pa8",
+      "questions": [
+        "Describe a journey you make regularly.",
+        "where you go",
+        "how you travel there",
+        "how often you make it",
+        "and explain how you feel about making it.",
+        "Is there a faster way of doing it?",
+        "Do you use the time for anything?"
+      ],
+      "aliases": [
+        "card_p2_regular_journey_r2pa8",
+        "A journey you make regularly"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_weather_plans_701",
+      "title": "A time when the weather changed your plans",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_weather_plans_701",
+      "questions": [
+        "Describe a time when the weather made you change your plans.",
+        "what you had planned to do",
+        "where you were and who you were with",
+        "what the weather did",
+        "and explain whether the day turned out better or worse than the plan.",
+        "Would you make that plan again at the same time of year?",
+        "Do people where you live pay much attention to the forecast?"
+      ],
+      "aliases": [
+        "card_p2_weather_plans_701",
+        "A time when the weather changed your plans"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_repaired_thing_702",
+      "title": "Something you own that you have repaired instead of replacing",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_repaired_thing_702",
+      "questions": [
+        "Describe something you own that you have repaired rather than replaced.",
+        "what the thing is",
+        "how long you have had it",
+        "what went wrong with it and how it was mended",
+        "and explain why you chose to repair it rather than buy a new one.",
+        "Is it as good now as it was before?",
+        "Do you know anybody else who gets things mended?"
+      ],
+      "aliases": [
+        "card_p2_repaired_thing_702",
+        "Something you own that you have repaired instead of replacing"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_local_problem_703",
+      "title": "A problem in your area that should be dealt with",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_local_problem_703",
+      "questions": [
+        "Describe a problem in your local area that you think should be dealt with.",
+        "what the problem is",
+        "who it affects most",
+        "what has been done about it so far",
+        "and explain why you think it should be a priority.",
+        "Have you ever complained about it to anybody?",
+        "Is it worse now than it was a year ago?"
+      ],
+      "aliases": [
+        "card_p2_local_problem_703",
+        "A problem in your area that should be dealt with"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_public_place_704",
+      "title": "A public place in your town where people meet",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_public_place_704",
+      "questions": [
+        "Describe a public place in your town where people go to meet each other.",
+        "where it is",
+        "what it looks like",
+        "who you see there, and when",
+        "and explain why people choose it rather than somewhere else.",
+        "Is it busier now than it was a few years ago?",
+        "Would you take a visitor there?"
+      ],
+      "aliases": [
+        "card_p2_public_place_704",
+        "A public place in your town where people meet"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_public_service_705",
+      "title": "A time you needed help from a public service",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_public_service_705",
+      "questions": [
+        "Describe a time when you needed help from a public service.",
+        "what you needed help with",
+        "which service you went to",
+        "what happened when you got there",
+        "and explain how you felt about the way you were dealt with.",
+        "Have you had to use them again since?",
+        "Do most people you know have a good word for that service?"
+      ],
+      "aliases": [
+        "card_p2_public_service_705",
+        "A time you needed help from a public service"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_public_rule_706",
+      "title": "A rule in a public place that is worth having",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_public_rule_706",
+      "questions": [
+        "Describe a rule in a public place that you think is worth having.",
+        "what the rule is",
+        "where it applies",
+        "how strictly people follow it",
+        "and explain why you think it does more good than harm.",
+        "Is it a rule you had to get used to?",
+        "Would most people you know agree with you about it?"
+      ],
+      "aliases": [
+        "card_p2_public_rule_706",
+        "A rule in a public place that is worth having"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_helped_at_event_707",
+      "title": "An occasion when you helped out at a local event",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_helped_at_event_707",
+      "questions": [
+        "Describe an occasion when you helped out at a local event.",
+        "what the event was",
+        "how you came to be involved",
+        "what you actually had to do",
+        "and explain what you got out of it.",
+        "Would you do it again next year?",
+        "Do many people you know volunteer for things like that?"
+      ],
+      "aliases": [
+        "card_p2_helped_at_event_707",
+        "An occasion when you helped out at a local event"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_country_spending_708",
+      "title": "Something people in your country spend a lot of money on",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_country_spending_708",
+      "questions": [
+        "Describe something that people in your country spend a lot of money on.",
+        "what it is",
+        "who spends the most on it",
+        "why it costs as much as it does",
+        "and explain whether you think it is money well spent.",
+        "Have you spent much on it yourself?",
+        "Was it the same twenty years ago?"
+      ],
+      "aliases": [
+        "card_p2_country_spending_708",
+        "Something people in your country spend a lot of money on"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_everyday_app_401",
+      "title": "A website or app you use almost every day",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_everyday_app_401",
+      "questions": [
+        "Describe a website or an app that you use almost every day.",
+        "what it is and what it does",
+        "how you first came across it",
+        "when and where you tend to use it",
+        "and explain why you have kept using it rather than something else.",
+        "Would you still use it if it started charging?",
+        "Do many of the people around you use the same one?"
+      ],
+      "aliases": [
+        "card_p2_everyday_app_401",
+        "A website or app you use almost every day"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_film_that_changed_you_402",
+      "title": "A film or programme that changed how you see something",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_film_that_changed_you_402",
+      "questions": [
+        "Describe a film or a television programme that changed the way you think about something.",
+        "what it was and what it was about",
+        "when and how you came to watch it",
+        "who you talked to about it afterwards",
+        "and explain what it changed in the way you think.",
+        "Have you watched it a second time?",
+        "Is it the sort of thing your parents would enjoy?"
+      ],
+      "aliases": [
+        "card_p2_film_that_changed_you_402",
+        "A film or programme that changed how you see something"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_online_account_403",
+      "title": "An online account or channel you follow regularly",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_online_account_403",
+      "questions": [
+        "Describe an account, channel or page online that you follow regularly.",
+        "what it is and who runs it",
+        "how long you have been following it",
+        "what sort of things it posts",
+        "and explain why you have kept following it when you have dropped others.",
+        "Do you ever leave a comment on it?",
+        "Have you told anyone else about it?"
+      ],
+      "aliases": [
+        "card_p2_online_account_403",
+        "An online account or channel you follow regularly"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_something_untrue_online_404",
+      "title": "A time you found out something online was not true",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_something_untrue_online_404",
+      "questions": [
+        "Describe a time when you discovered that something you had seen online was not true.",
+        "what the claim was",
+        "where you came across it",
+        "how you found out it was false",
+        "and explain what you decided to do about it.",
+        "Did you say anything to the person who sent it?",
+        "Do you check things more carefully now?"
+      ],
+      "aliases": [
+        "card_p2_something_untrue_online_404",
+        "A time you found out something online was not true"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_learned_online_405",
+      "title": "A time you learned something by following instructions online",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_learned_online_405",
+      "questions": [
+        "Describe a time when you learned how to do something by following instructions online.",
+        "what you were trying to do",
+        "where the instructions came from",
+        "how well it actually went",
+        "and explain what you would do differently if you did it again.",
+        "Have you had to do it again since?",
+        "Would you have asked somebody if you hadn't found it online?"
+      ],
+      "aliases": [
+        "card_p2_learned_online_405",
+        "A time you learned something by following instructions online"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_staying_in_touch_406",
+      "title": "Something you do to stay in touch with someone",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_staying_in_touch_406",
+      "questions": [
+        "Describe something you do regularly to stay in touch with somebody you rarely see.",
+        "what it is",
+        "who you do it with and how you know them",
+        "how often you do it and how it started",
+        "and explain why this one has lasted when other habits have not.",
+        "Would a phone call do the same job?",
+        "Was it your idea or theirs?"
+      ],
+      "aliases": [
+        "card_p2_staying_in_touch_406",
+        "Something you do to stay in touch with someone"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_first_phone_407",
+      "title": "The first phone or computer you owned",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_first_phone_407",
+      "questions": [
+        "Describe the first phone or computer that you owned yourself.",
+        "what it was like",
+        "when you got it and who gave it to you",
+        "what you mainly used it for",
+        "and explain what difference having it made to you at the time.",
+        "Do you still have it anywhere?",
+        "Would a child today manage to use it?"
+      ],
+      "aliases": [
+        "card_p2_first_phone_407",
+        "The first phone or computer you owned"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_decided_not_to_share_408",
+      "title": "A time you decided not to share something online",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_decided_not_to_share_408",
+      "questions": [
+        "Describe a time when you decided not to share something online.",
+        "what it was",
+        "where you had been intending to put it",
+        "what made you change your mind",
+        "and explain whether you think you made the right decision.",
+        "Did anybody else end up sharing it?",
+        "Do you think about that sort of thing more than you used to?"
+      ],
+      "aliases": [
+        "card_p2_decided_not_to_share_408",
+        "A time you decided not to share something online"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_teacher_who_changed_301",
+      "title": "A teacher who changed how you think about a subject",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_teacher_who_changed_301",
+      "questions": [
+        "Describe a teacher who changed the way you think about a subject.",
+        "who the teacher was",
+        "what subject they taught you",
+        "what they did differently from other teachers",
+        "and explain how your view of that subject changed.",
+        "Are you still in touch with that teacher at all?",
+        "Did the rest of your class feel the same way about her?"
+      ],
+      "aliases": [
+        "card_p2_teacher_who_changed_301",
+        "A teacher who changed how you think about a subject"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_subject_you_enjoyed_302",
+      "title": "A school subject you really enjoyed",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_subject_you_enjoyed_302",
+      "questions": [
+        "Describe a subject you really enjoyed studying at school.",
+        "what the subject was",
+        "when in your schooling you studied it",
+        "what a typical lesson involved",
+        "and explain why you enjoyed it more than the others.",
+        "Were you any good at it, or did you just like it?",
+        "Would you study it again now if you had the chance?"
+      ],
+      "aliases": [
+        "card_p2_subject_you_enjoyed_302",
+        "A school subject you really enjoyed"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_skill_took_longer_303",
+      "title": "A skill that took longer to learn than you expected",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_skill_took_longer_303",
+      "questions": [
+        "Describe a skill that took you much longer to learn than you expected.",
+        "what the skill was",
+        "how you went about learning it",
+        "which part of it held you up",
+        "and explain what finally made the difference.",
+        "Do you use it much these days?",
+        "Was there anybody who kept you going?"
+      ],
+      "aliases": [
+        "card_p2_skill_took_longer_303",
+        "A skill that took longer to learn than you expected"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_goal_you_achieved_304",
+      "title": "A goal you set yourself and achieved",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_goal_you_achieved_304",
+      "questions": [
+        "Describe a goal you set yourself and managed to achieve.",
+        "what the goal was",
+        "why you set it",
+        "what you had to do to reach it",
+        "and explain how you felt once you got there.",
+        "Did many people know you were doing it?",
+        "Would you take on something that big again?"
+      ],
+      "aliases": [
+        "card_p2_goal_you_achieved_304",
+        "A goal you set yourself and achieved"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_working_in_a_team_305",
+      "title": "A time you worked with other people to finish something",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_working_in_a_team_305",
+      "questions": [
+        "Describe a time when you worked with other people to get something finished.",
+        "what the task was",
+        "who else was involved",
+        "how the work was divided between you",
+        "and explain what made it come together in the end.",
+        "Are you still in contact with any of them?",
+        "Would you rather have done the whole thing yourself?"
+      ],
+      "aliases": [
+        "card_p2_working_in_a_team_305",
+        "A time you worked with other people to finish something"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_where_you_work_at_home_306",
+      "title": "The place in your home where you work or study",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_where_you_work_at_home_306",
+      "questions": [
+        "Describe the place in your home where you usually work or study.",
+        "where in your home it is",
+        "what you keep there",
+        "when you tend to use it",
+        "and explain how well it actually suits you.",
+        "Does anybody else in the house use it?",
+        "Would you work somewhere else if you had the choice?"
+      ],
+      "aliases": [
+        "card_p2_where_you_work_at_home_306",
+        "The place in your home where you work or study"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_interesting_job_307",
+      "title": "Someone you know whose job you find interesting",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_interesting_job_307",
+      "questions": [
+        "Describe someone you know whose job you find interesting.",
+        "who the person is",
+        "what their job actually involves",
+        "how you came to know about it",
+        "and explain why the job interests you.",
+        "Would you want to do that job yourself?",
+        "Do many people where you live do that sort of work?"
+      ],
+      "aliases": [
+        "card_p2_interesting_job_307",
+        "Someone you know whose job you find interesting"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    },
+    {
+      "id": "card_p2_exam_you_prepared_for_308",
+      "title": "An exam you prepared very hard for",
+      "objective": "围绕题卡要点组织一段完整表达。",
+      "sourceCardId": "card_p2_exam_you_prepared_for_308",
+      "questions": [
+        "Describe an exam or test that you prepared very hard for.",
+        "what the exam was for",
+        "how you went about preparing",
+        "how the exam itself went",
+        "and explain what you would do differently next time.",
+        "Do you still remember much of what you learned?",
+        "Was the result roughly what you expected?"
+      ],
+      "aliases": [
+        "card_p2_exam_you_prepared_for_308",
+        "An exam you prepared very hard for"
+      ],
+      "addedGuidance": "本课为 Part 2 长段表达，先介绍总题与完整要点，让用户准备并完整表达，再问收尾问题。要点不是独立短问。遵循学员档位，不强制跟读，不评分。"
+    }
+  ]
+}
