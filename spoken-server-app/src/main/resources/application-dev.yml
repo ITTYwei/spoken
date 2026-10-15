@@ -90,7 +90,9 @@ spoken-ai:
       # 并让场景音色退回 en-US-* 音色名。
       # dashscope = 阿里云百炼 Qwen TTS（qwen3-tts-flash-realtime），
       # 需要 OpenTalking 侧配好 OPENTALKING_TTS_DASHSCOPE_API_KEY。
-      default-tts-provider: dashscope
+      # 本地 Qwen3-TTS（vLLM-Omni）；OpenTalking 侧使用 vllm_omni 协议。
+      # 回退云端时改回 dashscope；旧 Cherry/Ethan 在本地适配层映射到 Vivian/Ryan。
+      default-tts-provider: openai_compatible
       connect-timeout-ms: 5000
       request-timeout-ms: 30000
       # 局域网直连：摘掉 stun，避免手机多网卡时等 ICE 收集多花约 7 秒
