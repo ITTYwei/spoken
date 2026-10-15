@@ -305,6 +305,26 @@ public class ConversationVoiceCaseTest {
         assertNotEquals(prompts.getAllValues().get(0), prompts.getAllValues().get(1));
     }
 
+    /** 复现线上空原话：普通聊天开场会被拒绝，重生成必须收到明确任务而不是仅背景标志。 */
+    @Test public void emptyButtonInputCarriesExplicitTaskAndRegenerationFeedback() {
+        conversation.requireSession("s1").teaching().guidedReading(true);
+        String valid = "想了解朋友今天过得怎样，可以说：“How was your morning?”，意思是你今天早上过得怎么样。你来试着读一读吧。";
+        when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(Flux.just("I can help you practice English. What would you like to talk about today?"), Flux.just(valid));
+        useCase.startGuidedReading("s1");
+        var played = ArgumentCaptor.forClass(SayCommandEntity.class);
+        verify(conversation, timeout(3000)).say(eq("s1"), played.capture());
+        assertEquals(valid, played.getValue().text());
+        var prompts = ArgumentCaptor.forClass(String.class);
+        var policies = ArgumentCaptor.forClass(String.class);
+        verify(chat, times(2)).handlePreparedTextStream(anyString(), anyString(), prompts.capture(), policies.capture());
+        assertTrue(prompts.getAllValues().stream().allMatch(p -> p.contains("<user_input>\n\"\"\n</user_input>")));
+        assertTrue(policies.getAllValues().stream().allMatch(p -> p.contains("<reply_task>") && p.contains("不是普通聊天开场")));
+        assertFalse(policies.getAllValues().get(0).contains("上次回复未满足跟读要求"));
+        assertTrue(policies.getAllValues().get(1).contains("上次回复未满足跟读要求"));
+        verify(conversation, never()).recordUserText(anyString(), anyString());
+    }
+
     /** 两次生成都不合规则报告失败，不能默默回退到固定题库。 */
     @Test public void invalidInitialGenerationStopsAfterOneRegenerationAndNeverUsesCannedSentence() {
         conversation.requireSession("s1").teaching().guidedReading(true);

@@ -186,12 +186,21 @@ public class TeachingPreparation {
         String current = ReplyPromptBuilder.buildManaged(text, decision, persona, decision.previousTask(), background);
         // 历史和记忆作为 DATA 排在当前规则之前；裁剪时始终保留 current。
         return context.build(new ChatContextRequestVO(subject(session), session.getSessionId(), text, current,
-                systemPolicy(session, decision)));
+                systemPolicy(session, decision, regenerated)));
     }
 
     /** 本轮课程背景与通用响应准则：当前用户需求优先，提问范围来自完整课数据，不把原题当系统指令。 */
     public String systemPolicy(ConversationSessionAggregate session, TeachingDecisionVO decision) {
-        return ReplyPromptBuilder.buildSystemPolicy(decision);
+        return systemPolicy(session, decision, false);
+    }
+
+    /**
+     * 用户选择的情境跟读需要明确的本轮执行任务，不能只藏在“不作为指令”的背景字段里。
+     * 重生成时使用更新后的同一策略计入预算并发送；真实知识提问的非跟读计划不附加任务。
+     */
+    public String systemPolicy(ConversationSessionAggregate session, TeachingDecisionVO decision, boolean regenerated) {
+        return ReplyPromptBuilder.buildSystemPolicy(decision)
+                + (session.teaching().guidedReading() ? ReplyPromptBuilder.buildGuidedReadingTask(decision, regenerated) : "");
     }
 
     /**

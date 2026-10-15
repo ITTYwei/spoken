@@ -74,16 +74,29 @@ public class ReplyPromptLayersTest {
     @Test public void guidedReadingRecentTargetsFitAlongsideAllCompleteCourses() {
         var books = new cn.adinall.ai.infrastructure.adapter.repository.ResourceTextbookRepository(new ObjectMapper());
         var context = new ChatContextService(List.of(), 12000);
-        var d = decision(EnglishLevelEnum.L2, false);
+        var d = new TeachingDecisionVO(EnglishLevelEnum.L2, new TeachingTaskVO("READ", "", "", 0), TeachingOutcomeEnum.RESPONDED, true, "", false, true);
         var recent = java.util.stream.IntStream.range(0, 8).mapToObj(i -> "I " + "really ".repeat(24) + "enjoy this book.").toList();
         for (var book : books.list()) for (var lesson : book.lessons()) {
             String turn = ReplyPromptBuilder.buildManaged("", d, null, null, Map.of(
                     "情境跟读", new cn.adinall.ai.domain.conversation.model.valobj.ReadingModeVO(true, "", 0, 3, 1),
                     "近期已练英文（避免重复）", recent, "当前文本课程数据", lesson.context()));
-            String prepared = context.build(new ChatContextRequestVO("subject", "session", "", turn, ReplyPromptBuilder.buildSystemPolicy(d)));
+            String prepared = context.build(new ChatContextRequestVO("subject", "session", "", turn, ReplyPromptBuilder.buildSystemPolicy(d) + ReplyPromptBuilder.buildGuidedReadingTask(d, true)));
             assertTrue(prepared.contains(recent.get(0)));
             assertTrue(prepared.contains(lesson.questions().get(lesson.questions().size() - 1)));
         }
+    }
+
+    /** 跟读任务进入可信策略，新的知识请求不能被强制生成指令覆盖。 */
+    @Test public void guidedTaskIsExplicitButDoesNotOverrideKnowledgeAnswer() {
+        var reading = new TeachingDecisionVO(EnglishLevelEnum.L2, new TeachingTaskVO("READ", "", "", 0),
+                TeachingOutcomeEnum.RESPONDED, true, "", false, true);
+        String task = ReplyPromptBuilder.buildGuidedReadingTask(reading, false);
+        assertTrue(task.contains("无需等待再次发言"));
+        assertTrue(task.contains("自主生成"));
+        var explaining = new TeachingDecisionVO(EnglishLevelEnum.L2, new TeachingTaskVO("EXPLAIN", "", "", 0),
+                TeachingOutcomeEnum.ENGLISH_QUESTION, true, "", false, false);
+        assertEquals("", ReplyPromptBuilder.buildGuidedReadingTask(explaining, false));
+        assertEquals("", ReplyPromptBuilder.buildGuidedReadingTask(decision(EnglishLevelEnum.L2, false), false));
     }
 
 }

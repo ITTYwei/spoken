@@ -497,8 +497,8 @@ public class ConversationCaseImpl implements IConversationCase {
                     // 教学策略只给任务与证据；后续对话统一由 Agent 生成。
                     String prompt = teaching.prompt(session, userText, decision, persona, regenerated.get());
                     // 可信等级/任务进入 SYSTEM；原话、场景与裁剪历史保留在 USER。
-                    if(agentReplies==null) return chatService.handlePreparedTextStream(replyAgentId,sessionId,prompt,teaching.systemPolicy(session,decision));
-                    return agentReplies.reply(replyAgentId, session, turnId == null ? 0L : turnId, userText, prompt, teaching.systemPolicy(session, decision), decision,
+                    if(agentReplies==null) return chatService.handlePreparedTextStream(replyAgentId, sessionId, prompt, teaching.systemPolicy(session, decision, regenerated.get()));
+                    return agentReplies.reply(replyAgentId, session, turnId == null ? 0L : turnId, userText, prompt, teaching.systemPolicy(session, decision, regenerated.get()), decision,
                             ()->!round.isDisposed()&&replyRounds.get(sessionId)==round&&!session.isFinished());
                 }).subscribeOn(Schedulers.boundedElastic())
                 // Agent 的原始增量先经过任务护栏，再交给数字人播报。
