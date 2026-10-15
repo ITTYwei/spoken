@@ -74,9 +74,9 @@ public class ReplyPromptLayersTest {
     @Test public void guidedReadingRecentTargetsFitAlongsideAllCompleteCourses() {
         var books = new cn.adinall.ai.infrastructure.adapter.repository.ResourceTextbookRepository(new ObjectMapper());
         var context = new ChatContextService(List.of(), 12000);
-        var d = new TeachingDecisionVO(EnglishLevelEnum.L2, new TeachingTaskVO("READ", "", "", 0), TeachingOutcomeEnum.RESPONDED, true, "", false, true);
         var recent = java.util.stream.IntStream.range(0, 8).mapToObj(i -> "I " + "really ".repeat(24) + "enjoy this book.").toList();
-        for (var book : books.list()) for (var lesson : book.lessons()) {
+        for (var level : EnglishLevelEnum.values()) for (var book : books.list()) for (var lesson : book.lessons()) {
+            var d = new TeachingDecisionVO(level, new TeachingTaskVO("READ", "", "", 0), TeachingOutcomeEnum.RESPONDED, true, "", false, true);
             String turn = ReplyPromptBuilder.buildManaged("", d, null, null, Map.of(
                     "情境跟读", new cn.adinall.ai.domain.conversation.model.valobj.ReadingModeVO(true, "", 0, 3, 1),
                     "近期已练英文（避免重复）", recent, "当前文本课程数据", lesson.context()));
@@ -97,6 +97,37 @@ public class ReplyPromptLayersTest {
                 TeachingOutcomeEnum.ENGLISH_QUESTION, true, "", false, false);
         assertEquals("", ReplyPromptBuilder.buildGuidedReadingTask(explaining, false));
         assertEquals("", ReplyPromptBuilder.buildGuidedReadingTask(decision(EnglishLevelEnum.L2, false), false));
+    }
+
+    /** 每档任务只携带该档的复杂度和例子参考，低档中文支援与高档自然表达不能共用同一模板。 */
+    @Test public void readingTargetsAndExamplesUseTheCurrentLevel() {
+        var tasks = new java.util.HashSet<String>();
+        for (var level : EnglishLevelEnum.values()) {
+            var d = new TeachingDecisionVO(level, new TeachingTaskVO("READ", "", "", 0), TeachingOutcomeEnum.RESPONDED, true, "", false, true);
+            String task = ReplyPromptBuilder.buildGuidedReadingTask(d, false);
+            assertTrue(task.contains("跟读难度与示例参考"));
+            assertTrue(task.contains("情境和示例随当前等级及学习需求重新构思"));
+            assertTrue(task.contains("纠音重读必须保持原句"));
+            tasks.add(task);
+            if (level == EnglishLevelEnum.L1 || level == EnglishLevelEnum.L2)
+                assertTrue(task.contains("英文后立即给中文含义"));
+            if (level == EnglishLevelEnum.L5 || level == EnglishLevelEnum.L6) {
+                assertTrue(task.contains("用户需要时补中文"));
+                assertFalse(task.contains("英文后立即给中文含义"));
+            }
+        }
+        assertEquals("六档不能共用一个跟读生成模板", 6, tasks.size());
+    }
+
+    /** 例子难度只影响新题，不改变已播目标或用缺评测来宣称用户不合格。 */
+    @Test public void readingLevelGuidanceDoesNotReplaceRetryTarget() {
+        var d = new TeachingDecisionVO(EnglishLevelEnum.L1, new TeachingTaskVO("CORRECT", "A previous model generated target.", "", 2),
+                TeachingOutcomeEnum.READ_RETRY, true, "", true, true);
+        String task = ReplyPromptBuilder.buildGuidedReadingTask(d, true);
+        assertTrue(task.contains("保留原句") || task.contains("保持原句"));
+        assertTrue(task.contains("不更换目标"));
+        assertFalse(task.contains("自主生成一个"));
+        assertFalse(task.contains("A previous model generated target."));
     }
 
 }
