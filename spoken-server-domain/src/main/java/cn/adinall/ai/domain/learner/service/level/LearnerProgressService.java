@@ -9,7 +9,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 /**
- * 功能：在新会话开始时按近期跨场证据最多提升一级，本场等级始终冻结。
+ * 功能：在新会话开始时按近期跨场证据最多提升一级，每轮陪练难度按最新手动选择读取。
  * <p>体系架构 / 运行过程：</p>
  * <pre>最近30天10场 -> 至少3场20回答 -> 80%支持下一档 -> CAS promotion -> freeze</pre>
  * <p>案例：两句高分 -> 保持 L2；三场20独立有效回答 -> 最多升到 L3。</p>
@@ -45,7 +45,23 @@ public class LearnerProgressService {
         var manual = repository.manualLevel(subject);
         return new EnglishLevelSettingVO(automatic, manual, manual == null ? automatic : manual);
     }
-    /** 只写陪练难度选择；不改自动档位、不删除证据、不影响已开始的会话。 */
+    /**
+     * 为新一轮回复读取有效难度：手动选择优先，清除手动选择后恢复自动评估档位。
+     * 只读取设置，不运行升级策略、不修改能力证据；由 Case 在决策前调用一次并冻结结果。
+     * 存储暂不可用时沿用当前会话难度，避免一次设置读取失败打断正在进行的练习。
+     * @param subject 会话创建时绑定的可信主体，不能使用请求线程上的可变账号
+     * @param fallback 当前会话已确认的难度，尚未初始化时使用 L2
+     * @return 本轮难度；保存发生在本轮取值之后时，下一轮再读取最新设置
+     */
+    public EnglishLevelEnum forReply(String subject, EnglishLevelEnum fallback) {
+        try {
+            return settings(subject).effectiveLevel();
+        } catch (RuntimeException error) {
+            log.warn("读取本轮陪练难度失败，沿用会话档位，异常类型={}", error.getClass().getSimpleName());
+            return fallback == null ? EnglishLevelEnum.L2 : fallback;
+        }
+    }
+    /** 只写陪练难度选择；不改自动档位、不删除证据，由下一轮准备流程读取。 */
     public EnglishLevelSettingVO select(String subject, EnglishLevelEnum level) {
         repository.setManualLevel(subject, level);
         return settings(subject);

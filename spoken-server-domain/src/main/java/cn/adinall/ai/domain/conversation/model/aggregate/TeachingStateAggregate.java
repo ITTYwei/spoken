@@ -7,13 +7,13 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
- * 功能：保存会话内冻结等级及上一项有效教学任务。
+ * 功能：保存最近一轮陪练难度及上一项有效教学任务。
  * <p>体系架构 / 运行过程：</p>
  * <pre>initialize -> propose reply -> commit after media drain -> next input
  * interrupt -> clear pending task (no assumed unheard question)</pre>
  * <p>案例：生成了问题但中途被打断 -> pending 清空，不认定用户拒绝回答。</p>
  * <p>设计要点：</p>
- * <ul><li>等级在本会话内不升级。</li><li>方法同步；旧轮次提交还需要外层 replyId 校验。</li></ul>
+ * <ul><li>自动能力升级仍在新会话计算；手动陪练难度可在下一轮刷新。</li><li>方法同步；旧轮次提交还需要外层 replyId 校验。</li></ul>
  */
 public final class TeachingStateAggregate {
     /** 在必需上下文预算内保留近期八句，避免开关切换或历史裁剪导致立即重复。 */
@@ -87,12 +87,23 @@ public final class TeachingStateAggregate {
     /** 最后一次检查请求的输入时间，防止旧异步轮次覆盖新的学习要求。 */
     private Instant learningRequestAt = Instant.MIN;
 
-    /** 会话期间稳定的能力等级。 */
+    /** 本会话最近一轮使用的陪练难度；与自动能力评估分开，手动设置可在轮次边界刷新。 */
     private EnglishLevelEnum level;
     /** 上一轮完整播报后等待用户完成的任务。 */
     private TeachingTaskVO pending = TeachingTaskVO.question("");
     public synchronized EnglishLevelEnum initialize(EnglishLevelEnum initial) {
         if (level == null) level = initial;
+        return level;
+    }
+    /**
+     * 在下一轮开始时刷新陪练难度，不修改已播目标、纠音次数或跟读版本。
+     * 已生成的 TeachingDecisionVO 持有自己的不可变档位，因此不会改动进行中的播报。
+     * @param selected learner 领域读取的有效档位；null 表示保留已确认值
+     * @return 当前有效档位，首次缺值时使用 L2
+     */
+    public synchronized EnglishLevelEnum refreshLevel(EnglishLevelEnum selected) {
+        if (selected != null) level = selected;
+        if (level == null) level = EnglishLevelEnum.L2;
         return level;
     }
     /**

@@ -123,12 +123,16 @@ public class TeachingPreparation {
     }
 
     /**
-     * 档位懒初始化：会话内只定一次，之后复用（六级稳定水平）。
+     * 在新轮次准备时读取最新陪练档位：保存设置后无需重建业务会话或媒体连接。
+     * 初次仍执行原有跨场能力评估；后续仅读取设置，不反复触发升级或重置任务。
+     * 返回值随 TeachingDecisionVO 冻结，本轮生成/播报中的设置变化留到下一轮生效。
      */
     public EnglishLevelEnum level(ConversationSessionAggregate session) {
         synchronized (session.teaching()) {
-            if (session.teaching().level() != null) return session.teaching().level();
-            return session.teaching().initialize(progress.begin(subject(session), session.getSessionId(), Instant.now()));
+            var current = session.teaching().level();
+            if (current == null) current = session.teaching().initialize(
+                    progress.begin(subject(session), session.getSessionId(), Instant.now()));
+            return session.teaching().refreshLevel(progress.forReply(subject(session), current));
         }
     }
 
