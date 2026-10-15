@@ -129,6 +129,21 @@ public class PracticeCase {
                 " Would you like to continue our last lesson, or have a free chat?" :
                 " 要继续上次的“"+state.recentLessonTitle()+"”，还是自由聊聊？");
     }
+    /**
+     * 开场提交前读取当前练习：用户在待机课详情点击开始时，课程已先经原切换用例保存。
+     * 课程首句替代创建时冻结的自由开场，避免先询问继续旧课再开始新课。
+     * 自由模式仍返回原快照，不重算历史、不创建用户回合，也不重复保存最近课。
+     * @param session 已校验的当前业务会话
+     * @param original 创建时保存的开场快照，未选课时原样返回
+     * @return 当前课的引导与第一题；课程编号失效时明确失败，不悄悄改为自由聊
+     */
+    public String openingForPlayback(ConversationSessionAggregate session, String original) {
+        var state = practice.state(session.getSessionId()).snapshot();
+        if (!"COURSE".equals(state.mode())) return original;
+        var lesson = textbooks.lesson(state.textbookId(), state.lessonId());
+        boolean english = session.teaching().level() != null && session.teaching().level().ordinal() >= 3;
+        return (english ? "Let's practice. " : "我们来练“" + lesson.title() + "”。") + lesson.questions().get(0);
+    }
     /** 仅在实际提交询问前登记编号，任务仍需媒体完成回执才生效。 */
     public void invite(ConversationSessionAggregate session,String reply) { practice.state(session.getSessionId()).invite(reply); }
 }

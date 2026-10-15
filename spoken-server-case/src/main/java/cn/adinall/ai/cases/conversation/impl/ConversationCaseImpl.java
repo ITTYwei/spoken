@@ -369,7 +369,8 @@ public class ConversationCaseImpl implements IConversationCase {
             decision = session.freezeOpening(openingPreparation.prepare(session.getDeviceId(), scenario,session.getAvatarId()));
             conversationService.saveOpeningDecision(sessionId, decision);
         }
-        String openingLine = decision.text();
+        // 详情直接开始会先保存当前课；实际开场优先该课，普通待机仍使用原始开场快照。
+        String openingLine = practiceCase == null ? decision.text() : practiceCase.openingForPlayback(session, decision.text());
         if (openingLine == null || openingLine.isBlank()) {
             log.info("场景 {} 没配开场白，跳过开场 session={}", session.getScenarioId(), sessionId);
             return OpeningResponseDTO.skipped("no_opening");
