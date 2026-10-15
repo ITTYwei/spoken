@@ -355,4 +355,44 @@ public class ConversationVoiceCaseTest {
         verify(conversation, never()).say(anyString(), any());
     }
 
+    /** 用户真实轮次重生成时仅登记一次；第二次登记模拟数据库主键冲突，不能靠吞掉异常通过。 */
+    @Test public void regenerationOfUserTurnRegistersTeachingReplyOnlyOnce() {
+        assertSingleRegistrationOnRegeneration(false);
+    }
+
+    /** 两次草稿都失败也不能重复登记，更不能反复触发用户事实与能力观察。 */
+    @Test public void exhaustedRegenerationStillRegistersTeachingReplyOnlyOnce() {
+        assertSingleRegistrationOnRegeneration(true);
+    }
+
+    private void assertSingleRegistrationOnRegeneration(boolean exhausted) {
+        var teaching = spy(TeachingTestFixture.create());
+        var replies = mock(cn.adinall.ai.domain.conversation.adapter.repository.ITeachingReplyRepository.class);
+        var inserts = new java.util.concurrent.atomic.AtomicInteger();
+        doAnswer(call -> {
+            if (inserts.incrementAndGet() > 1) throw new org.springframework.dao.DuplicateKeyException("重复真实用户轮次42");
+            return null;
+        }).when(replies).begin(anyString(), eq("s1"), eq(42L), anyString(), any());
+        org.springframework.test.util.ReflectionTestUtils.setField(teaching, "replies", replies);
+        org.springframework.test.util.ReflectionTestUtils.setField(useCase, "teaching", teaching);
+        var session = conversation.requireSession("s1");
+        session.teaching().guidedReading(true);
+        var initial = new TeachingDecisionVO(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2,
+                new TeachingTaskVO("READ", "", "", 0), TeachingOutcomeEnum.RESPONDED,true,"",false,true);
+        session.teaching().commitSpoken(initial, "问近况可以说：“How are you?”，意思是你好吗。请跟读。");
+        when(conversation.transcribeUploadedAndRecord("s1",wav)).thenReturn(new UserUtteranceVO("How are you?",42L));
+        String valid = "评测暂不可用，我们再读：“How are you?”，意思是你好吗。请朗读。";
+        when(chat.handlePreparedTextStream(anyString(),anyString(),anyString(),anyString()))
+                .thenReturn(Flux.just("没有英文目标"), Flux.just(exhausted ? "依然没有英文目标" : valid));
+        useCase.voice("s1",pcm,16000,null);
+        if (exhausted) {
+            verify(events,timeout(3000)).publish(eq("s1"),argThat(e -> e.type()==EventTypeEnum.ERROR));
+            verify(conversation,never()).say(anyString(),any());
+        } else verify(conversation,timeout(3000)).say(eq("s1"),any());
+        verify(chat,times(2)).handlePreparedTextStream(anyString(),anyString(),anyString(),anyString());
+        verify(teaching,times(1)).begin(eq(session),eq(42L),anyString(),any(),eq("How are you?"),eq("100003"));
+        verify(replies,times(1)).begin(anyString(),eq("s1"),eq(42L),anyString(),any());
+        assertEquals(1,inserts.get());
+    }
+
 }

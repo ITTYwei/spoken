@@ -489,11 +489,15 @@ public class ConversationCaseImpl implements IConversationCase {
         AtomicReference<Long> firstDelta = new AtomicReference<>();
         // 仅在当前回复内保存固定业务修正原因；重生成收到具体约束，不携带失败草稿或异常堆栈。
         var regenerated = new java.util.concurrent.atomic.AtomicReference<String>("");
+        // 同一业务回复可因草稿校验失败而重新订阅模型流，但数据库登记、事实维护和后台观察只能执行一次。
+        // 标志属于本次 replyId，不随重订阅创建；登记失败直接终止，不把数据库错误当作模型重生成理由。
+        var registered = new java.util.concurrent.atomic.AtomicBoolean(false);
         Flux<String> tokens = Flux.defer(() -> {
                     if (round.isDisposed()) return Flux.empty();
                     // 先登记“待播回复”，此时并未证明用户听到了新任务。
                     // begin 还可能启动独立回答的后台能力观察；该观察与本轮教练回复不是同一次模型请求。
-                    teaching.begin(session, turnId, replyId, decision, userText, replyAgentId);
+                    if (registered.compareAndSet(false, true))
+                        teaching.begin(session, turnId, replyId, decision, userText, replyAgentId);
                     // 教学策略只给任务与证据；后续对话统一由 Agent 生成。
                     String prompt = teaching.prompt(session, userText, decision, persona, regenerated.get());
                     // 可信等级/任务进入 SYSTEM；原话、场景与裁剪历史保留在 USER。
