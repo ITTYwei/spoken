@@ -1,7 +1,9 @@
 package cn.adinall.ai.infrastructure.adapter.repository;
 
-import cn.adinall.ai.domain.conversation.adapter.repository.IOpeningEncounterRepository;
-import cn.adinall.ai.domain.conversation.model.valobj.OpeningEncounterVO;
+import java.util.Map;
+
+import cn.adinall.ai.domain.coaching.conversation.adapter.repository.IOpeningEncounterRepository;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.OpeningEncounterVO;
 import cn.adinall.ai.infrastructure.dao.IOpeningFactsDao;
 import org.springframework.stereotype.Repository;
 import java.time.Instant;
@@ -18,12 +20,15 @@ import java.util.Date;
 @Repository
 public class OpeningEncounterRepository implements IOpeningEncounterRepository {
     /** 主体隔离的首句DAO。 */ private final IOpeningFactsDao dao;
+    /** 创建 {@code OpeningEncounterRepository}，初始化其依赖与状态。 */
     public OpeningEncounterRepository(IOpeningFactsDao dao) { this.dao=dao; }
+    /** 读取主体最近实际展示的开场和形象记录。 */
     public OpeningEncounterVO read(String subject) {
-        var row=dao.encounter(subject);
+        Map<String, Object> row=dao.encounter(subject);
         return row==null ? OpeningEncounterVO.unseen() : new OpeningEncounterVO(true,row.get("introducedAt")!=null,
                 (String)row.get("avatarId"),(String)row.get("avatarName"));
     }
+    /** 记录已实际展示的开场与形象信息，供下次开场决策使用。 */
     public void recordShown(String subject,String session,String avatar,String name,boolean intro,Instant at) {
         dao.shown(subject,session,avatar,name,intro,Date.from(at));
     }

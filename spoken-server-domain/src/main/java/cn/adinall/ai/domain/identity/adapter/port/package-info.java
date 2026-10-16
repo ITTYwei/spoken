@@ -1,4 +1,2 @@
-/**
- * 用户身份领域需要的外部能力端口。
- */
+/** 数字人首页所需音色目录与试听契约。 */
 package cn.adinall.ai.domain.identity.adapter.port;

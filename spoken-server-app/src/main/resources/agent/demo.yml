@@ -23,7 +23,7 @@ ai:
                     base-uri: http://appbuilder.baidu.com/v2/ai_search/mcp/
                     sse-endpoint: sse?api_key=${BAIDU_MCP_API_KEY:}
                     request-timeout: 500000
-                # local本地实现的，mcp 服务，在 ai-agent-scaffold-lite-domain 模块下，cn.adinall.ai.domain.agent.service.armory.matter.mcp.server 下实现服务
+                # local本地实现的，mcp 服务，在 ai-agent-scaffold-lite-domain 模块下，cn.adinall.ai.infrastructure.gateway.agent.armory.matter.mcp.server 下实现服务
                 - local:
                     name: myToolCallbackProvider
               # 可以配置 skills 技能书，放到 resource/agent/skills 下。

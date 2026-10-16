@@ -1,140 +1,84 @@
 package cn.adinall.ai.cases.conversation;
 
-import cn.adinall.ai.api.dto.CreateConversationSessionRequestDTO;
-import cn.adinall.ai.api.dto.ConversationTurnResponseDTO;
-import cn.adinall.ai.api.dto.IceServerResponseDTO;
-import cn.adinall.ai.api.dto.OpeningResponseDTO;
-import cn.adinall.ai.api.dto.SayRequestDTO;
-import cn.adinall.ai.api.dto.ServerEventDTO;
-import cn.adinall.ai.api.dto.SessionResponseDTO;
-import cn.adinall.ai.api.dto.SpeakRequestDTO;
-import cn.adinall.ai.api.dto.TurnResponseDTO;
+import cn.adinall.ai.cases.conversation.model.*;
+import cn.adinall.ai.domain.coaching.conversation.model.entity.SpeakCommandEntity;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.*;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
 
 /**
- * 会话用例（App 的一次请求 = 这里的一个方法）
- * <p>
- * 功能：把 HTTP 入参翻译成领域服务调用，再把领域结果翻回 api 模块的 DTO；
- * 「等多久 / 轮询几次 / 流怎么拼」这些编排决策也落在这一层。
- * 这一层只有「流程」没有「规则」—— 规则（会话能干什么、状态怎么变）在领域服务与聚合里。
- * <pre>
- *   create()      建会话：先关旧会话 -> 等槽位释放 -> 建新会话 -> 轮询就绪
- *   get()         查会话状态（顺手向上游纠偏一次），App 靠它轮询 QUEUED -> READY
- *   iceServers()  取 WebRTC 的 ICE 服务器配置
- *   offer()       SDP 交换：offer 换 answer
- *   speak()       文本驱动数字人说话（走 LLM 生成轨）
- *   say()         脚本轨：让数字人原样念出这段文字，不经过 LLM
- *   opening()     开场：让数字人说出本场景的开场白（幂等，只真正下发一次）
- *   voice()       语音上行（裸 PCM / s16le 单声道），返回识别文本
- *   interrupt()   打断当前这句
- *   close()       关会话并释放上游资源
- *   turns()       取本场会话的历史回合
- *   events()      SSE 事件流：流头状态 + 上游事件 + 本地事件 + 15 秒心跳
- * </pre>
- * 体系架构（它两侧的边界）：
- * <pre>
- *   SessionController  @RequestMapping("/api/v1/sessions")，只做转发
- *        |
- *        | 对外只认 api 模块 DTO：CreateConversationSessionRequestDTO /
- *        | SpeakRequestDTO / SayRequestDTO / SessionResponseDTO / ServerEventDTO
- *        v
- *   IConversationCase（本接口：只声明会话动作，不含编排实现）
- *        |
- *        | 对内只认领域类型：StartConversationCommandEntity / SpeakCommandEntity /
- *        | SayCommandEntity / ConversationSessionAggregate / ConversationTurnAggregate
- *        v
- *   IConversationService（领域服务：会话状态机唯一入口，不 sleep、不轮询）
- * </pre>
- * 案例：
- * <pre>
- *   输入: POST /api/v1/sessions
- *         CreateConversationSessionRequestDTO{deviceId="dev-001", avatarId=null,
- *         model=null, voice=null, scenarioId="interview"}
- *   处理: create(request) -> 关掉 dev-001 的旧会话 -> 建新会话 ->
- *         轮询最多 appConfig.readyWaitMs()（配置里 15000ms）等它就绪
- *   输出: SessionResponseDTO{sessionId="s-3f2a9c8b1d4e6f70", status="READY",
- *         voice="en-US-JennyNeural", startedAt=1735468800000}
- *         （请求里没给 avatarId / model，聚合里存的就是 null，而 SessionResponseDTO 标了
- *          NON_NULL，所以这两个键在响应里不出现；形象与模型的配置兜底只作用于上游调用那一步）
- *   超时: 上游仍在排队时 status 返回 "QUEUED"（不抛异常），由 App 继续轮询或听 SSE
- * </pre>
- * 设计要点：
- * <ul>
- *   <li>接口只暴露 DTO：SessionController 因此薄得像张纸，领域类型不会泄漏到 HTTP 边界之外。</li>
- *   <li>「等」留在实现类里（sleep / 轮询），领域服务保持纯同步、可单测、不阻塞线程。</li>
- *   <li>opening() 刻意做成幂等并返回 spoken / reason 而不是报错：
- *       客户端超时重试和用户连点都会打到它，而重复开场会让数字人把第一句话说两遍，代价不可撤销。</li>
- * </ul>
+ * 经过认证的应用入口；传输协议转换由输入适配器负责。
  */
 public interface IConversationCase {
+    /**
+     * 校验创建身份并建立会话，同一账号设备的旧会话按创建策略释放。
+     *
+     * @param command 创建参数，设备标识会在应用入口按账号隔离
+     * @return 初始会话状态，排队时不保证媒体已经就绪
+     */
+    SessionResult create(CreateConversationCommand command);
 
     /**
-     * 建会话。
-     * 流程：先把该设备的旧会话关掉并等一小会儿（上游单 GPU 槽的释放是异步的）->
-     * 建新会话 -> 轮询最多 readyWaitMs 等它就绪（超时不报错，返回 QUEUED 让 App 继续轮询/听 SSE）。
+     * 校验当前账号的会话归属后返回会话状态。
      */
-    SessionResponseDTO create(CreateConversationSessionRequestDTO request);
+    SessionResult get(String sessionId);
 
-    /** 查会话状态（顺手向上游纠偏一次）。App 靠它轮询 QUEUED -> READY。 */
-    SessionResponseDTO get(String sessionId);
+    /**
+     * 读取媒体连接使用的 ICE 服务器配置。
+     */
+    List<IceServerVO> iceServers();
 
-    /** 取 WebRTC 的 ICE 服务器配置。 */
-    List<IceServerResponseDTO> iceServers();
-
-    /** WebRTC SDP 交换：offer 换 answer。 */
+    /**
+     * 校验会话归属后交换 SDP 描述。
+     *
+     * @param sessionId 当前账号拥有的会话标识
+     * @param sdp       客户端生成的媒体连接描述
+     * @return 上游返回的媒体连接应答
+     */
     String offer(String sessionId, String sdp);
 
-    /** 文本驱动数字人说话。 */
-    void speak(String sessionId, SpeakRequestDTO request);
+    /**
+     * 在指定会话中提交播报命令。
+     */
+    void speak(String sessionId, SpeakCommandEntity command);
 
     /**
-     * 脚本轨：让数字人原样念出这段文字，不经过 LLM。
-     * 内容已定的话（开场白、题目、讲解、判分反馈）走这里。
+     * 按冻结的开场决策播放首句，重复请求不重复播报。
      */
-    void say(String sessionId, SayRequestDTO request);
+    OpeningResult opening(String sessionId);
 
     /**
-     * 开场：让数字人主动说出本场景的开场白（脚本轨，不经过 LLM）。
+     * 处理用户语音，记录识别与发音评估结果并触发回复；评估失败时允许降级对话。
      *
-     * <b>幂等</b>：同一场会话只真正下发一次。重复调用返回
-     * {@code spoken=false / reason=already_spoken} 而不是报错 ——
-     * 客户端超时重试、用户连点两次都会走到这里，而重复开场会让数字人把
-     * 第一句话说两遍，代价不可撤销。
+     * @param sessionId    当前账号拥有的会话标识
+     * @param pcm          原始 PCM 音频字节
+     * @param sampleRate   音频采样率，单位为赫兹
+     * @param expectedText 可选的发音参考文本
+     * @return 本轮用户文本、回合标识及可用的发音评估
      */
-    OpeningResponseDTO opening(String sessionId);
+    ConversationTurnResultVO voice(String sessionId, byte[] pcm, int sampleRate, String expectedText);
 
     /**
-     * 语音上行（裸 PCM / s16le 单声道）。
-     *
-     * 返回值随配置 {@code spoken-ai.llm-owner} 走两条路：
-     * <ul>
-     *   <li>{@code agent}（默认）—— 上传音频 -> 上游只识别 -> 发音评测 -> 智能体生成回答，
-     *       返回 {@code text + turnId + assessment}；回答的字幕与播放状态走 SSE
-     *       （由上游 {@code /say} 的 subtitle / speech 事件驱动）；</li>
-     *   <li>{@code opentalking} —— 老链路（音频交上游一条龙），只返回 {@code text}。</li>
-     * </ul>
-     *
-     * @param expectedText 跟读题面；为空时用识别出的文本当评测参照（自由对话场景）
+     * 为已开启的跟读模式准备并播放首个示范。
      */
-    ConversationTurnResponseDTO voice(String sessionId, byte[] pcm, int sampleRate, String expectedText);
-
-    /** 按钮开启情境跟读：模型根据真实等级和场景生成首句，不创建虚构用户回合。 */
     void startGuidedReading(String sessionId);
 
-    /** 打断当前这句。 */
+    /**
+     * 打断当前回复，取消生成和播放，并清除未播出的待提交状态。
+     */
     void interrupt(String sessionId);
 
-    /** 关会话并释放上游资源。 */
+    /**
+     * 校验会话归属后关闭会话，取消生成与播放并释放连接和运行状态。
+     */
     void close(String sessionId);
 
-    /** 取本场会话的历史回合。 */
-    List<TurnResponseDTO> turns(String sessionId);
-
     /**
-     * SSE 事件流：流头一条当前状态，之后是上游事件 + 本地事件（stt.final / 打断回执）+ 15 秒心跳。
-     * 心跳有两个作用：顶住 Servlet 容器的 async 超时，以及让 App 判断链路还活着。
+     * 校验会话归属后提供业务事件流；会话关闭时结束，不包含传输协议心跳。
+     *
+     * @param sessionId 当前账号拥有的会话标识
+     * @return 会话状态、字幕和教学状态等业务事件
      */
-    Flux<ServerEventDTO> events(String sessionId);
+    Flux<ConversationEventVO> events(String sessionId);
 }

@@ -1,0 +1,148 @@
+package cn.adinall.ai.domain.coaching.teaching.service.reply;
+
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingTaskVO;
+
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+/**
+ * 功能：按数字人实际播报内容提交待完成任务，不把模型未说出的跟读指令记到会话里。
+ * <p>体系架构 / 运行过程：</p>
+ * <pre>planned task + completed spoken text -> verify target and invitation -> committed task</pre>
+ * <p>案例：计划 READ("Let's talk.")，实际只问“今天聊什么？” -> 提交 QUESTION。</p>
+ * <p>设计要点：</p>
+ * <ul><li>同一规则用于流式和整段播报的完成回调。</li>
+ * <li>无法确认用户听到了跟读要求时，不保留 READ/CORRECT 状态。</li></ul>
+ */
+public final class SpokenTaskResolver {
+    private static final Pattern QUESTION = Pattern.compile("[^.!?。！？]*[?？]");
+    /** 模型新生成的唯一英文跟读句，以引号界定，避免把中文解释当成目标。 */
+    private static final Pattern TARGET = Pattern.compile("[\"“]([A-Za-z][A-Za-z\\s’',.!?-]{0,179})[\"”]");
+
+    /** 禁止实例化，仅通过静态方法使用此工具类。 */
+    private SpokenTaskResolver() {
+    }
+
+    /**
+     * 使用本轮冻结的已播任务对照实际新任务，同一句被再次邀请时不能当成全新跟读清零。
+     * 教学建议是 RESPOND 也不例外：模型可能仍说“请再跟读”，必须保留连续重试次数。
+     * @param planned 本轮参考建议，不代表实际播报内容
+     * @param previous 本轮输入时冻结的旧任务，不能读取异步阶段已经变化的任务
+     * @param spoken 确认完成的实际播报正文；只提到例句而未邀请，不增加次数
+     * @return 实际待完成任务；同句次数封顶，换句从零开始，不对已播放正文作替换
+     */
+    public static TeachingTaskVO resolve(TeachingTaskVO planned, TeachingTaskVO previous, String spoken) {
+        TeachingTaskVO actual = resolve(planned, spoken);
+        if (!actual.reading() || previous == null || !previous.reading()
+                || !sameTarget(actual.target(), previous.target())) return actual;
+        int retries = Math.min(TeachingPolicy.MAX_READING_RETRIES,
+                Math.max(previous.attempts() + 1, actual.attempts()));
+        return new TeachingTaskVO(actual.action(), actual.target(), actual.question(), retries);
+    }
+
+    /** 忽略大小写、空白和标点差异，避免同一句换引号或问号就被误当成新句。 */
+    private static boolean sameTarget(String left, String right) {
+        return normalize(left).equals(normalize(right));
+    }
+
+    /** 统一跟读目标文本的空白与标点，便于比较已播内容。 */
+    private static String normalize(String target) {
+        return target == null ? "" : target.toLowerCase(Locale.ROOT).replace('’', '\'')
+                .replaceAll("[^a-z0-9']+", " ").trim();
+    }
+
+    /** 已播报文本同时含完整目标和跟读邀请时，才提交原跟读任务。 */
+    /* 例：“How are you?” 意思是你好吗。请跟读。
+     * 引号中的问号不是向用户提问，必须提交 READ；否则下一轮会被误当普通问答。
+     * 若模型只提到英文句、没有邀请跟读，则不会凭计划强行认定用户应该读它。
+     */
+    public static TeachingTaskVO resolve(TeachingTaskVO planned, String spoken) {
+        // 知识讲解里的问句/例句不是练习任务；解释完成后不留下强制待答问题或待跟读目标。
+        if (planned != null && planned.explaining()) return TeachingTaskVO.question("");
+        // 新跟读只由模型生成目标，播报完成后再保存实际说出的英文句。
+        if (planned != null && !planned.explaining() && (planned.target() == null || planned.target().isBlank()) && spoken != null) {
+            Matcher matcher = TARGET.matcher(spoken);
+            if (matcher.find()) {
+                String target = matcher.group(1).trim();
+                if (!matcher.find() && readingWasSpoken(spoken, target))
+                    return new TeachingTaskVO("READ", target, "", 0);
+            }
+        }
+        if (planned != null && planned.reading() && readingWasSpoken(spoken, planned.target())) return planned;
+        return TeachingTaskVO.question(lastQuestion(spoken));
+    }
+
+    /**
+     * 显式跟读模式已有服务端任务，不再从邀请用词或最后一个问号反推是否在聊天。
+     * 只解析唯一英文题面：允许常规数字标点和中英文双引号、中文单引号，同句重复引用合并。
+     * 普通聊天继续使用 resolve 的保守判断，避免把知识例句误登记为练习任务。
+     */
+    public static TeachingTaskVO resolveGuided(TeachingTaskVO planned, String spoken) {
+        String line = spoken == null ? "" : spoken;
+        if (declinesReading(line.toLowerCase(Locale.ROOT)))
+            throw new ReadingGenerationException(ReadingGenerationErrorEnum.READING_DECLINED);
+        Matcher matcher = Pattern.compile("[\"“]([^\"”\\r\\n]{1,180})[\"”]|‘([^‘’\\r\\n]{1,180})’").matcher(line);
+        ArrayList<String> targets = new java.util.ArrayList<String>();
+        while (matcher.find()) {
+            String target = (matcher.group(1) == null ? matcher.group(2) : matcher.group(1)).trim();
+            if (!target.matches("[A-Za-z0-9][A-Za-z0-9\\s’',.!?;:()\\-/…–—]*") || !target.matches("(?s).*[A-Za-z].*")) continue;
+            if (targets.stream().noneMatch(old -> GuidedReadingPolicy.sameTarget(old, target))) targets.add(target);
+        }
+        if (targets.isEmpty()) throw new ReadingGenerationException(ReadingGenerationErrorEnum.MISSING_TARGET);
+        if (targets.size() > 1) throw new ReadingGenerationException(ReadingGenerationErrorEnum.MULTIPLE_TARGETS);
+        return new TeachingTaskVO(planned.action(), targets.get(0), "", planned.attempts());
+    }
+
+    /** 显式任务缺少邀请措辞时可补一个邀请，不把自然问句误判成新聊天任务。 */
+    public static String ensureReadingInvitation(String spoken) {
+        return invitesReading(spoken.toLowerCase(Locale.ROOT)) ? spoken : spoken + " 你来试着读一读吧。";
+    }
+
+    /** 明确否定仍优先，不能通过放宽解析把“不用读”改成邀请；只识别教学指令而非目标内容。 */
+    private static boolean declinesReading(String line) {
+        String narration = line.replaceAll("\"[^\"]*\"|“[^”]*”|‘[^’]*’", "");
+        return narration.matches("(?s).*(?:不需要|不用|不必|无需|不要)(?:再|先|你|进行)?(?:跟读|重复|朗读|读).*" )
+                || narration.matches("(?s).*(?:don't|do not|no need to) (?:read|repeat).*" );
+    }
+
+    /** 提取已播文本中的最后一个有效问题。 */
+    public static String lastQuestion(String spoken) {
+        if (spoken == null) return "";
+        // 引号中的问句可能是跟读目标或中文译文，不能被提升为真实聊天问题。
+        // 例如 “How are you?” 意思是你好吗。请跟读。必须仍提交 READ，下一轮才有练习标记。
+        String questions = spoken.replaceAll("\"[^\"]*\"|“[^”]*”", "");
+        // 英文问句后解释“意思是：你准备好了吗？”仍是译意，不是下一轮等待回答的中文问题。
+        // 只消除带明确译意前缀的中文段；真实未加前缀的中文聊天问题仍可被正常提交。
+        questions = questions.replaceAll("(?:这句英文的意思是|这句话的意思是|中文意思是|意思是|中文是|也就是|是在问|表示)[：:\\s]*[\\p{IsHan}，、\\s]+[。！？.!?]?", "");
+        Matcher matcher = QUESTION.matcher(questions);
+        String last = "";
+        while (matcher.find()) last = matcher.group().trim();
+        return last;
+    }
+
+    /** 判断跟读目标是否确实出现在已播文本中。 */
+    private static boolean readingWasSpoken(String spoken, String target) {
+        if (spoken == null || target == null || target.isBlank()) return false;
+        String line = spoken.toLowerCase(Locale.ROOT).replace('’', '\'').replaceAll("\\s+", " ");
+        String phrase = target.toLowerCase(Locale.ROOT).replace('’', '\'')
+                .replaceAll("[.!?。！？]+$", "").replaceAll("\\s+", " ").trim();
+        if (phrase.isEmpty() || !line.contains(phrase)) return false;
+        // 模型只提到目标句还不算下达任务；另问一个聊天问题也不能记为跟读。
+        String question = lastQuestion(line);
+        return invitesReading(line) && (question.isEmpty() || invitesReading(question));
+    }
+
+    /** 明确的阅读邀请才产生任务；表达示例和“不用跟读”不能登记为跟读。 */
+    private static boolean invitesReading(String line) {
+        if (line.matches("(?s).*(?:不需要|不用|不必|无需|不要)(?:再|先|你|进行)?(?:跟读|重复|读).*")) return false;
+        if (line.matches("(?s).*(?:don't|do not|no need to) (?:read|repeat).*")) return false;
+        return line.contains("请朗读") || line.contains("朗读一下") || line.contains("跟着读") || line.contains("请跟读") || line.contains("请再跟读") || line.contains("跟我读") || line.contains("跟我念")
+                || line.contains("读一遍") || line.contains("请读") || line.contains("试着读") || line.contains("你来读")
+                || line.contains("跟读一次") || line.contains("跟读这") || line.contains("请重复")
+                || line.contains("repeat after") || line.contains("please repeat") || line.contains("please read")
+                || line.contains("read aloud") || line.contains("try reading") || line.contains("your turn");
+    }
+}

@@ -1,0 +1,165 @@
+package cn.adinall.ai.domain.coaching.teaching.model.aggregate;
+
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.ReadingModeVO;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingDecisionVO;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingPlaybackVO;
+import cn.adinall.ai.domain.coaching.teaching.service.reply.GuidedReadingPolicy;
+import cn.adinall.ai.domain.coaching.teaching.service.reply.ReadingGenerationException;
+import cn.adinall.ai.domain.coaching.teaching.service.reply.SpokenTaskResolver;
+
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingTaskVO;
+import cn.adinall.ai.domain.learning.model.valobj.EnglishLevelEnum;
+import java.time.Instant;
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+/**
+ * 功能：保存最近一轮陪练难度及上一项有效教学任务。
+ * <p>体系架构 / 运行过程：</p>
+ * <pre>initialize -> propose reply -> commit after media drain -> next input
+ * interrupt -> clear pending task (no assumed unheard question)</pre>
+ * <p>案例：生成了问题但中途被打断 -> pending 清空，不认定用户拒绝回答。</p>
+ * <p>设计要点：</p>
+ * <ul><li>自动能力升级仍在新会话计算；手动陪练难度可在下一轮刷新。</li><li>方法同步；旧轮次提交还需要外层 replyId 校验。</li></ul>
+ */
+public final class TeachingStateAggregate {
+    /** 已生成但尚未播完的教学计划；有效任务仍由 pending 表示。 */
+    private TeachingPlaybackVO playback;
+
+    /** 登记待播计划，调用方需在会话锁内绑定当前 replyId。 */
+    public synchronized void pendingPlayback(TeachingPlaybackVO reply) {
+        playback = reply;
+    }
+
+    /** 读取待播计划用于归档与回复归属校验，不表示用户已经听到。 */
+    public synchronized TeachingPlaybackVO pendingPlayback() {
+        return playback;
+    }
+
+    /** 在必需上下文预算内保留近期八句，避免开关切换或历史裁剪导致立即重复。 */
+    private static final int MAX_RECENT_TARGETS = 8;
+    /** 用户主动选择的情境跟读状态，只存于当前业务会话，不从模型历史推断。 */
+    private boolean guidedReading;
+    /** 近期已播出的模型生成目标，最多八句；开关切换不清空，以免本场反复打开就重复首句。 */
+    private final java.util.Deque<String> recentReadingTargets = new java.util.ArrayDeque<>();
+    /** 单调快照版本，防止手机用迟到 HTTP 响应覆盖新 SSE 状态。 */
+    private long readingVersion;
+
+    /** 显式开关具有幂等性；变更清空旧任务，防止普通聊天字幕误成为题面。 */
+    public synchronized boolean guidedReading(boolean enabled) {
+        if (guidedReading == enabled) return false;
+        guidedReading = enabled;
+        pending = TeachingTaskVO.response();
+        readingVersion++;
+        return true;
+    }
+    /** 读取当前会话是否开启情境跟读。 */
+    public synchronized boolean guidedReading() { return guidedReading; }
+    /** 返回不可变的近期目标快照，作为每轮必需数据；未播完的模型草稿不会进入。 */
+    public synchronized java.util.List<String> recentReadingTargets() { return java.util.List.copyOf(recentReadingTargets); }
+
+    /** 已播任务快照；尚无任务时不把首次待播文本或整段讲解暴露成目标。 */
+    public synchronized ReadingModeVO readingMode() {
+        return new ReadingModeVO(guidedReading,
+                guidedReading && pending.reading() ? pending.target() : "", pending.reading() ? pending.attempts() : 0,
+                GuidedReadingPolicy.MAX_CORRECTIONS, readingVersion);
+    }
+
+    /**
+     * 所有播报完成路径统一提交任务；情境模式次数由已冻结的服务端计划决定。
+     * 不再经过普通聊天的两次建议计数器，避免三次纠音被重置或重复回调多加一次。
+     */
+    public synchronized void commitSpoken(TeachingDecisionVO decision, String text) {
+        if (!guidedReading) {
+            commit(SpokenTaskResolver.resolve(decision.nextTask(), decision.previousTask(), text));
+            return;
+        }
+        // 跟读计划来自服务端；完成提交与播前校验使用相同的唯一目标解析，不能再按问号猜状态。
+        TeachingTaskVO actual;
+        try {
+            actual = decision.nextTask().reading()
+                    ? SpokenTaskResolver.resolveGuided(decision.nextTask(), text)
+                    : SpokenTaskResolver.resolve(TeachingTaskVO.response(), text);
+        } catch (ReadingGenerationException invalid) {
+            return; // 不接受未经校验或格式失真的迟到完成内容，保留既有任务。
+        }
+        if (!actual.reading()) { commit(actual); return; }
+        String planned = decision.nextTask().target();
+        boolean newSentence = decision.nextTask().reading() && (planned == null || planned.isBlank());
+        if (newSentence) {
+            // 同一回复可能收到流式/媒体两次完成；仅相同已提交任务允许幂等确认，旧句不得重用。
+            boolean duplicate = recentReadingTargets.stream().anyMatch(old ->
+                    GuidedReadingPolicy.sameTarget(old, actual.target()));
+            if (duplicate) return;
+            recentReadingTargets.addLast(actual.target());
+            if (recentReadingTargets.size() > MAX_RECENT_TARGETS) recentReadingTargets.removeFirst();
+            commit(new TeachingTaskVO(actual.action(), actual.target(), "", 0));
+        } else if (decision.nextTask().reading() &&
+                GuidedReadingPolicy.sameTarget(planned, actual.target())) {
+            // 纠音次数来自服务端计划，不让模型重置；重复完成也不会再加一次。
+            commit(new TeachingTaskVO(decision.nextTask().action(), actual.target(), "", decision.nextTask().attempts()));
+        } else commit(actual);
+    }
+    /** 仅提取明确学习诉求作为引用数据，不借此决定模型动作或学习等级。 */
+    private static final Pattern LEARNING_REQUEST = Pattern.compile(
+            "(?s).*(我(?:现在|今天)?想(?:学|练)|我(?:现在|今天)?要学|教我|i (?:want|would like) to (?:learn|study|practice)|i'd like to (?:learn|study|practice)).*");
+    /** 当前会话的学习请求原话；不是长期偏好，不跨会话共享。为空表示没有固定学习目标。 */
+    private String learningRequest = "";
+    /** 最后一次检查请求的输入时间，防止旧异步轮次覆盖新的学习要求。 */
+    private Instant learningRequestAt = Instant.MIN;
+
+    /** 本会话最近一轮使用的陪练难度；与自动能力评估分开，手动设置可在轮次边界刷新。 */
+    private EnglishLevelEnum level;
+    /** 上一轮完整播报后等待用户完成的任务。 */
+    private TeachingTaskVO pending = TeachingTaskVO.question("");
+    /** 初始化教学状态，返回生效的学习档位。 */
+    public synchronized EnglishLevelEnum initialize(EnglishLevelEnum initial) {
+        if (level == null) level = initial;
+        return level;
+    }
+    /**
+     * 在下一轮开始时刷新陪练难度，不修改已播目标、纠音次数或跟读版本。
+     * 已生成的 TeachingDecisionVO 持有自己的不可变档位，因此不会改动进行中的播报。
+     * @param selected learner 领域读取的有效档位；null 表示保留已确认值
+     * @return 当前有效档位，首次缺值时使用 L2
+     */
+    public synchronized EnglishLevelEnum refreshLevel(EnglishLevelEnum selected) {
+        if (selected != null) level = selected;
+        if (level == null) level = EnglishLevelEnum.L2;
+        return level;
+    }
+    /**
+     * 保存明确学习请求的完整原话供下一轮引用；实际教学意图仍交给模型解释。
+     * 跟读/角色素材不保存；明确改学另一内容时新原话替代旧原话，明确结束学习时清空。
+     * 超长原话显式拒绝，不截成可能失真的半句；调用方应在组装预算前执行。
+     */
+    public synchronized void captureLearningRequest(String text, boolean practiceInput, Instant inputAt) {
+        if (practiceInput || text == null || inputAt.isBefore(learningRequestAt)) return;
+        learningRequestAt = inputAt;
+        String value = text.trim().toLowerCase(Locale.ROOT);
+        if (value.matches("(?s).*[\"“”‘’].*")) return;
+        if (LEARNING_REQUEST.matcher(value).matches()) {
+            if (text.length() > 2048) throw new IllegalArgumentException("learning_request_too_large");
+            learningRequest = text.trim();
+        } else if (value.matches("(?s)^(?:我|今天|现在|先)?(?:不想学|不学了|先不学|不练了|换个话题|随便聊|自由聊).*")) {
+            learningRequest = "";
+        }
+    }
+    /** 返回当前学习请求原话，调用方放 USER 必需段，不提升为 SYSTEM 指令。 */
+    public synchronized String learningRequest() { return learningRequest; }
+
+    /** 读取上一项已生效的教学任务。 */
+    public synchronized TeachingTaskVO pending() { return pending; }
+    /** 读取主体或会话当前生效的学习档位。 */
+    public synchronized EnglishLevelEnum level() { return level; }
+    /** 提交已经实际播出的教学任务。 */
+    public synchronized void commit(TeachingTaskVO task) {
+        if (!java.util.Objects.equals(pending, task)) readingVersion++;
+        pending = task;
+    }
+    /** 不能认为被打断回复中的新任务已经被用户听到。 */
+    public synchronized void interrupt() {
+        playback = null;
+        commit(TeachingTaskVO.question(""));
+    }
+}

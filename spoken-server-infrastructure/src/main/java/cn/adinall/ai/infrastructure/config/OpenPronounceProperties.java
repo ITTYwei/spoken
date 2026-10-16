@@ -89,58 +89,72 @@ public class OpenPronounceProperties {
     /** 只暴露这些语言给 App；留空表示全部暴露。 */
     private List<String> exposeLanguages = new ArrayList<>();
 
+    /** 读取提供方服务地址。 */
     public String getBaseUrl() {
         return baseUrl;
     }
 
+    /** 设置提供方服务地址。 */
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
     }
 
+    /** 读取默认语言。 */
     public String getDefaultLang() {
         return defaultLang;
     }
 
+    /** 设置默认语言。 */
     public void setDefaultLang(String defaultLang) {
         this.defaultLang = defaultLang;
     }
 
+    /** 读取连接超时（毫秒）。 */
     public int getConnectTimeoutMs() {
         return connectTimeoutMs;
     }
 
+    /** 设置连接超时（毫秒）。 */
     public void setConnectTimeoutMs(int connectTimeoutMs) {
         this.connectTimeoutMs = connectTimeoutMs;
     }
 
+    /** 读取请求超时（毫秒）。 */
     public int getRequestTimeoutMs() {
         return requestTimeoutMs;
     }
 
+    /** 设置请求超时（毫秒）。 */
     public void setRequestTimeoutMs(int requestTimeoutMs) {
         this.requestTimeoutMs = requestTimeoutMs;
     }
 
+    /** 读取评估超时（毫秒）。 */
     public int getAssessTimeoutMs() {
         return assessTimeoutMs;
     }
 
+    /** 设置评估超时（毫秒）。 */
     public void setAssessTimeoutMs(int assessTimeoutMs) {
         this.assessTimeoutMs = assessTimeoutMs;
     }
 
+    /** 读取允许上传的最大音频字节数。 */
     public int getMaxAudioBytes() {
         return maxAudioBytes;
     }
 
+    /** 设置允许上传的最大音频字节数。 */
     public void setMaxAudioBytes(int maxAudioBytes) {
         this.maxAudioBytes = maxAudioBytes;
     }
 
+    /** 读取对外开放的语言列表。 */
     public List<String> getExposeLanguages() {
         return exposeLanguages;
     }
 
+    /** 设置对外开放的语言列表。 */
     public void setExposeLanguages(List<String> exposeLanguages) {
         this.exposeLanguages = exposeLanguages;
     }

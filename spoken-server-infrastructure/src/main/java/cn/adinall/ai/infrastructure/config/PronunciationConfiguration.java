@@ -1,6 +1,6 @@
 package cn.adinall.ai.infrastructure.config;
 
-import cn.adinall.ai.domain.pronunciation.adapter.port.IPronunciationPort;
+import cn.adinall.ai.domain.assessment.pronunciation.adapter.port.IPronunciationPort;
 import cn.adinall.ai.infrastructure.adapter.port.OpenPronouncePronunciationAdapter;
 import cn.adinall.ai.infrastructure.gateway.OpenPronounceGateway;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

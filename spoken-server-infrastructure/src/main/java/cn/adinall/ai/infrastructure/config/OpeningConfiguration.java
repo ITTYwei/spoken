@@ -28,14 +28,17 @@ import java.time.Clock;
 @Configuration(proxyBeanMethods = false)
 @org.springframework.boot.context.properties.EnableConfigurationProperties(OpeningAvatarProperties.class)
 public class OpeningConfiguration {
+    /** 组装开场使用的形象配置。 */
     @Bean
-    public cn.adinall.ai.domain.conversation.adapter.port.IOpeningAvatarPort openingAvatar(
+    public cn.adinall.ai.domain.coaching.conversation.adapter.port.IOpeningAvatarPort openingAvatar(
             OpeningAvatarProperties properties,
             @org.springframework.beans.factory.annotation.Value("${spoken-ai.provider.opentalking.default-avatar-id:anchor}") String defaultId) {
         return new cn.adinall.ai.infrastructure.adapter.port.ConfiguredOpeningAvatarAdapter(properties,defaultId);
     }
+    /** 提供开场日期与时间计算使用的时钟。 */
     @Bean @ConditionalOnMissingBean(Clock.class)
     public Clock openingClock() { return Clock.systemUTC(); }
+    /** 提供开场身份解析端口实现。 */
     @Bean @ConditionalOnMissingBean(IOpeningIdentityPort.class)
     public IOpeningIdentityPort openingIdentity() { return new GuestOpeningIdentityAdapter(); }
 }

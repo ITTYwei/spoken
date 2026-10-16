@@ -29,9 +29,11 @@ public record OpeningSubjectVO(
         /** 练习日期使用的学员时区。 */
         ZoneId timezone
 ) {
+    /** 创建 {@code OpeningSubjectVO}，初始化其依赖与状态。 */
     public OpeningSubjectVO {
         if (deviceId == null || deviceId.isBlank()) throw new IllegalArgumentException("deviceId required");
         timezone = timezone == null ? ZoneId.of("Asia/Shanghai") : timezone;
     }
+    /** 返回用于开场轮换的稳定主体键。 */
     public String rotationKey() { return userId == null ? "device:" + deviceId : "user:" + userId; }
 }

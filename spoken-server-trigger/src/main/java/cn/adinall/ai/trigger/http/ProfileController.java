@@ -1,8 +1,8 @@
 package cn.adinall.ai.trigger.http;
 
-import cn.adinall.ai.domain.account.model.valobj.AccountOverviewVO;
+import cn.adinall.ai.domain.identity.model.valobj.AccountOverviewVO;
 
-import cn.adinall.ai.domain.account.service.IProfileService;
+import cn.adinall.ai.cases.overview.IProfileService;
 import org.springframework.web.bind.annotation.*;
 
 /** “我的”页面接口，不接受userId参数；账号归属来自认证上下文。 */
@@ -10,18 +10,22 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/me")
 public class ProfileController {
     private final IProfileService profiles;
+    /** 创建 {@code ProfileController}，初始化其依赖与状态。 */
     public ProfileController(IProfileService profiles) { this.profiles = profiles; }
     public record Nickname(String nickname) { }
     public record Display(boolean subtitles, String translation) { }
     public record Fact(String key, String type, String content) { }
+    /** 读取当前登录账号的个人信息与学习概况。 */
     @GetMapping public AccountOverviewVO me() { return profiles.me(); }
     /** 保存后返回完整资料，客户端不需要猜测服务器最终状态。 */
     @PatchMapping("/nickname") public AccountOverviewVO nickname(@RequestBody Nickname request) {
         profiles.nickname(request.nickname()); return profiles.me();
     }
+    /** 更新字幕显示和翻译偏好。 */
     @PutMapping("/display") public AccountOverviewVO display(@RequestBody Display request) {
         profiles.display(request.subtitles(), request.translation()); return profiles.me();
     }
+    /** 保存当前账号明确提交的个人事实。 */
     @PutMapping("/preferences") public AccountOverviewVO preference(@RequestBody Fact request) {
         profiles.fact(request.key(), request.type(), request.content()); return profiles.me();
     }

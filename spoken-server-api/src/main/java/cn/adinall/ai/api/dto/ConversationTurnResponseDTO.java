@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *   POST /api/v1/sessions/{id}/voice  （octet-stream：AEC 后的裸 PCM）
  *        |
  *        v
- *   SessionController.voice(...) -> PronunciationController 无关，走 ConversationCase
+ *   SessionController.voice(...) -> ConversationCaseImpl.voice(...)
  *        |
  *        | spoken-ai.llm-owner=agent      -> converseTurn（识别+评测+agent）
  *        | spoken-ai.llm-owner=opentalking -> transcribeAndRecord（老链路，assessment=null）
@@ -35,9 +35,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * </pre>
  * 设计要点：
  * <ul>
- *   <li>assessment 是**完整**结果（含韵律曲线与音素向量），与
- *       GET /api/v1/sessions/{id}/pronunciation 那条评测接口的响应同源同形 ——
- *       它们都是 PronunciationAssembler.toResponse(...) 的产物，App 只写一套解析。</li>
+ *   <li>assessment 是完整结果（含韵律曲线与音素向量），由语音主链路的
+ *       PronunciationAssembler.toResponse(...) 统一映射，客户端无需追加独立评测请求。</li>
  *   <li>@JsonInclude(NON_NULL)：老链路（或评测失败）时 turnId / assessment 键直接不下发，
  *       老客户端按 text 解析不受影响，新客户端按 presence 判断走不走评测分支。</li>
  *   <li>这是对既有 /voice 响应形状的**向后兼容扩充**：原契约只有 text，

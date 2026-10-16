@@ -1,14 +1,14 @@
 package cn.adinall.ai.infrastructure.adapter.port;
 
-import cn.adinall.ai.domain.pronunciation.adapter.port.IPronunciationPort;
-import cn.adinall.ai.domain.pronunciation.model.entity.AssessPronunciationCommandEntity;
-import cn.adinall.ai.domain.pronunciation.model.valobj.PhonemesVO;
-import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationErrorVO;
-import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationLanguageVO;
-import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationLanguagesVO;
-import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationPhoneVO;
-import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationProsodyVO;
-import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationResultVO;
+import cn.adinall.ai.domain.assessment.pronunciation.adapter.port.IPronunciationPort;
+import cn.adinall.ai.domain.assessment.pronunciation.model.entity.AssessPronunciationCommandEntity;
+import cn.adinall.ai.domain.assessment.pronunciation.model.valobj.PhonemesVO;
+import cn.adinall.ai.domain.assessment.pronunciation.model.valobj.PronunciationErrorVO;
+import cn.adinall.ai.domain.assessment.pronunciation.model.valobj.PronunciationLanguageVO;
+import cn.adinall.ai.domain.assessment.pronunciation.model.valobj.PronunciationLanguagesVO;
+import cn.adinall.ai.domain.assessment.pronunciation.model.valobj.PronunciationPhoneVO;
+import cn.adinall.ai.domain.assessment.pronunciation.model.valobj.PronunciationProsodyVO;
+import cn.adinall.ai.domain.assessment.pronunciation.model.valobj.PronunciationResultVO;
 import cn.adinall.ai.infrastructure.config.OpenPronounceProperties;
 import cn.adinall.ai.infrastructure.gateway.OpenPronounceGateway;
 import cn.adinall.ai.types.enums.ResponseCodeEnum;
@@ -89,11 +89,13 @@ public class OpenPronouncePronunciationAdapter implements IPronunciationPort {
     private final OpenPronounceGateway gateway;
     private final OpenPronounceProperties props;
 
+    /** 创建 {@code OpenPronouncePronunciationAdapter}，初始化其依赖与状态。 */
     public OpenPronouncePronunciationAdapter(OpenPronounceGateway gateway, OpenPronounceProperties props) {
         this.gateway = gateway;
         this.props = props;
     }
 
+    /** 返回发音评估提供方标识。 */
     @Override
     public String id() {
         return "openpronounce";
@@ -101,6 +103,7 @@ public class OpenPronouncePronunciationAdapter implements IPronunciationPort {
 
     // ---------------------------------------------------------------- 评测
 
+    /** 评估音频的发音表现并返回结构化结果。 */
     @Override
     public PronunciationResultVO assess(AssessPronunciationCommandEntity command) {
         String lang = langOrDefault(command.lang());
@@ -192,6 +195,7 @@ public class OpenPronouncePronunciationAdapter implements IPronunciationPort {
 
     // ---------------------------------------------------------------- 附属能力
 
+    /** 识别输入音频并返回语音转写结果。 */
     @Override
     public String transcribe(byte[] audio, String filename, String contentType, String lang) {
         JsonNode root = gateway.speech2text(audio, filename, langOrDefault(lang));
@@ -205,17 +209,20 @@ public class OpenPronouncePronunciationAdapter implements IPronunciationPort {
         return transcript;
     }
 
+    /** 将指定语言的文本转换为音素序列。 */
     @Override
     public PhonemesVO phonemes(String text, String lang) {
         JsonNode root = gateway.phonemes(text, langOrDefault(lang));
         return new PhonemesVO(strList(root, "words"), strList(root, "phonemes"));
     }
 
+    /** 按指定语言或音色将文本转换为语音。 */
     @Override
     public byte[] synthesize(String text, String lang) {
         return gateway.tts(text, langOrDefault(lang));
     }
 
+    /** 查询提供方支持的语言。 */
     @Override
     public PronunciationLanguagesVO languages() {
         JsonNode root = gateway.languages();
@@ -236,6 +243,7 @@ public class OpenPronouncePronunciationAdapter implements IPronunciationPort {
         return new PronunciationLanguagesVO(text(root, "default"), filterExposed(all));
     }
 
+    /** 检查提供方健康状态。 */
     @Override
     public boolean healthy() {
         return gateway.health();
@@ -263,10 +271,12 @@ public class OpenPronouncePronunciationAdapter implements IPronunciationPort {
         return filtered;
     }
 
+    /** 优先返回第一个非空值，否则返回备用值。 */
     private static <T> T firstNonNull(T first, T second) {
         return first != null ? first : second;
     }
 
+    /** 读取指定 JSON 字段的文本值。 */
     private static String text(JsonNode node, String name) {
         JsonNode v = node == null ? null : node.get(name);
         if (v == null || v.isNull() || !v.isValueNode()) {
@@ -275,6 +285,7 @@ public class OpenPronouncePronunciationAdapter implements IPronunciationPort {
         return v.asText();
     }
 
+    /** 读取指定 JSON 字段的双精度数值。 */
     private static Double dbl(JsonNode node, String name) {
         JsonNode v = node == null ? null : node.get(name);
         if (v == null || v.isNull() || !v.isNumber()) {
@@ -283,6 +294,7 @@ public class OpenPronouncePronunciationAdapter implements IPronunciationPort {
         return v.asDouble();
     }
 
+    /** 读取指定 JSON 字段的整数值。 */
     private static Integer intv(JsonNode node, String name) {
         JsonNode v = node == null ? null : node.get(name);
         if (v == null || v.isNull() || !v.isNumber()) {
@@ -291,6 +303,7 @@ public class OpenPronouncePronunciationAdapter implements IPronunciationPort {
         return v.asInt();
     }
 
+    /** 将指定 JSON 数组转换为字符串列表。 */
     private static List<String> strList(JsonNode node, String name) {
         JsonNode v = node == null ? null : node.get(name);
         if (v == null || !v.isArray()) {
@@ -303,6 +316,7 @@ public class OpenPronouncePronunciationAdapter implements IPronunciationPort {
         return result;
     }
 
+    /** 将指定 JSON 数组转换为数值列表。 */
     private static List<Double> dblList(JsonNode node, String name) {
         JsonNode v = node == null ? null : node.get(name);
         if (v == null || !v.isArray()) {
@@ -315,6 +329,7 @@ public class OpenPronouncePronunciationAdapter implements IPronunciationPort {
         return result;
     }
 
+    /** 将指定 JSON 二维数组转换为字符串列表集合。 */
     private static List<List<String>> strListList(JsonNode node, String name) {
         JsonNode v = node == null ? null : node.get(name);
         if (v == null || !v.isArray()) {

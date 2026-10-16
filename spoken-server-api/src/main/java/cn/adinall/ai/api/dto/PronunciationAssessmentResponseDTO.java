@@ -5,13 +5,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 
 /**
- * 一次跟读评测的完整结果（POST /api/v1/sessions/{sessionId}/pronunciation 的响应）
+ * 语音主链路中一次跟读评测的完整结果（/voice 响应中的 assessment 字段）
  * <p>
  * 功能：把「这次跟读得了多少分、哪里念错了、音调什么样」一次给全，App 拿到就能直接渲染结果页。
  * 前半段（assessmentId..createdAt）是我方元数据，后半段是评测结果本身。
  * record 的组件名就是 JSON 字段名。
  * <pre>
- *   assessmentId          评测记录 id（库里的自增主键）；App 拿它做记录列表 key
+ *   assessmentId          评测记录 id（库里的自增主键）；用于关联持久评测记录
  *   sessionId             所属会话
  *   turnId                所属回合；可为 null（这次跟读没挂回合）
  *   expectedText          本次跟读的题面
@@ -42,17 +42,14 @@ import java.util.List;
  * </pre>
  * 运行过程：
  * <pre>
- *   POST /api/v1/sessions/s-001/pronunciation   (multipart: file + expectedText + lang + turnId)
+ *   POST /api/v1/sessions/s-001/voice  (application/octet-stream audio)
  *        |
  *        v
- *   PronunciationController.assess(...)
+ *   SessionController.voice(...) -> ConversationCaseImpl.voice(...)
  *        |
- *        v
- *   PronunciationCaseImpl.assess(...)
- *        |
- *        | (1) conversationService.requireSession(sessionId)   // 会话不存在 -> 404
- *        | (2) pronunciationService.assess(...)                // 评测 + 落库，回填 assessmentId
- *        | (3) PronunciationAssembler.toResponse(assessment)   // 领域聚合 -> 本 DTO
+ *        | (1) requireSession + trusted teaching context
+ *        | (2) pronunciationService.assess(...) -> persisted assessment
+ *        | (3) PronunciationAssembler.toResponse(assessment)
  *        v
  *   {"assessmentId":1,"sessionId":"s-001","turnId":null,"expectedText":"Hello, how are you?",
  *    "lang":"en","latencyMs":192,"score":86.67,"transcribe":"HELLO HOW ARE YOU",

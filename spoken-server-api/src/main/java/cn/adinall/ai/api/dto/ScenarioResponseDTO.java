@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *   openingLine       数字人主动说的第一句话；为空表示该场景不自动开场
  *   voice             该场景的默认 TTS 音色（Edge TTS voice 名）；为空表示用后端默认音色
  * </pre>
- * 运行过程：
+ * 体系架构 / 运行过程：
  * <pre>
  *   GET /api/v1/catalog/scenarios
  *        |
@@ -25,13 +25,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *   CatalogController.scenarios()
  *        |
  *        v
- *   CatalogCaseImpl.listScenarios()
+ *   IScenarioRepository.listAll()
  *        |
- *        | (1) scenarioRepository.listAll() --> List&lt;ScenarioVO&gt;
- *        |        （默认实现 InMemoryScenarioRepository 里写死了 free / interview 两个场景）
- *        | (2) new ScenarioResponseDTO(id, title, goal, systemPromptHint, level, openingLine, voice)
  *        v
- *   [ {"id":"interview","title":"英文面试","level":"intermediate", ...} ]
+ *   CatalogResponseAssembler.scenario(...) -> ScenarioResponseDTO -> JSON
  * </pre>
  * 案例：
  * <pre>

@@ -1,7 +1,7 @@
 package cn.adinall.ai.infrastructure.adapter.repository;
 
-import cn.adinall.ai.domain.scenario.adapter.repository.IScenarioRepository;
-import cn.adinall.ai.domain.scenario.model.valobj.ScenarioVO;
+import cn.adinall.ai.domain.content.adapter.repository.IScenarioRepository;
+import cn.adinall.ai.domain.content.model.valobj.ScenarioVO;
 
 import java.util.List;
 
@@ -24,6 +24,7 @@ public class InMemoryScenarioRepository implements IScenarioRepository {
             new ScenarioVO("interview", "英文面试", "练习自我介绍与常见面试问题", null,
                     "intermediate", "嗨，又见面啦！今天有什么想聊的，或者想练的？", "Ethan"));
 
+    /** 读取全部可用场景配置。 */
     @Override
     public List<ScenarioVO> listAll() {
         return SCENARIOS;

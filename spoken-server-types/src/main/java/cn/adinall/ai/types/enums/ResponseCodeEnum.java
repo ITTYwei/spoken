@@ -101,6 +101,7 @@ public enum ResponseCodeEnum {
     private final String code;
     private final String message;
 
+    /** 创建 {@code ResponseCodeEnum}，初始化其依赖与状态。 */
     ResponseCodeEnum(String code, String message) {
         this.code = code;
         this.message = message;

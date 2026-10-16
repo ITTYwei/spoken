@@ -4,7 +4,6 @@ import cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.List;
 
 /**
  * conversation_turn 表的 MyBatis DAO（一问一答的落库与读取）
@@ -13,7 +12,6 @@ import java.util.List;
  * <pre>
  *   insert(turnPO)                   插一条回合；useGeneratedKeys 把自增主键回填到 turnPO.id
  *   selectById(id)                   按自增主键查单条
- *   selectBySessionIdOrderBySeqAsc(sessionId)  按会话查全部，seq 升序（/turns 恢复整段聊天记录）
  *   selectLastBySessionId(sessionId) 取 seq 最大的一条（算下一个 seq / 回填数字人回复）
  *   updateAssistant(turnPO)          把 assistant_text 与 latency_ms 写到指定 id 上
  * </pre>
@@ -24,7 +22,6 @@ import java.util.List;
  *        +--> append()               -> insert()                        自增 id 回填
  *        +--> updateAssistantText()  -> updateAssistant()
  *        +--> findById()             -> selectById()
- *        +--> listBySessionId()      -> selectBySessionIdOrderBySeqAsc()
  *        +--> findLastBySessionId()  -> selectLastBySessionId()
  *        |
  *        v
@@ -82,9 +79,6 @@ public interface IConversationTurnDao {
 
     /** 按自增主键查单条回合。 */
     ConversationTurnPO selectById(@Param("id") Long id);
-
-    /** 按会话查全部回合并按 seq 升序返回，用于 /turns 接口恢复整段聊天记录。 */
-    List<ConversationTurnPO> selectBySessionIdOrderBySeqAsc(@Param("sessionId") String sessionId);
 
     /**
      * 取该会话 seq 最大的那条回合。

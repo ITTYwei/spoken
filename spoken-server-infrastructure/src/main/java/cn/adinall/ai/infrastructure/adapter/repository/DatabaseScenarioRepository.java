@@ -1,7 +1,7 @@
 package cn.adinall.ai.infrastructure.adapter.repository;
 
-import cn.adinall.ai.domain.scenario.adapter.repository.IScenarioRepository;
-import cn.adinall.ai.domain.scenario.model.valobj.ScenarioVO;
+import cn.adinall.ai.domain.content.adapter.repository.IScenarioRepository;
+import cn.adinall.ai.domain.content.model.valobj.ScenarioVO;
 import cn.adinall.ai.infrastructure.dao.IOpeningFactsDao;
 import cn.adinall.ai.infrastructure.dao.po.OpeningScenarioPO;
 import org.springframework.stereotype.Repository;
@@ -31,15 +31,18 @@ import java.util.List;
 public class DatabaseScenarioRepository implements IScenarioRepository {
     private final IOpeningFactsDao dao;
 
+    /** 创建 {@code DatabaseScenarioRepository}，初始化其依赖与状态。 */
     public DatabaseScenarioRepository(IOpeningFactsDao dao) {
         this.dao = dao;
     }
 
+    /** 读取全部可用场景配置。 */
     public List<ScenarioVO> listAll() {
 
         return dao.scenarios().stream().map(DatabaseScenarioRepository::toVO).toList();
     }
 
+    /** 按场景标识读取配置，缺失时拒绝创建无效场景会话。 */
     public ScenarioVO findById(String id) {
         List<ScenarioVO> scenarios = listAll();
         return scenarios.stream().filter(s -> s.id().equals(id)).findFirst()
@@ -47,6 +50,7 @@ public class DatabaseScenarioRepository implements IScenarioRepository {
                         .orElseThrow(() -> new IllegalStateException("official free scenario missing")));
     }
 
+    /** 将场景数据库记录转换为领域值对象。 */
     private static ScenarioVO toVO(OpeningScenarioPO p) {
         return new ScenarioVO(p.getScenarioCode(), p.getTitle(), p.getGoal(), p.getPersonaPrompt(),
                 p.getLevelHint(), p.getOpeningLine(), p.getVoice(), p.getOpeningLineLow(), p.getOpeningLineMid(), p.getOpeningLineHigh());

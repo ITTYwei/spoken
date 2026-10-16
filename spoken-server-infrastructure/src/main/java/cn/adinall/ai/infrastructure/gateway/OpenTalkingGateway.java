@@ -163,10 +163,10 @@ public class OpenTalkingGateway {
     /** 独立TTS试听的响应是二进制WAV，不能交给JSON响应解析器。 */
     public byte[] previewVoice(String provider, String voice, String text) {
         String body = writeJson(Map.of("tts_provider", provider, "voice", voice, "text", text));
-        var request = request("/tts/preview").header("Content-Type", "application/json")
+        HttpRequest request = request("/tts/preview").header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body)).build();
         try {
-            var response = http.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            HttpResponse<byte[]> response = http.send(request, HttpResponse.BodyHandlers.ofByteArray());
             if (response.statusCode() != 200 || response.body().length < 44)
                 throw new AppException(ResponseCodeEnum.PROVIDER_UNAVAILABLE, "音色试听暂时不可用");
             return response.body();
@@ -365,6 +365,7 @@ public class OpenTalkingGateway {
         return text;
     }
 
+    /** 将 PCM 音频封装为 WAV，采样率沿用调用方提供的值。 */
     private static byte[] pcmToWav(byte[] pcm, int sampleRate) {
         ByteBuffer header = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN);
         header.put(new byte[]{'R', 'I', 'F', 'F'});
@@ -394,6 +395,7 @@ public class OpenTalkingGateway {
         return text.getBytes(StandardCharsets.UTF_8);
     }
 
+    /** 将 WAV 音频编码为多部分表单中的文件内容。 */
     private static byte[] multipartFile(String boundary, byte[] wav) {
         try {
             ByteArrayOutputStream body = new ByteArrayOutputStream(wav.length + 256);

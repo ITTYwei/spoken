@@ -1,8 +1,8 @@
 package cn.adinall.ai.infrastructure.adapter.port;
 
-import cn.adinall.ai.domain.conversation.adapter.port.IOpeningAvatarPort;
+import cn.adinall.ai.domain.coaching.conversation.adapter.port.IOpeningAvatarPort;
 import cn.adinall.ai.infrastructure.config.OpeningAvatarProperties;
-import cn.adinall.ai.domain.conversation.service.opening.OpeningTextPolicy;
+import cn.adinall.ai.domain.coaching.conversation.service.opening.OpeningTextPolicy;
 
 /**
  * 功能：解析与当前选择绑定的名称，未指定形象时沿用驱动的默认形象。
@@ -15,8 +15,11 @@ import cn.adinall.ai.domain.conversation.service.opening.OpeningTextPolicy;
 public class ConfiguredOpeningAvatarAdapter implements IOpeningAvatarPort {
     /** 明确配置的名称映射。 */ private final OpeningAvatarProperties properties;
     /** 与数字人驱动相同的默认形象。 */ private final String defaultId;
+    /** 创建 {@code ConfiguredOpeningAvatarAdapter}，初始化其依赖与状态。 */
     public ConfiguredOpeningAvatarAdapter(OpeningAvatarProperties properties,String defaultId) { this.properties=properties; this.defaultId=defaultId; }
+    /** 解析请求中的形象标识，未指定时使用配置的默认形象。 */
     public String effectiveId(String requested) { return requested==null || requested.isBlank() ? defaultId : requested.trim(); }
+    /** 查询数字人形象的展示名称。 */
     public String name(String avatarId) {
         String name=properties.getAvatarNames().get(avatarId);
         return name!=null && name.length()<=32 && OpeningTextPolicy.safeMaterial(name)

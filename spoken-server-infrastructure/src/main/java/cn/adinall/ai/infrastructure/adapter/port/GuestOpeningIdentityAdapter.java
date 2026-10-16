@@ -1,5 +1,7 @@
 package cn.adinall.ai.infrastructure.adapter.port;
 
+import cn.adinall.ai.domain.identity.model.valobj.AccountPrincipalVO;
+
 import cn.adinall.ai.domain.identity.adapter.port.IOpeningIdentityPort;
 import cn.adinall.ai.domain.identity.model.valobj.OpeningSubjectVO;
 import java.time.ZoneId;
@@ -24,10 +26,11 @@ import java.time.ZoneId;
  * </ul>
  */
 public class GuestOpeningIdentityAdapter implements IOpeningIdentityPort {
+    /** 解析当前开场主体，区分账号身份与匿名设备。 */
     public OpeningSubjectVO currentSubject(String deviceId) {
         // HTTP入口已认证；领域测试和非HTTP内部调用仍可保留设备主体。
         // 不通过设备绑定表猜测登录人，防止共用手机串号。
-        var principal = cn.adinall.ai.domain.account.support.AccountContext.current();
+        AccountPrincipalVO principal = cn.adinall.ai.domain.identity.support.AccountContext.current();
         return new OpeningSubjectVO(deviceId, principal == null ? null : principal.id(), ZoneId.of("Asia/Shanghai"));
     }
 }

@@ -19,13 +19,6 @@
         where id = #{id}
     </select>
 
-    <select id="selectBySessionIdOrderBySeqAsc" resultType="cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO">
-        select id, session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at, updated_at
-        from conversation_turn
-        where session_id = #{sessionId}
-        order by seq asc
-    </select>
-
     <select id="selectLastBySessionId" resultType="cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO">
         select id, session_id, seq, user_text, assistant_text, audio_path, latency_ms, created_at, updated_at
         from conversation_turn

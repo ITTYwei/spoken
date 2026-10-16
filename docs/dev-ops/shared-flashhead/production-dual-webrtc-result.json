@@ -1,0 +1,214 @@
+{
+  "port": 8001,
+  "clients": [
+    {
+      "sid": "sess_3d552d654e51",
+      "video": 353,
+      "audio": 280,
+      "audio_peak": 10707,
+      "shape": [
+        576,
+        576
+      ],
+      "events": [
+        {
+          "event": "speech.started",
+          "data": {
+            "session_id": "sess_3d552d654e51",
+            "text": "Hello! Let's practice speaking English together. Tell me about your plans for the weekend. What would you like to do with your friends?",
+            "utterance_id": "shared-test-4011d20b5c7d47588f358a80a52a359b"
+          }
+        },
+        {
+          "event": "subtitle.chunk",
+          "data": {
+            "session_id": "sess_3d552d654e51",
+            "text": "Hello!",
+            "is_final": false,
+            "utterance_id": "shared-test-4011d20b5c7d47588f358a80a52a359b"
+          }
+        },
+        {
+          "event": "speech.media_started",
+          "data": {
+            "session_id": "sess_3d552d654e51",
+            "utterance_id": "shared-test-4011d20b5c7d47588f358a80a52a359b"
+          }
+        },
+        {
+          "event": "subtitle.chunk",
+          "data": {
+            "session_id": "sess_3d552d654e51",
+            "text": "Let's practice speaking English together.",
+            "is_final": false,
+            "utterance_id": "shared-test-4011d20b5c7d47588f358a80a52a359b"
+          }
+        },
+        {
+          "event": "speech.ended",
+          "data": {
+            "session_id": "sess_3d552d654e51",
+            "utterance_id": "shared-test-4011d20b5c7d47588f358a80a52a359b"
+          }
+        },
+        {
+          "event": "speech.started",
+          "data": {
+            "session_id": "sess_3d552d654e51",
+            "text": "Hello again! My conversation still works.",
+            "utterance_id": "shared-test-3d474e5995414de5a06086ff9d1c480f"
+          }
+        },
+        {
+          "event": "subtitle.chunk",
+          "data": {
+            "session_id": "sess_3d552d654e51",
+            "text": "Hello again!",
+            "is_final": false,
+            "utterance_id": "shared-test-3d474e5995414de5a06086ff9d1c480f"
+          }
+        },
+        {
+          "event": "speech.media_started",
+          "data": {
+            "session_id": "sess_3d552d654e51",
+            "utterance_id": "shared-test-3d474e5995414de5a06086ff9d1c480f"
+          }
+        },
+        {
+          "event": "subtitle.chunk",
+          "data": {
+            "session_id": "sess_3d552d654e51",
+            "text": "My conversation still works.",
+            "is_final": false,
+            "utterance_id": "shared-test-3d474e5995414de5a06086ff9d1c480f"
+          }
+        },
+        {
+          "event": "speech.ended",
+          "data": {
+            "session_id": "sess_3d552d654e51",
+            "utterance_id": "shared-test-3d474e5995414de5a06086ff9d1c480f",
+            "text": "Hello again! My conversation still works."
+          }
+        }
+      ]
+    },
+    {
+      "sid": "sess_f71b92875f51",
+      "video": 419,
+      "audio": 535,
+      "audio_peak": 20233,
+      "shape": [
+        576,
+        576
+      ],
+      "events": [
+        {
+          "event": "speech.started",
+          "data": {
+            "session_id": "sess_f71b92875f51",
+            "text": "Hello! Let's practice speaking English together. Tell me about your plans for the weekend. What would you like to do with your friends?",
+            "utterance_id": "shared-test-a5591810c9654cf89461b177db5f7069"
+          }
+        },
+        {
+          "event": "subtitle.chunk",
+          "data": {
+            "session_id": "sess_f71b92875f51",
+            "text": "Hello!",
+            "is_final": false,
+            "utterance_id": "shared-test-a5591810c9654cf89461b177db5f7069"
+          }
+        },
+        {
+          "event": "speech.media_started",
+          "data": {
+            "session_id": "sess_f71b92875f51",
+            "utterance_id": "shared-test-a5591810c9654cf89461b177db5f7069"
+          }
+        },
+        {
+          "event": "subtitle.chunk",
+          "data": {
+            "session_id": "sess_f71b92875f51",
+            "text": "Let's practice speaking English together.",
+            "is_final": false,
+            "utterance_id": "shared-test-a5591810c9654cf89461b177db5f7069"
+          }
+        },
+        {
+          "event": "subtitle.chunk",
+          "data": {
+            "session_id": "sess_f71b92875f51",
+            "text": "Tell me about your plans for the weekend.",
+            "is_final": false,
+            "utterance_id": "shared-test-a5591810c9654cf89461b177db5f7069"
+          }
+        },
+        {
+          "event": "subtitle.chunk",
+          "data": {
+            "session_id": "sess_f71b92875f51",
+            "text": "What would you like to do with your friends?",
+            "is_final": false,
+            "utterance_id": "shared-test-a5591810c9654cf89461b177db5f7069"
+          }
+        },
+        {
+          "event": "speech.ended",
+          "data": {
+            "session_id": "sess_f71b92875f51",
+            "utterance_id": "shared-test-a5591810c9654cf89461b177db5f7069",
+            "text": "Hello! Let's practice speaking English together. Tell me about your plans for the weekend. What would you like to do with your friends?"
+          }
+        },
+        {
+          "event": "speech.started",
+          "data": {
+            "session_id": "sess_f71b92875f51",
+            "text": "I can keep speaking while the other user leaves. How was your day?",
+            "utterance_id": "shared-test-20d2dc1a56fd4cb7a4a0429b06723ce5"
+          }
+        },
+        {
+          "event": "subtitle.chunk",
+          "data": {
+            "session_id": "sess_f71b92875f51",
+            "text": "I can keep speaking while the other user leaves.",
+            "is_final": false,
+            "utterance_id": "shared-test-20d2dc1a56fd4cb7a4a0429b06723ce5"
+          }
+        },
+        {
+          "event": "speech.media_started",
+          "data": {
+            "session_id": "sess_f71b92875f51",
+            "utterance_id": "shared-test-20d2dc1a56fd4cb7a4a0429b06723ce5"
+          }
+        },
+        {
+          "event": "subtitle.chunk",
+          "data": {
+            "session_id": "sess_f71b92875f51",
+            "text": "How was your day?",
+            "is_final": false,
+            "utterance_id": "shared-test-20d2dc1a56fd4cb7a4a0429b06723ce5"
+          }
+        },
+        {
+          "event": "speech.ended",
+          "data": {
+            "session_id": "sess_f71b92875f51",
+            "utterance_id": "shared-test-20d2dc1a56fd4cb7a4a0429b06723ce5",
+            "text": "I can keep speaking while the other user leaves. How was your day?"
+          }
+        }
+      ]
+    }
+  ],
+  "started": 1792062989.3579044,
+  "interrupt_http_seconds": 0.9526226175948977,
+  "interrupt_end_seconds": 0.9527185773476958,
+  "passed": true
+}

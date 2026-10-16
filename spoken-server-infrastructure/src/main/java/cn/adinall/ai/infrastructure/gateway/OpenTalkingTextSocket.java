@@ -1,5 +1,7 @@
 package cn.adinall.ai.infrastructure.gateway;
 
+import java.util.LinkedHashMap;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -48,8 +50,10 @@ final class OpenTalkingTextSocket implements WebSocket.Listener {
     /** WebSocket 分帧缓冲，限制在 16 KiB。 */
     private final StringBuilder incoming = new StringBuilder();
 
+    /** 创建 {@code OpenTalkingTextSocket}，初始化其依赖与状态。 */
     private OpenTalkingTextSocket(String replyId) { this.replyId = replyId; }
 
+    /** 建立文本播放连接并发送回复文本，等待媒体播放结束。 */
     static Mono<Void> play(HttpClient client, URI uri, String replyId, String voice,
                            String provider, Flux<String> text) {
         return Mono.defer(() -> {
@@ -78,7 +82,7 @@ final class OpenTalkingTextSocket implements WebSocket.Listener {
             awaiting = seq;
             CompletableFuture<Void> pending = new CompletableFuture<>();
             ack = pending;
-            var body = new java.util.LinkedHashMap<String, Object>(fields);
+            LinkedHashMap<String, Object> body = new java.util.LinkedHashMap<String, Object>(fields);
             body.put("type", type); body.put("replyId", replyId); body.put("seq", seq);
             socket.sendText(OpenTalkingJson.MAPPER.writeValueAsString(body), true).get(5, TimeUnit.SECONDS);
             pending.get(20, TimeUnit.SECONDS);
@@ -89,11 +93,13 @@ final class OpenTalkingTextSocket implements WebSocket.Listener {
         }
     }
 
+    /** 在连接建立后登记连接并开始接收消息。 */
     @Override public void onOpen(WebSocket webSocket) {
         socket = webSocket;
         if (closed.get()) webSocket.abort(); else webSocket.request(1);
     }
 
+    /** 累积文本消息分片，并在完整消息到达时处理媒体事件。 */
     @Override public CompletionStage<?> onText(WebSocket ws, CharSequence data, boolean last) {
         incoming.append(data);
         if (incoming.length() > 16384) {
@@ -111,18 +117,22 @@ final class OpenTalkingTextSocket implements WebSocket.Listener {
         ws.request(1); return null;
     }
 
+    /** 处理上游连接关闭并结束待处理的播放任务。 */
     @Override public CompletionStage<?> onClose(WebSocket ws, int status, String reason) {
         if (!drained.isDone()) fail(new IllegalStateException("text_stream_disconnected"));
         return null;
     }
 
+    /** 以失败信号结束当前操作并释放相关连接资源。 */
     @Override public void onError(WebSocket ws, Throwable error) { fail(error); }
 
+    /** 以失败信号结束当前操作并释放相关连接资源。 */
     private void fail(Throwable error) {
         if (ack != null) ack.completeExceptionally(error);
         drained.completeExceptionally(error);
     }
 
+    /** 关闭当前资源并释放其持有的运行状态。 */
     private void close() {
         if (!closed.compareAndSet(false, true)) return;
         fail(new IllegalStateException("reply_closed"));

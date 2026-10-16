@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *   isDefault         是否是后端默认选的模型（JSON 名字由 @JsonProperty 钉死）
  *   estimatedChunkMs  预估单块推理耗时（毫秒），只用于 UI 提示，可为 null
  * </pre>
- * 运行过程：
+ * 体系架构 / 运行过程：
  * <pre>
  *   GET /api/v1/catalog/models
  *        |
@@ -25,14 +25,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *   CatalogController.models()
  *        |
  *        v
- *   CatalogCaseImpl.listModels() --> OpenTalkingAvatarDriver.listModels()
+ *   IAvatarDriverPort.listModels()
  *        |
- *        | (1) 调上游 /models；连不上就造一个 connected=false 的占位项
- *        | (2) 解析 statuses 数组（每项带 connected / reason），退化时解析 models 字符串数组
- *        | (3) 过滤掉配置 exposeModels 之外的模型，并用 markDefault 标出默认项
  *        v
- *   [ {"id":"flashhead","label":"FlashHead 1.3B（实时）","connected":true,
- *      "isDefault":true,"estimatedChunkMs":300} ]
+ *   CatalogResponseAssembler.model(...) -> ModelResponseDTO -> JSON
  * </pre>
  * 案例：
  * <pre>

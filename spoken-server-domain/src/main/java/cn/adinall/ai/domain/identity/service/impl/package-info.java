@@ -1,4 +1,2 @@
-/**
- * 用户身份领域服务实现。
- */
+/** 账户、资料、首页选择和字幕翻译的业务规则。 */
 package cn.adinall.ai.domain.identity.service.impl;

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.adinall.ai.infrastructure.dao.IConversationHistoryDao">
+    <select id="sessions" resultType="cn.adinall.ai.infrastructure.dao.po.TrainingSessionPO">
+        select id, avatar_id, voice, scenario_id, status, started_at, ended_at
+        from training_session where user_id = #{userId}
+        <if test="beforeTime != null">
+            and (started_at &lt; #{beforeTime}
+                or (started_at = #{beforeTime} and id &lt; #{beforeId}))
+        </if>
+        order by started_at desc, id desc limit #{limit}
+    </select>
+    <select id="session" resultType="cn.adinall.ai.infrastructure.dao.po.TrainingSessionPO">
+        select id, avatar_id, voice, scenario_id, status, started_at, ended_at
+        from training_session where user_id = #{userId} and id = #{sessionId}
+    </select>
+    <select id="turns" resultType="cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO">
+        select t.id, t.session_id, t.seq, t.user_text, t.assistant_text, t.audio_path, t.latency_ms, t.created_at, t.updated_at
+        from conversation_turn t join training_session s on s.id = t.session_id
+        where s.user_id = #{userId} and s.id = #{sessionId} and t.id &gt; #{afterId}
+        order by t.id asc limit #{limit}
+    </select>
+</mapper>

@@ -1,7 +1,7 @@
 package cn.adinall.ai.trigger.http;
 
-import cn.adinall.ai.domain.account.support.AccountContext;
-import cn.adinall.ai.domain.account.service.IAccountService;
+import cn.adinall.ai.domain.identity.support.AccountContext;
+import cn.adinall.ai.domain.identity.service.IAccountService;
 
 import cn.adinall.ai.types.exception.AppException;
 import jakarta.servlet.http.*;
@@ -15,9 +15,12 @@ import java.util.Map;
 @Configuration
 public class AccountWebConfiguration implements WebMvcConfigurer {
     private final IAccountService accounts;
+    /** 创建 {@code AccountWebConfiguration}，初始化其依赖与状态。 */
     public AccountWebConfiguration(IAccountService accounts) { this.accounts = accounts; }
+    /** 注册账号认证拦截器及其生效路径。 */
     @Override public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new AsyncHandlerInterceptor() {
+            /** 在请求进入控制器前验证令牌并绑定认证主体。 */
             @Override public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
                 AccountContext.clear();
                 // 预检不读取私有数据；注册、登录和幂等退出可以不持有有效登录态。
@@ -33,15 +36,18 @@ public class AccountWebConfiguration implements WebMvcConfigurer {
                     return true;
                 } catch (RuntimeException e) { AccountContext.clear(); throw e; }
             }
+            /** 清除请求线程中的认证主体，避免线程复用导致身份泄漏。 */
             @Override public void afterCompletion(HttpServletRequest req, HttpServletResponse res, Object handler, Exception ex) {
                 AccountContext.clear();
             }
+            /** 清除请求线程中的认证主体，避免线程复用导致身份泄漏。 */
             @Override public void afterConcurrentHandlingStarted(HttpServletRequest req, HttpServletResponse res, Object handler) {
                 // SSE转异步后原线程即归还线程池，不能等连接断开才清身份。
                 AccountContext.clear();
             }
         }).addPathPatterns("/api/v1/**");
     }
+    /** 从认证请求头解析持有者令牌。 */
     public static String bearer(String header) {
         if (header == null || !header.startsWith("Bearer ") || header.substring(7).isBlank())
             throw new AppException("unauthorized", "请先登录");

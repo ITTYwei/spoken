@@ -42,8 +42,7 @@ import jakarta.validation.constraints.NotBlank;
  * </pre>
  * 设计要点：
  * <ul>
- *   <li>与脚本轨的 SayRequestDTO 严格分工：本类的 text 是「用户说的话」（要过 LLM），
- *       内容已定的开场白/题目/讲解一律走 /say，否则白绕一圈 LLM，首块音频会慢一个量级。</li>
+ *   <li>text 是用户输入；开场白、题目和讲解由服务端用例通过内部媒体端口播报，不开放任意原文播报 HTTP 入口。</li>
  *   <li>voice 可空，且空值会被领域层用会话默认音色补上（ConversationServiceImpl.withSessionVoice）：
  *       保证每次下发都带上音色，不必依赖上游对「不传 voice」的兜底。</li>
  *   <li>返回 {"status":"accepted"} 而不是回复文本：响应只确认「已交给后端」，

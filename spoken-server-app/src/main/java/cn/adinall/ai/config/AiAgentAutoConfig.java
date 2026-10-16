@@ -1,8 +1,8 @@
 package cn.adinall.ai.config;
 
-import cn.adinall.ai.domain.agent.model.valobj.properties.AiAgentAutoConfigProperties;
-import cn.adinall.ai.domain.agent.model.valobj.AiAgentConfigTableVO;
-import cn.adinall.ai.domain.agent.service.IArmoryService;
+import cn.adinall.ai.infrastructure.config.agent.AiAgentAutoConfigProperties;
+import cn.adinall.ai.infrastructure.config.agent.AiAgentConfigTableVO;
+import cn.adinall.ai.infrastructure.gateway.agent.armory.IArmoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -79,6 +79,7 @@ public class AiAgentAutoConfig implements ApplicationListener<ApplicationReadyEv
     @Resource
     private IArmoryService armoryService;
 
+    /** 响应应用启动事件，初始化启动阶段所需的运行配置。 */
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
         // Agent 是后续才接的能力；没启用（ai.agent.config.enabled=false）或没配任何智能体时，

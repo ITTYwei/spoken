@@ -17,7 +17,7 @@ import java.util.List;
  *   scriptedSay       能否走脚本轨直念（文本直通 TTS、不经过 LLM）
  *   supportedModels   可用模型 id 列表，如 ["flashhead","flashtalk"]
  * </pre>
- * 运行过程：
+ * 体系架构 / 运行过程：
  * <pre>
  *   GET /api/v1/catalog/capabilities
  *        |
@@ -25,14 +25,10 @@ import java.util.List;
  *   CatalogController.capabilities()
  *        |
  *        v
- *   CatalogCaseImpl.capabilities()
+ *   IAvatarDriverPort.capabilities()
  *        |
- *        | (1) avatarDriver.capabilities() --> DriverCapabilityVO
- *        | (2) new CapabilitiesResponseDTO(...) 按组件顺序原样搬字段，不做任何加工
  *        v
- *   {"providerId":"opentalking","webrtcVideo":true,"upstreamAudio":true,
- *    "interrupt":true,"textDriven":true,"scriptedSay":true,
- *    "supportedModels":["flashhead","flashtalk"]}
+ *   CatalogResponseAssembler.capability(...) -> CapabilitiesResponseDTO -> JSON
  * </pre>
  * 案例：
  * <pre>

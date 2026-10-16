@@ -1,17 +1,17 @@
 package cn.adinall.ai.infrastructure.adapter.port;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import cn.adinall.ai.domain.conversation.adapter.port.IAvatarDriverPort;
-import cn.adinall.ai.domain.conversation.model.entity.CreateSessionCommandEntity;
-import cn.adinall.ai.domain.conversation.model.entity.SayCommandEntity;
-import cn.adinall.ai.domain.conversation.model.entity.SpeakCommandEntity;
-import cn.adinall.ai.domain.conversation.model.valobj.AvatarProfileVO;
-import cn.adinall.ai.domain.conversation.model.valobj.ConversationEventVO;
-import cn.adinall.ai.domain.conversation.model.valobj.DriverCapabilityVO;
-import cn.adinall.ai.domain.conversation.model.valobj.DriverModelVO;
-import cn.adinall.ai.domain.conversation.model.valobj.IceServerVO;
-import cn.adinall.ai.domain.conversation.model.valobj.SessionHandleVO;
-import cn.adinall.ai.domain.conversation.model.valobj.SessionStatusEnum;
+import cn.adinall.ai.domain.coaching.conversation.adapter.port.IAvatarDriverPort;
+import cn.adinall.ai.domain.coaching.conversation.model.entity.CreateSessionCommandEntity;
+import cn.adinall.ai.domain.coaching.conversation.model.entity.SayCommandEntity;
+import cn.adinall.ai.domain.coaching.conversation.model.entity.SpeakCommandEntity;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.AvatarProfileVO;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.ConversationEventVO;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.DriverCapabilityVO;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.DriverModelVO;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.IceServerVO;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.SessionHandleVO;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.SessionStatusEnum;
 import cn.adinall.ai.infrastructure.config.OpenTalkingProperties;
 import cn.adinall.ai.infrastructure.gateway.OpenTalkingEventTranslator;
 import cn.adinall.ai.infrastructure.gateway.OpenTalkingGateway;
@@ -128,6 +128,7 @@ import java.util.stream.Collectors;
  * </ul>
  */
 public class OpenTalkingAvatarDriver implements IAvatarDriverPort {
+    /** 订阅回复文本并驱动媒体播放，媒体播放结束后才完成返回信号。 */
     @Override
     public reactor.core.publisher.Mono<Void> streamReply(String providerSessionId, String replyId,
             String voice, Flux<String> text) {
@@ -139,6 +140,7 @@ public class OpenTalkingAvatarDriver implements IAvatarDriverPort {
     private final OpenTalkingGateway gateway;
     private final OpenTalkingProperties props;
 
+    /** 创建 {@code OpenTalkingAvatarDriver}，初始化其依赖与状态。 */
     public OpenTalkingAvatarDriver(OpenTalkingGateway gateway, OpenTalkingProperties props) {
         this.gateway = gateway;
         this.props = props;

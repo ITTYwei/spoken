@@ -96,138 +96,172 @@ public class PronunciationAssessmentPO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** 读取记录标识。 */
     public Long getId() {
         return id;
     }
 
+    /** 设置记录标识。 */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /** 读取业务会话标识。 */
     public String getSessionId() {
         return sessionId;
     }
 
+    /** 设置业务会话标识。 */
     public void setSessionId(String sessionId) {
         this.sessionId = sessionId;
     }
 
+    /** 读取对话回合标识。 */
     public Long getTurnId() {
         return turnId;
     }
 
+    /** 设置对话回合标识。 */
     public void setTurnId(Long turnId) {
         this.turnId = turnId;
     }
 
+    /** 读取发音评估参考文本。 */
     public String getExpectedText() {
         return expectedText;
     }
 
+    /** 设置发音评估参考文本。 */
     public void setExpectedText(String expectedText) {
         this.expectedText = expectedText;
     }
 
+    /** 读取语言代码。 */
     public String getLang() {
         return lang;
     }
 
+    /** 设置语言代码。 */
     public void setLang(String lang) {
         this.lang = lang;
     }
 
+    /** 读取音频媒体类型。 */
     public String getContentType() {
         return contentType;
     }
 
+    /** 设置音频媒体类型。 */
     public void setContentType(String contentType) {
         this.contentType = contentType;
     }
 
+    /** 读取音频字节数。 */
     public Integer getAudioBytes() {
         return audioBytes;
     }
 
+    /** 设置音频字节数。 */
     public void setAudioBytes(Integer audioBytes) {
         this.audioBytes = audioBytes;
     }
 
+    /** 读取综合评分。 */
     public Double getScore() {
         return score;
     }
 
+    /** 设置综合评分。 */
     public void setScore(Double score) {
         this.score = score;
     }
 
+    /** 读取识别文本。 */
     public String getTranscribe() {
         return transcribe;
     }
 
+    /** 设置识别文本。 */
     public void setTranscribe(String transcribe) {
         this.transcribe = transcribe;
     }
 
+    /** 读取单词错误率。 */
     public Double getWordErrorRate() {
         return wordErrorRate;
     }
 
+    /** 设置单词错误率。 */
     public void setWordErrorRate(Double wordErrorRate) {
         this.wordErrorRate = wordErrorRate;
     }
 
+    /** 读取音素错误率。 */
     public Double getPhonemeErrorRate() {
         return phonemeErrorRate;
     }
 
+    /** 设置音素错误率。 */
     public void setPhonemeErrorRate(Double phonemeErrorRate) {
         this.phonemeErrorRate = phonemeErrorRate;
     }
 
+    /** 读取声学距离。 */
     public Double getAcousticDistance() {
         return acousticDistance;
     }
 
+    /** 设置声学距离。 */
     public void setAcousticDistance(Double acousticDistance) {
         this.acousticDistance = acousticDistance;
     }
 
+    /** 读取发音反馈。 */
     public String getFeedback() {
         return feedback;
     }
 
+    /** 设置发音反馈。 */
     public void setFeedback(String feedback) {
         this.feedback = feedback;
     }
 
+    /** 读取完整评估结果 JSON。 */
     public String getResultJson() {
         return resultJson;
     }
 
+    /** 设置完整评估结果 JSON。 */
     public void setResultJson(String resultJson) {
         this.resultJson = resultJson;
     }
 
+    /** 读取响应耗时（毫秒）。 */
     public Long getLatencyMs() {
         return latencyMs;
     }
 
+    /** 设置响应耗时（毫秒）。 */
     public void setLatencyMs(Long latencyMs) {
         this.latencyMs = latencyMs;
     }
 
+    /** 读取创建时间。 */
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
+    /** 设置创建时间。 */
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
+    /** 读取更新时间。 */
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
+    /** 设置更新时间。 */
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }

@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *   previewVideoUrl  预览视频地址，可为 null
  *   online           当前是否可用；上游拉取失败时兜底形象一律给 true
  * </pre>
- * 运行过程：
+ * 体系架构 / 运行过程：
  * <pre>
  *   GET /api/v1/catalog/avatars
  *        |
@@ -22,13 +22,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *   CatalogController.avatars()
  *        |
  *        v
- *   CatalogCaseImpl.listAvatars()
+ *   IAvatarDriverPort.listAvatars()
  *        |
- *        | (1) avatarDriver.listAvatars() --> List&lt;AvatarProfileVO&gt;
- *        |        （OpenTalking 实现：拉上游 /avatars，失败或为空则退到 fallbackAvatarIds）
- *        | (2) 逐个 new AvatarResponseDTO(id, name, coverUrl, previewVideoUrl, online)
  *        v
- *   [ {"id":"anchor","name":"anchor","coverUrl":null,"previewVideoUrl":null,"online":true} ]
+ *   CatalogResponseAssembler.avatar(...) -> AvatarResponseDTO -> JSON
  * </pre>
  * 案例：
  * <pre>

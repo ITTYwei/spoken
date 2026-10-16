@@ -1,6 +1,6 @@
 package cn.adinall.ai;
 
-import cn.adinall.ai.domain.agent.service.armory.matter.mcp.server.MyTestMcpService;
+import cn.adinall.ai.infrastructure.gateway.agent.armory.matter.mcp.server.MyTestMcpService;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -64,10 +64,12 @@ import org.springframework.context.annotation.Bean;
 @Configurable
 public class Application {
 
+    /** 启动应用入口。 */
     public static void main(String[] args) {
         SpringApplication.run(Application.class);
     }
 
+    /** 注册示例工具实现供工具回调使用。 */
     @Bean("myToolCallbackProvider")
     public ToolCallbackProvider testTools(MyTestMcpService testService) {
         return MethodToolCallbackProvider.builder().toolObjects(testService).build();

@@ -1,6 +1,6 @@
 package cn.adinall.ai.infrastructure.config;
 
-import cn.adinall.ai.domain.conversation.model.valobj.LlmOwnerEnum;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.LlmOwnerEnum;
 import cn.adinall.ai.domain.shared.adapter.port.IAppConfigPort;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -87,56 +87,68 @@ public class AppProperties implements IAppConfigPort {
      */
     private String llmOwner = "agent";
 
+    /** 读取负责生成回复的模型所属端。 */
     @Override
     public LlmOwnerEnum llmOwner() {
         return LlmOwnerEnum.of(llmOwner);
     }
 
+    /** 设置回复生成模型的所属端。 */
     public void setLlmOwner(String llmOwner) {
         this.llmOwner = llmOwner;
     }
 
+    /** 读取单设备允许的最大活动会话数。 */
     @Override
     public int maxSessionsPerDevice() {
         return maxSessionsPerDevice;
     }
 
+    /** 设置单设备活动会话数上限。 */
     public void setMaxSessionsPerDevice(int maxSessionsPerDevice) {
         this.maxSessionsPerDevice = maxSessionsPerDevice;
     }
 
+    /** 读取会话就绪等待上限，单位为毫秒。 */
     @Override
     public long readyWaitMs() {
         return readyWaitMs;
     }
 
+    /** 设置就绪等待上限（毫秒）。 */
     public void setReadyWaitMs(long readyWaitMs) {
         this.readyWaitMs = readyWaitMs;
     }
 
+    /** 读取会话空闲回收时限，单位为毫秒。 */
     @Override
     public long sessionIdleTimeoutMs() {
         return sessionIdleTimeoutMs;
     }
 
+    /** 设置会话空闲回收时限（毫秒）。 */
     public void setSessionIdleTimeoutMs(long sessionIdleTimeoutMs) {
         this.sessionIdleTimeoutMs = sessionIdleTimeoutMs;
     }
 
+    /** 读取上游槽位释放后的等待间隔，单位为毫秒。 */
     @Override
     public long slotReleaseSettleMs() {
         return slotReleaseSettleMs;
     }
 
+    /** 设置槽位释放等待间隔（毫秒）。 */
     public void setSlotReleaseSettleMs(long slotReleaseSettleMs) {
         this.slotReleaseSettleMs = slotReleaseSettleMs;
     }
 
+    /** 读取允许跨域访问的来源列表。 */
     @Override
     public List<String> corsAllowedOrigins() {
         return corsAllowedOrigins;
     }
 
+    /** 设置允许跨域访问的来源列表。 */
     public void setCorsAllowedOrigins(List<String> corsAllowedOrigins) {
         this.corsAllowedOrigins = corsAllowedOrigins;
     }

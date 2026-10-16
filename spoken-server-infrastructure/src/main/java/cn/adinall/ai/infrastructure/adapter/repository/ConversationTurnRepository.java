@@ -1,14 +1,13 @@
 package cn.adinall.ai.infrastructure.adapter.repository;
 
-import cn.adinall.ai.domain.conversation.adapter.repository.IConversationTurnRepository;
-import cn.adinall.ai.domain.conversation.model.aggregate.ConversationTurnAggregate;
+import cn.adinall.ai.domain.coaching.conversation.adapter.repository.IConversationTurnRepository;
+import cn.adinall.ai.domain.coaching.conversation.model.aggregate.ConversationTurnAggregate;
 import cn.adinall.ai.infrastructure.dao.IConversationTurnDao;
 import cn.adinall.ai.infrastructure.dao.DatabaseTime;
 import cn.adinall.ai.infrastructure.dao.po.ConversationTurnPO;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -19,7 +18,6 @@ import java.util.Optional;
  *   append(turn)                   插一条回合并回填自增主键（@Transactional），返回入参聚合
  *   updateAssistantText(turn)      把数字人回复与延迟补到已有回合上（@Transactional）
  *   findById(turnId)               按自增主键查单条，PO 用 restore 还原成聚合
- *   listBySessionId(sessionId)     按会话查全部回合并按 seq 升序，用于 /turns 恢复整段聊天记录
  *   findLastBySessionId(sessionId) 取 seq 最大的回合：算下一个 seq，或回填刚建的用户回合
  * </pre>
  * 运行过程（用户说完一句话到数字人回复定稿）：
@@ -79,6 +77,7 @@ public class ConversationTurnRepository implements IConversationTurnRepository {
 
     private final IConversationTurnDao turnDao;
 
+    /** 创建 {@code ConversationTurnRepository}，初始化其依赖与状态。 */
     public ConversationTurnRepository(IConversationTurnDao turnDao) {
         this.turnDao = turnDao;
     }
@@ -113,18 +112,13 @@ public class ConversationTurnRepository implements IConversationTurnRepository {
         turnDao.updateAssistant(po);
     }
 
+    /** 按回合标识查找并还原对话聚合。 */
     @Override
     public Optional<ConversationTurnAggregate> findById(Long turnId) {
         return Optional.ofNullable(turnDao.selectById(turnId)).map(ConversationTurnRepository::toAggregate);
     }
 
-    @Override
-    public List<ConversationTurnAggregate> listBySessionId(String sessionId) {
-        return turnDao.selectBySessionIdOrderBySeqAsc(sessionId).stream()
-                .map(ConversationTurnRepository::toAggregate)
-                .toList();
-    }
-
+    /** 读取指定会话中顺序号最大的对话回合。 */
     @Override
     public Optional<ConversationTurnAggregate> findLastBySessionId(String sessionId) {
         return Optional.ofNullable(turnDao.selectLastBySessionId(sessionId))
@@ -132,7 +126,7 @@ public class ConversationTurnRepository implements IConversationTurnRepository {
     }
 
     /** PO -> 聚合（用 restore 而不是 create：id 和 created_at 必须是库里的原值）。 */
-    private static ConversationTurnAggregate toAggregate(ConversationTurnPO po) {
+    static ConversationTurnAggregate toAggregate(ConversationTurnPO po) {
         return ConversationTurnAggregate.restore(po.getId(), po.getSessionId(),
                 po.getSeq() == null ? 0 : po.getSeq(), po.getUserText(), po.getAssistantText(),
                 po.getAudioPath(), po.getLatencyMs(),

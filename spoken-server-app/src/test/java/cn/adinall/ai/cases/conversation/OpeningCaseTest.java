@@ -1,25 +1,30 @@
 package cn.adinall.ai.cases.conversation;
 
-import cn.adinall.ai.domain.learner.model.valobj.LearnerLevelEnum;
+import cn.adinall.ai.domain.coaching.teaching.service.TeachingService;
+import cn.adinall.ai.cases.conversation.impl.OpeningPreparation;
+import cn.adinall.ai.cases.teaching.TeachingPreparation;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.OpeningDecisionVO;
+
+import cn.adinall.ai.domain.learning.model.valobj.LearnerLevelEnum;
 
 import cn.adinall.ai.cases.conversation.impl.*;
-import cn.adinall.ai.domain.conversation.adapter.repository.IOpeningHistoryRepository;
-import cn.adinall.ai.domain.conversation.adapter.port.*;
-import cn.adinall.ai.domain.conversation.model.aggregate.ConversationSessionAggregate;
-import cn.adinall.ai.domain.conversation.model.entity.*;
-import cn.adinall.ai.domain.conversation.model.valobj.*;
-import cn.adinall.ai.domain.conversation.service.IConversationService;
+import cn.adinall.ai.domain.coaching.conversation.adapter.repository.IOpeningHistoryRepository;
+import cn.adinall.ai.domain.coaching.conversation.adapter.port.*;
+import cn.adinall.ai.domain.coaching.conversation.model.aggregate.ConversationSessionAggregate;
+import cn.adinall.ai.domain.coaching.conversation.model.entity.*;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.*;
+import cn.adinall.ai.cases.conversation.runtime.IConversationService;
 import cn.adinall.ai.domain.identity.adapter.port.IOpeningIdentityPort;
 import cn.adinall.ai.domain.identity.model.valobj.OpeningSubjectVO;
-import cn.adinall.ai.domain.practice.adapter.repository.IOpeningPlanRepository;
-import cn.adinall.ai.domain.pronunciation.service.IPronunciationService;
-import cn.adinall.ai.domain.scenario.adapter.repository.IScenarioRepository;
-import cn.adinall.ai.domain.scenario.model.valobj.ScenarioVO;
+import cn.adinall.ai.domain.coaching.practice.adapter.repository.IOpeningPlanRepository;
+import cn.adinall.ai.domain.assessment.pronunciation.service.IPronunciationService;
+import cn.adinall.ai.domain.content.adapter.repository.IScenarioRepository;
+import cn.adinall.ai.domain.content.model.valobj.ScenarioVO;
 import cn.adinall.ai.domain.shared.adapter.port.IAppConfigPort;
-import cn.adinall.ai.api.dto.CreateConversationSessionRequestDTO;
+import cn.adinall.ai.cases.conversation.model.CreateConversationCommand;
 import org.junit.Test;
-import cn.adinall.ai.domain.agent.service.IChatService;
-import cn.adinall.ai.domain.learner.service.level.LearnerLevelService;
+import cn.adinall.ai.domain.companion.service.IChatService;
+import cn.adinall.ai.domain.learning.service.level.LearnerLevelService;
 import reactor.core.publisher.Flux;
 import org.mockito.ArgumentCaptor;
 import java.time.*;
@@ -49,6 +54,9 @@ import static org.mockito.Mockito.*;
  * </ul>
  */
 public class OpeningCaseTest {
+    /** 每个测试独立持有教学运行态，并显式共享给相关应用协作者。 */
+    private final TeachingService teachingStates = new TeachingService();
+
     private final IConversationService service=mock(IConversationService.class);
     private final IScenarioRepository scenarios=mock(IScenarioRepository.class);
     private final IPronunciationService pronunciation=mock(IPronunciationService.class);
@@ -57,20 +65,20 @@ public class OpeningCaseTest {
     private final IAppConfigPort config=mock(IAppConfigPort.class);
     private final OpeningPreparation preparation=mock(OpeningPreparation.class);
     private final IChatService chat=mock(IChatService.class);
-    private final ConversationCaseImpl useCase=new ConversationCaseImpl(service,config,scenarios,pronunciation,audio,events,preparation,chat,new LearnerLevelService(),"100003");
+    private final ConversationCaseImpl useCase=cn.adinall.ai.cases.conversation.CaseTestFixture.conversation(service,config,scenarios,pronunciation,audio,events,preparation,chat,new LearnerLevelService(),"100003", teachingStates);
     public OpeningCaseTest() {
-        org.springframework.test.util.ReflectionTestUtils.setField(useCase,"teaching",TeachingTestFixture.create());
-        org.springframework.test.util.ReflectionTestUtils.setField(useCase,"streamingEnabled",false);
+        cn.adinall.ai.cases.conversation.CaseTestFixture.teaching(useCase, TeachingTestFixture.create(teachingStates));
+        org.springframework.test.util.ReflectionTestUtils.setField(org.springframework.test.util.ReflectionTestUtils.getField(useCase,"replyGeneration"), "streamingEnabled",false);
     }
     private OpeningDecisionVO decision(String text) {
         return new OpeningDecisionVO(LocalDate.of(2026,10,12),LearnerLevelEnum.LOW,"recent_history","recent10_30d_v1",3,"DEFAULT","base","opening_v1",text,"samples=3");
     }
     private ConversationSessionAggregate session(String text) {
-        var session=new ConversationSessionAggregate("s1","p1","d1",null,null,"Cherry","free",SessionStatusEnum.READY);
+        ConversationSessionAggregate session=new ConversationSessionAggregate("s1","p1","d1",null,null,"Cherry","free",SessionStatusEnum.READY);
         session.freezeOpening(decision(text)); when(service.requireSession("s1")).thenReturn(session); return session;
     }
     @Test public void openingPlaysFrozenTextOnceWithoutRequeryingMaterials() {
-        var session=session("你好，你今天做了什么？");
+        ConversationSessionAggregate session=session("你好，你今天做了什么？");
         useCase.opening("s1"); useCase.opening("s1");
         ArgumentCaptor<SayCommandEntity> command=ArgumentCaptor.forClass(SayCommandEntity.class);
         verify(service).say(eq("s1"),command.capture());
@@ -79,11 +87,11 @@ public class OpeningCaseTest {
         assertTrue(session.isOpeningSpoken()); verifyNoInteractions(preparation,scenarios);
     }
     @Test public void noOpeningIsNotMarkedOrSent() {
-        var session=session(null); useCase.opening("s1"); assertFalse(session.isOpeningSpoken());
+        ConversationSessionAggregate session=session(null); useCase.opening("s1"); assertFalse(session.isOpeningSpoken());
         verify(service,never()).say(any(),any());
     }
     @Test public void failedOpeningSubmissionCanRetryWithoutRepeatingSuccessfulSubmission() {
-        var session=session("你好，今天聊什么？");
+        ConversationSessionAggregate session=session("你好，今天聊什么？");
         doThrow(new IllegalStateException("upstream unavailable")).doNothing().when(service).say(eq("s1"),any());
         try { useCase.opening("s1"); fail("Expected upstream failure"); } catch(IllegalStateException expected) {}
         assertFalse(session.isOpeningSpoken()); useCase.opening("s1"); useCase.opening("s1");
@@ -107,37 +115,40 @@ public class OpeningCaseTest {
         verify(service,timeout(3000)).say(eq("s1"),any());
     }
     @Test public void snapshotCannotChangeAcrossMidnightOrNewDecision() {
-        var session=session("你好，你今天做了什么？");
-        var next=new OpeningDecisionVO(LocalDate.of(2026,10,13),LearnerLevelEnum.HIGH,"scenario","v1",0,"FIRST","2","opening_v1","Hello, ready?","none");
+        ConversationSessionAggregate session=session("你好，你今天做了什么？");
+        OpeningDecisionVO next=new OpeningDecisionVO(LocalDate.of(2026,10,13),LearnerLevelEnum.HIGH,"scenario","v1",0,"FIRST","2","opening_v1","Hello, ready?","none");
         assertSame(session.getOpeningDecision(),session.freezeOpening(next));
         assertEquals(LocalDate.of(2026,10,12),session.getOpeningDecision().date());
     }
     @Test public void firstTurnPreservesGradeCapturedByOpening() {
-        var snapshot=decision("你好？").withTeachingLevel(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L4);
-        var aggregate=new cn.adinall.ai.domain.conversation.model.aggregate.ConversationSessionAggregate(
+        OpeningDecisionVO snapshot=decision("你好？").withTeachingLevel(cn.adinall.ai.domain.learning.model.valobj.EnglishLevelEnum.L4);
+        ConversationSessionAggregate aggregate=new cn.adinall.ai.domain.coaching.conversation.model.aggregate.ConversationSessionAggregate(
                 "frozen-grade","provider","d1","anchor","flashhead","Cherry","free",
-                cn.adinall.ai.domain.conversation.model.valobj.SessionStatusEnum.ACTIVE);
+                cn.adinall.ai.domain.coaching.conversation.model.valobj.SessionStatusEnum.ACTIVE);
         aggregate.freezeOpening(snapshot);
-        var teaching=TeachingTestFixture.create(); // 存储替身返回L2，快照仍必须优先。
+        TeachingPreparation teaching=TeachingTestFixture.create(teachingStates); // 存储替身返回L2，快照仍必须优先。
         teaching.bind(aggregate);
-        assertEquals(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L4,teaching.level(aggregate));
+        assertEquals(cn.adinall.ai.domain.learning.model.valobj.EnglishLevelEnum.L4,teaching.level(aggregate));
     }
     @Test public void creationPassesDecisionIntoDomainCommand() {
-        var scenario=new ScenarioVO("free","Free","Talk","Amy","beginner","Hi?","Cherry");
-        when(scenarios.findById("free")).thenReturn(scenario); when(preparation.prepare("d1",scenario,null)).thenReturn(decision("你好？"));
-        var created=session("你好？");
+        ScenarioVO scenario=new ScenarioVO("free","Free","Talk","Amy","beginner","Hi?","Cherry");
+        when(scenarios.findById("free")).thenReturn(scenario); when(preparation.prepare(anyString(),eq(scenario),isNull())).thenReturn(decision("你好？"));
+        ConversationSessionAggregate created=session("你好？");
         when(service.createSession(any())).thenReturn(created);
-        useCase.create(new CreateConversationSessionRequestDTO("d1",null,null,null,"free"));
+        useCase.create(new CreateConversationCommand("d1",null,null,null,"free"));
         ArgumentCaptor<StartConversationCommandEntity> command=ArgumentCaptor.forClass(StartConversationCommandEntity.class);
-        verify(service).createSession(command.capture()); assertEquals(LearnerLevelEnum.LOW,command.getValue().openingDecision().initialLevel());
+        verify(service).createSession(command.capture());
+        assertTrue(command.getValue().deviceId().startsWith("u1:"));
+        assertEquals("user:1",command.getValue().subject());
+        assertEquals(LearnerLevelEnum.LOW,command.getValue().openingDecision().initialLevel());
     }
     @Test public void unavailableHistoryFallsBackWithoutCallingItFirst() {
-        var history=mock(IOpeningHistoryRepository.class); var plans=mock(IOpeningPlanRepository.class); var identity=mock(IOpeningIdentityPort.class);
+        IOpeningHistoryRepository history=mock(IOpeningHistoryRepository.class); IOpeningPlanRepository plans=mock(IOpeningPlanRepository.class); IOpeningIdentityPort identity=mock(IOpeningIdentityPort.class);
         when(identity.currentSubject("d1")).thenReturn(new OpeningSubjectVO("d1",null,null));
         when(history.read(any(),any(),any())).thenThrow(new IllegalStateException("offline"));
         when(plans.findToday(any(),any(),any())).thenReturn(Optional.empty());
-        var prepared=new OpeningPreparation(history,plans,identity,Clock.fixed(Instant.parse("2026-10-12T09:00:00Z"),ZoneOffset.UTC));
-        var scenario=new ScenarioVO("free","Free","Talk","Amy","beginner","Hi, ready?","Cherry");
+        OpeningPreparation prepared=CaseTestFixture.opening(history,plans,identity,Clock.fixed(Instant.parse("2026-10-12T09:00:00Z"),ZoneOffset.UTC));
+        ScenarioVO scenario=new ScenarioVO("free","Free","Talk","Amy","beginner","Hi, ready?","Cherry");
         assertEquals("DEFAULT",prepared.prepare("d1",scenario).context());
     }
 }

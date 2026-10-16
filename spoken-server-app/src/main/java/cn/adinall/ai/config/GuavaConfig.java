@@ -52,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class GuavaConfig {
 
+    /** 创建按配置控制容量与过期时间的缓存实例。 */
     @Bean(name = "cache")
     public Cache<String, String> cache() {
         return CacheBuilder.newBuilder()

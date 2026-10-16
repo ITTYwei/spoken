@@ -1,7 +1,9 @@
 package cn.adinall.ai.infrastructure.adapter.repository;
 
-import cn.adinall.ai.domain.agent.adapter.repository.IChatHistoryRepository;
-import cn.adinall.ai.domain.agent.model.valobj.DialogMessageVO;
+import java.util.ArrayList;
+
+import cn.adinall.ai.domain.companion.adapter.repository.IChatHistoryRepository;
+import cn.adinall.ai.domain.companion.model.valobj.DialogMessageVO;
 import cn.adinall.ai.infrastructure.dao.ITeachingContextDao;
 import org.springframework.stereotype.Repository;
 import java.util.*;
@@ -17,9 +19,11 @@ import java.util.*;
 @Repository
 public class ChatHistoryRepository implements IChatHistoryRepository {
     /** SQL边界。 */ private final ITeachingContextDao dao;
+    /** 创建 {@code ChatHistoryRepository}，初始化其依赖与状态。 */
     public ChatHistoryRepository(ITeachingContextDao dao) { this.dao=dao; }
+    /** 读取指定主体范围内的近期记录。 */
     public List<DialogMessageVO> recent(String subject,String session) {
-        var list=new ArrayList<>(dao.history(subject,session).stream().map(m -> new DialogMessageVO(
+        ArrayList<DialogMessageVO> list=new ArrayList<>(dao.history(subject,session).stream().map(m -> new DialogMessageVO(
                 ((Number)m.get("turnId")).longValue(),(String)m.get("userText"),(String)m.get("assistantText"),
                 Boolean.TRUE.equals(m.get("practiceInput")) || (m.get("practiceInput") instanceof Number n && n.intValue()!=0))).toList());
         Collections.reverse(list); return list;

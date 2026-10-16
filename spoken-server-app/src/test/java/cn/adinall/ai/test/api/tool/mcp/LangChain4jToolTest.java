@@ -1,5 +1,7 @@
 package cn.adinall.ai.test.api.tool.mcp;
 
+import io.modelcontextprotocol.spec.McpSchema.InitializeResult;
+
 import cn.adinall.ai.test.SecretEnv;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.openai.OpenAiChatModel;
@@ -56,7 +58,7 @@ public class LangChain4jToolTest {
                 .build();
 
         McpSyncClient mcpSyncClient = McpClient.sync(sseClientTransport).requestTimeout(Duration.ofMinutes(360)).build();
-        var init_sse = mcpSyncClient.initialize();
+        InitializeResult init_sse = mcpSyncClient.initialize();
         log.info("Tool SSE MCP Initialized {}", init_sse);
 
         return mcpSyncClient;

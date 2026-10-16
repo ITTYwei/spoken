@@ -1,8 +1,8 @@
 package cn.adinall.ai.infrastructure.gateway;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import cn.adinall.ai.domain.conversation.model.valobj.ConversationEventVO;
-import cn.adinall.ai.domain.conversation.model.valobj.EventTypeEnum;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.ConversationEventVO;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.EventTypeEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,16 +1,19 @@
 package cn.adinall.ai.trigger.http;
 
+import cn.adinall.ai.cases.teaching.GuidedReadingCase;
+import cn.adinall.ai.cases.conversation.model.ConversationTurnResultVO;
+import cn.adinall.ai.cases.conversation.model.OpeningResult;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.ReadingModeVO;
+
 import cn.adinall.ai.api.dto.CreateConversationSessionRequestDTO;
 import cn.adinall.ai.api.dto.ConversationTurnResponseDTO;
 import cn.adinall.ai.api.dto.IceServerResponseDTO;
 import cn.adinall.ai.api.dto.OpeningResponseDTO;
-import cn.adinall.ai.api.dto.SayRequestDTO;
 import cn.adinall.ai.api.dto.SdpAnswerResponseDTO;
 import cn.adinall.ai.api.dto.SdpOfferRequestDTO;
 import cn.adinall.ai.api.dto.ServerEventDTO;
 import cn.adinall.ai.api.dto.SessionResponseDTO;
 import cn.adinall.ai.api.dto.SpeakRequestDTO;
-import cn.adinall.ai.api.dto.TurnResponseDTO;
 import cn.adinall.ai.cases.conversation.IConversationCase;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
@@ -41,12 +44,10 @@ import java.util.Map;
  *   POST   /api/v1/sessions/{sessionId}/offer    SDP 交换：offer 换 answer
  *   GET    /api/v1/sessions/{sessionId}/events   SSE 事件流（字幕 / 状态 / 心跳 / 错误）
  *   POST   /api/v1/sessions/{sessionId}/speak    文本驱动（当成用户说的话，过 LLM）
- *   POST   /api/v1/sessions/{sessionId}/say      脚本轨直念（不经过 LLM）
  *   POST   /api/v1/sessions/{sessionId}/opening  说本场景开场白（幂等）
  *   POST   /api/v1/sessions/{sessionId}/voice    语音上行（application/octet-stream）
  *   POST   /api/v1/sessions/{sessionId}/interrupt 打断当前这句
  *   DELETE /api/v1/sessions/{sessionId}          关会话并释放上游资源
- *   GET    /api/v1/sessions/{sessionId}/turns    本场历史回合
  * </pre>
  * 运行过程（建会话 -> 拿 ICE -> 换 SDP -> 听事件）：
  * <pre>
@@ -58,7 +59,7 @@ import java.util.Map;
  *        |
  *        | (2) GET /api/v1/sessions/ice-config
  *        |        v
- *        |     Map.of("iceServers", conversationCase.iceServers())
+ *        |     Map.of("iceServers", conversationCase.iceServers().stream().map(i -> new IceServerResponseDTO(i.urls(), i.username(), i.credential())).toList())
  *        |
  *        | (3) POST /api/v1/sessions/{id}/offer   body={"sdp":"v=0...","type":"offer"}
  *        |        v
@@ -80,7 +81,7 @@ import java.util.Map;
  *          "startedAt":1767225600000}
  *         注意：请求里没给 avatarId / model，响应里也不会有这两个键 ——
  *         默认值只在下游调上游时兜底，对外形状是 @JsonInclude(NON_NULL) 且不回填
- *         POST /{id}/speak 或 /say: 200 {"status":"accepted"}
+ *         POST /{id}/speak: 200 {"status":"accepted"}
  *         DELETE /{id}:            200 {"status":"closed"}
  *         POST /{id}/voice:        200 {"text":"Hello"}（返回识别文本）
  *         会话不存在: 404 {"code":"session_not_found","message":"会话不存在或已结束: s-001","ts":...}
@@ -93,7 +94,7 @@ import java.util.Map;
  *       取服务端那份过了 AEC3 的上行缓冲），所以 @RequestBody(required = false)。</li>
  *   <li>/ice-config 外面包了一层 {"iceServers": [...]}：这是历史契约形状，App 按它解析，
  *       不要「顺手」改成裸数组。</li>
- *   <li>speak / say / interrupt / close 统一返回 {"status":"..."} 或 {"text":"..."}：
+ *   <li>speak / interrupt / close 统一返回 {"status":"..."} 或 {"text":"..."}：
  *       下发是异步的，接口只确认受理，真正的进度从 /events 读。</li>
  *   <li>IConversationCase负责对话；HomeService校验及恢复上次形象/音色选择，均通过构造器注入。</li>
  * </ul>
@@ -104,43 +105,44 @@ public class SessionController {
 
     /** 按钮只调用跟读用例，身份校验和状态转换不放在 Controller。 */
     @org.springframework.beans.factory.annotation.Autowired
-    private cn.adinall.ai.cases.conversation.impl.GuidedReadingCase reading;
+    private cn.adinall.ai.cases.teaching.GuidedReadingCase reading;
 
+    /** 读取或切换会话跟读模式，并返回生效状态。 */
     @GetMapping("/{sessionId}/reading")
     public cn.adinall.ai.api.dto.ReadingModeResponseDTO reading(@PathVariable String sessionId) {
-        return reading.get(sessionId);
+        ReadingModeVO state = reading.get(sessionId);
+        return new cn.adinall.ai.api.dto.ReadingModeResponseDTO(state.enabled(), state.target(), state.correctionRetries(), state.maxCorrections(), state.version());
     }
 
+    /** 读取或切换会话跟读模式，并返回生效状态。 */
     @PostMapping("/{sessionId}/reading")
     public cn.adinall.ai.api.dto.ReadingModeResponseDTO reading(@PathVariable String sessionId,
             @Valid @RequestBody cn.adinall.ai.api.dto.ReadingModeRequestDTO request) {
-        return reading.change(sessionId, request.enabled());
+        ReadingModeVO state = reading.change(sessionId, request.enabled());
+        return new cn.adinall.ai.api.dto.ReadingModeResponseDTO(state.enabled(), state.target(), state.correctionRetries(), state.maxCorrections(), state.version());
     }
 
     private final IConversationCase conversationCase;
-    private final cn.adinall.ai.domain.account.service.IHomeService home;
+    private final cn.adinall.ai.cases.conversation.impl.SessionCreationCase creation;
 
-    public SessionController(IConversationCase conversationCase, cn.adinall.ai.domain.account.service.IHomeService home) {
+    /** 创建 {@code SessionController}，初始化其依赖与状态。 */
+    public SessionController(IConversationCase conversationCase,
+            cn.adinall.ai.cases.conversation.impl.SessionCreationCase creation) {
         this.conversationCase = conversationCase;
-        this.home = home;
+        this.creation = creation;
     }
 
     /** 建会话：捕获可信账号，恢复选择并进入统一自由对话，学习意图由聊天逐步确认。 */
     @PostMapping
     public SessionResponseDTO create(@Valid @RequestBody CreateConversationSessionRequestDTO request) {
-        var principal = cn.adinall.ai.domain.account.support.AccountContext.require();
-        // 用账号+设备组成内部索引；相同设备切换账号时不能关闭另一人的会话。
-        String scopedDevice = principal.userNo() + ":" + cn.adinall.ai.domain.account.service.security.TokenHasher.digest(request.deviceId().trim());
-        var selection = home.resolve(request.avatarId(), request.voice());
-        if (selection.avatarId() != null) home.select(selection.avatarId(), selection.voice());
-        return conversationCase.create(new CreateConversationSessionRequestDTO(scopedDevice,
-                selection.avatarId(), request.model(), selection.voice(), "free"));
+        return ConversationHttpAssembler.session(creation.create(new cn.adinall.ai.cases.conversation.model.CreateConversationCommand(
+                request.deviceId(), request.avatarId(), request.model(), request.voice(), request.scenarioId())));
     }
 
     /** 查会话状态。App 轮询这个接口就能看到 QUEUED 变 READY。 */
     @GetMapping("/{sessionId}")
     public SessionResponseDTO get(@PathVariable String sessionId) {
-        return conversationCase.get(sessionId);
+        return ConversationHttpAssembler.session(conversationCase.get(sessionId));
     }
 
     /**
@@ -149,7 +151,7 @@ public class SessionController {
      */
     @GetMapping("/ice-config")
     public Map<String, List<IceServerResponseDTO>> iceConfig() {
-        return Map.of("iceServers", conversationCase.iceServers());
+        return Map.of("iceServers", conversationCase.iceServers().stream().map(i -> new IceServerResponseDTO(i.urls(), i.username(), i.credential())).toList());
     }
 
     /** WebRTC SDP 交换：offer 换 answer（non-trickle）。 */
@@ -163,27 +165,13 @@ public class SessionController {
     /** SSE 事件流：字幕、状态、错误都从这里出来。 */
     @GetMapping(value = "/{sessionId}/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerEventDTO> events(@PathVariable String sessionId) {
-        return conversationCase.events(sessionId);
+        return ConversationHttpAssembler.events(sessionId, conversationCase.events(sessionId));
     }
 
     /** 文本驱动数字人说话（调试、无网时兜底）。 */
     @PostMapping("/{sessionId}/speak")
     public Map<String, Object> speak(@PathVariable String sessionId, @Valid @RequestBody SpeakRequestDTO request) {
-        conversationCase.speak(sessionId, request);
-        return Map.of("status", "accepted");
-    }
-
-    /**
-     * 脚本轨：让数字人**原样念出**这段文字，不经过 LLM。
-     *
-     * 与 /speak 的分工：/speak 的 text 是「用户说的话」，会先让 LLM 生成回复再念；
-     * /say 的 text 就是数字人要说的话，直通 TTS。
-     * 开场白、题目、讲解、判分反馈这类**内容已定**的话走这里：
-     * 实测首块音频约 1.0 秒（同样文本走 /speak 约 6.9 秒），且措辞完全可控。
-     */
-    @PostMapping("/{sessionId}/say")
-    public Map<String, Object> say(@PathVariable String sessionId, @Valid @RequestBody SayRequestDTO request) {
-        conversationCase.say(sessionId, request);
+        conversationCase.speak(sessionId, new cn.adinall.ai.domain.coaching.conversation.model.entity.SpeakCommandEntity(request.text(), request.voice()));
         return Map.of("status", "accepted");
     }
 
@@ -196,7 +184,8 @@ public class SessionController {
      */
     @PostMapping("/{sessionId}/opening")
     public OpeningResponseDTO opening(@PathVariable String sessionId) {
-        return conversationCase.opening(sessionId);
+        OpeningResult result = conversationCase.opening(sessionId);
+        return new OpeningResponseDTO(result.spoken(), result.text(), result.reason());
     }
 
     /**
@@ -223,7 +212,9 @@ public class SessionController {
         // 空 body 是**老链路**的正常用法（表示「用服务端那份过了 AEC3 的音频」）；
         // 新链路（llm-owner=agent）需要 App 把 AEC 后的裸 PCM 放进 body。
         byte[] payload = (pcm == null || pcm.length == 0) ? null : pcm;
-        return conversationCase.voice(sessionId, payload, sampleRate, expectedText);
+        ConversationTurnResultVO result = conversationCase.voice(sessionId, payload, sampleRate, expectedText);
+        return new ConversationTurnResponseDTO(result.userText(), result.turnId(),
+                result.assessment() == null ? null : PronunciationAssembler.toResponse(result.assessment()));
     }
 
     /** 打断当前这句。 */
@@ -240,9 +231,4 @@ public class SessionController {
         return Map.of("status", "closed");
     }
 
-    /** 本场会话的历史回合（服务重启后仍在，数据来自库）。 */
-    @GetMapping("/{sessionId}/turns")
-    public List<TurnResponseDTO> turns(@PathVariable String sessionId) {
-        return conversationCase.turns(sessionId);
-    }
 }

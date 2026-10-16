@@ -1,7 +1,10 @@
 package cn.adinall.ai.infrastructure.adapter.repository;
 
-import cn.adinall.ai.domain.scenario.adapter.repository.ITextbookRepository;
-import cn.adinall.ai.domain.scenario.model.valobj.TextbookVO;
+import cn.adinall.ai.domain.content.model.valobj.TextLessonVO;
+import java.io.InputStream;
+
+import cn.adinall.ai.domain.content.adapter.repository.ITextbookRepository;
+import cn.adinall.ai.domain.content.model.valobj.TextbookVO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Repository;
@@ -30,21 +33,21 @@ public class ResourceTextbookRepository implements ITextbookRepository {
     public ResourceTextbookRepository(ObjectMapper mapper) {
         try {
             String[] paths;
-            try (var input = new ClassPathResource("textbooks/catalog.json").getInputStream()) {
+            try (InputStream input = new ClassPathResource("textbooks/catalog.json").getInputStream()) {
                 paths = mapper.readValue(input, String[].class);
             }
             if (paths.length == 0) throw new IllegalStateException("教材清单为空");
-            var loaded = new ArrayList<TextbookVO>();
-            var bookIds = new HashSet<String>();
+            ArrayList<TextbookVO> loaded = new ArrayList<TextbookVO>();
+            HashSet<String> bookIds = new HashSet<String>();
             for (String path : paths) {
                 if (!path.matches("[a-z0-9/-]+\\.json") || path.contains(".."))
                     throw new IllegalStateException("教材清单路径无效");
-                try (var input = new ClassPathResource("textbooks/" + path).getInputStream()) {
-                    var book = mapper.readValue(input, TextbookVO.class);
-                    var lessonIds = new HashSet<String>();
+                try (InputStream input = new ClassPathResource("textbooks/" + path).getInputStream()) {
+                    TextbookVO book = mapper.readValue(input, TextbookVO.class);
+                    HashSet<String> lessonIds = new HashSet<String>();
                     if (book.id() == null || !bookIds.add(book.id()) || book.lessons().isEmpty())
                         throw new IllegalStateException("教材编号重复或目录为空");
-                    for (var lesson : book.lessons()) {
+                    for (TextLessonVO lesson : book.lessons()) {
                         if (lesson.id() == null || !lessonIds.add(lesson.id()) || lesson.questions().isEmpty() ||
                                 lesson.questions().stream().anyMatch(q -> q == null || q.isBlank()))
                             throw new IllegalStateException("课程编号重复或原题为空：" + book.id());

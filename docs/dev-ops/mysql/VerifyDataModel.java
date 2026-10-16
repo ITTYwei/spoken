@@ -47,7 +47,7 @@ class VerifyDataModel {
             check(scalar(admin, "SELECT @@innodb_page_size") == 16384, "InnoDB 16KB pages");
             System.out.println("MySQL " + admin.getMetaData().getDatabaseProductVersion());
             List<Path> versions;
-            try (var files = Files.list(migrations)) {
+            try (java.util.stream.Stream<Path> files = Files.list(migrations)) {
                 versions = files.filter(p -> p.getFileName().toString().matches("V\\d+__.*\\.sql"))
                         .sorted(Comparator.comparingInt(VerifyDataModel::version)).toList();
             }

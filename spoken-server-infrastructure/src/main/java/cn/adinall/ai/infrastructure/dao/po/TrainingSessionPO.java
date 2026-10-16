@@ -60,7 +60,9 @@ import java.time.LocalDateTime;
 public class TrainingSessionPO {
     /** 服务端认证账号；旧设备会话为空，不允许账号入口读取。 */
     private Long userId;
+    /** 读取账号标识。 */
     public Long getUserId() { return userId; }
+    /** 设置账号标识。 */
     public void setUserId(Long userId) { this.userId = userId; }
 
     /** 我方生成的会话 id（s-xxxx）。 */
@@ -77,104 +79,130 @@ public class TrainingSessionPO {
     private String errorMessage;
     /** V11 首句决策 JSON：持久化档位、情境、模板版本及最终文案。 */
     private String openingDecisionJson;
+    /** 读取开场决策 JSON。 */
     public String getOpeningDecisionJson() { return openingDecisionJson; }
+    /** 设置开场决策 JSON。 */
     public void setOpeningDecisionJson(String value) { openingDecisionJson = value; }
     /** V10 补齐的审计时间，由数据库生成。 */
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** 读取记录标识。 */
     public String getId() {
         return id;
     }
 
+    /** 设置记录标识。 */
     public void setId(String id) {
         this.id = id;
     }
 
+    /** 读取设备标识。 */
     public String getDeviceId() {
         return deviceId;
     }
 
+    /** 设置设备标识。 */
     public void setDeviceId(String deviceId) {
         this.deviceId = deviceId;
     }
 
+    /** 读取数字人形象标识。 */
     public String getAvatarId() {
         return avatarId;
     }
 
+    /** 设置数字人形象标识。 */
     public void setAvatarId(String avatarId) {
         this.avatarId = avatarId;
     }
 
+    /** 读取模型标识。 */
     public String getModel() {
         return model;
     }
 
+    /** 设置模型标识。 */
     public void setModel(String model) {
         this.model = model;
     }
 
+    /** 读取音色。 */
     public String getVoice() {
         return voice;
     }
 
+    /** 设置音色。 */
     public void setVoice(String voice) {
         this.voice = voice;
     }
 
+    /** 读取场景标识。 */
     public String getScenarioId() {
         return scenarioId;
     }
 
+    /** 设置场景标识。 */
     public void setScenarioId(String scenarioId) {
         this.scenarioId = scenarioId;
     }
 
+    /** 读取会话状态。 */
     public String getStatus() {
         return status;
     }
 
+    /** 设置会话状态。 */
     public void setStatus(String status) {
         this.status = status;
     }
 
+    /** 读取会话开始时间。 */
     public Long getStartedAt() {
         return startedAt;
     }
 
+    /** 设置会话开始时间。 */
     public void setStartedAt(Long startedAt) {
         this.startedAt = startedAt;
     }
 
+    /** 读取会话结束时间。 */
     public Long getEndedAt() {
         return endedAt;
     }
 
+    /** 设置会话结束时间。 */
     public void setEndedAt(Long endedAt) {
         this.endedAt = endedAt;
     }
 
+    /** 读取错误说明。 */
     public String getErrorMessage() {
         return errorMessage;
     }
 
+    /** 设置错误说明。 */
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
     }
 
+    /** 读取创建时间。 */
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
+    /** 设置创建时间。 */
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
+    /** 读取更新时间。 */
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
+    /** 设置更新时间。 */
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }

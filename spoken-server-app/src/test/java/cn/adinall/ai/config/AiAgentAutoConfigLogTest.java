@@ -1,6 +1,6 @@
 package cn.adinall.ai.config;
 
-import cn.adinall.ai.domain.agent.model.valobj.AiAgentConfigTableVO;
+import cn.adinall.ai.infrastructure.config.agent.AiAgentConfigTableVO;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -1,6 +1,6 @@
 package cn.adinall.ai.test.app;
 
-import cn.adinall.ai.domain.agent.model.valobj.AiAgentRegisterVO;
+import cn.adinall.ai.infrastructure.gateway.agent.model.AiAgentRegisterVO;
 import com.alibaba.fastjson.JSON;
 import com.google.adk.events.Event;
 import com.google.adk.runner.InMemoryRunner;

@@ -1,7 +1,9 @@
 package cn.adinall.ai.infrastructure.adapter.port;
 
-import cn.adinall.ai.domain.conversation.adapter.port.IConversationEventBusPort;
-import cn.adinall.ai.domain.conversation.model.valobj.ConversationEventVO;
+import reactor.core.publisher.Sinks.Many;
+
+import cn.adinall.ai.domain.coaching.conversation.adapter.port.IConversationEventBusPort;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.ConversationEventVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -55,8 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <ul>
  *   <li>用 directBestEffort 而不是带缓冲的 multicast：这类是即时事件，没有订阅者时丢掉才是对的；
  *       缓冲下来等下一个 SSE 连接再补发，重连的 App 会收到一句早就过期的用户台词。</li>
- *   <li>remove 只摘通道、不 complete：已经连上的 SSE 由上游事件流与心跳继续维持，
- *       提前 complete 会让 App 莫名其妙断流。</li>
+ *   <li>remove 摘除并完成通道；会话结束后取消现有 SSE 订阅与心跳。</li>
  *   <li>sinksBySession 用 ConcurrentHashMap + computeIfAbsent：上游事件线程与 HTTP 请求线程
  *       会并发碰同一场会话，先 hasKey 再 put 的写法会出现两个 sink、事件丢一半。</li>
  *   <li>扩展点：换分布式部署（多实例）时把这个实现换成走 Redis/MQ 的适配器即可，
@@ -91,12 +92,12 @@ public class InProcessConversationEventBus implements IConversationEventBusPort 
 
     /**
      * 会话结束时摘掉通道，避免 Sinks 越积越多。
-     * 注意**不** complete：已经连上的 SSE 由上游事件流与心跳继续维持，
-     * 提前 complete 会让 App 那边莫名其妙断流。
+     * 完成现有订阅，避免会话关闭后 HTTP 心跳继续维持孤立连接。
      */
     @Override
     public void remove(String sessionId) {
-        sinksBySession.remove(sessionId);
+        Many<ConversationEventVO> removed = sinksBySession.remove(sessionId);
+        if (removed != null) removed.tryEmitComplete();
     }
 
     /** 取该会话的 sink，没有就建一个。 */

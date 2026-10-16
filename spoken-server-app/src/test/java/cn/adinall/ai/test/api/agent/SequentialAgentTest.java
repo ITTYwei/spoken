@@ -1,5 +1,7 @@
 package cn.adinall.ai.test.api.agent;
 
+import io.modelcontextprotocol.spec.McpSchema.InitializeResult;
+
 import cn.adinall.ai.test.SecretEnv;
 import com.google.adk.agents.LlmAgent;
 import com.google.adk.agents.SequentialAgent;
@@ -156,7 +158,7 @@ public class SequentialAgentTest {
                 .build();
 
         McpSyncClient mcpSyncClient = McpClient.sync(sseClientTransport).requestTimeout(Duration.ofMinutes(360)).build();
-        var init_sse = mcpSyncClient.initialize();
+        InitializeResult init_sse = mcpSyncClient.initialize();
         log.info("Tool SSE MCP Initialized {}", init_sse);
 
         return mcpSyncClient;

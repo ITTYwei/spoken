@@ -43,6 +43,7 @@ public final class WavEncoder {
     /** WAV 头固定 44 字节（PCM 格式：RIFF + fmt + data）。 */
     private static final int HEADER_BYTES = 44;
 
+    /** 禁止实例化，仅通过静态方法使用此工具类。 */
     private WavEncoder() {
     }
 

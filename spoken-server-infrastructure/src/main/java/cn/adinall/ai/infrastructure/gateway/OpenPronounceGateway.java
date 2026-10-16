@@ -245,6 +245,7 @@ public class OpenPronounceGateway {
                 .header("Accept", "application/json");
     }
 
+    /** 将相对接口路径解析为提供方请求地址。 */
     private URI uri(String path) {
         return URI.create(base + path);
     }
@@ -443,6 +444,7 @@ public class OpenPronounceGateway {
         return sb.toString();
     }
 
+    /** 生成本次多部分表单请求使用的边界标识。 */
     private static String newBoundary() {
         return "----SpokenAiPronounce" + java.util.UUID.randomUUID().toString().replace("-", "");
     }

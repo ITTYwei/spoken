@@ -48,10 +48,12 @@ package cn.adinall.ai.api.dto;
  */
 public record OpeningResponseDTO(boolean spoken, String text, String reason) {
 
+    /** 构造已提交播报的开场结果。 */
     public static OpeningResponseDTO spoken(String text) {
         return new OpeningResponseDTO(true, text, null);
     }
 
+    /** 构造未播报的开场结果并保留跳过原因。 */
     public static OpeningResponseDTO skipped(String reason) {
         return new OpeningResponseDTO(false, null, reason);
     }

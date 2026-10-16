@@ -64,74 +64,92 @@ public class ConversationTurnPO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** 读取记录标识。 */
     public Long getId() {
         return id;
     }
 
+    /** 设置记录标识。 */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /** 读取业务会话标识。 */
     public String getSessionId() {
         return sessionId;
     }
 
+    /** 设置业务会话标识。 */
     public void setSessionId(String sessionId) {
         this.sessionId = sessionId;
     }
 
+    /** 读取回合顺序号。 */
     public Integer getSeq() {
         return seq;
     }
 
+    /** 设置回合顺序号。 */
     public void setSeq(Integer seq) {
         this.seq = seq;
     }
 
+    /** 读取用户原话。 */
     public String getUserText() {
         return userText;
     }
 
+    /** 设置用户原话。 */
     public void setUserText(String userText) {
         this.userText = userText;
     }
 
+    /** 读取助手已播文本。 */
     public String getAssistantText() {
         return assistantText;
     }
 
+    /** 设置助手已播文本。 */
     public void setAssistantText(String assistantText) {
         this.assistantText = assistantText;
     }
 
+    /** 读取音频存储路径。 */
     public String getAudioPath() {
         return audioPath;
     }
 
+    /** 设置音频存储路径。 */
     public void setAudioPath(String audioPath) {
         this.audioPath = audioPath;
     }
 
+    /** 读取响应耗时（毫秒）。 */
     public Long getLatencyMs() {
         return latencyMs;
     }
 
+    /** 设置响应耗时（毫秒）。 */
     public void setLatencyMs(Long latencyMs) {
         this.latencyMs = latencyMs;
     }
 
+    /** 读取创建时间。 */
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
+    /** 设置创建时间。 */
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
+    /** 读取更新时间。 */
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
+    /** 设置更新时间。 */
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }

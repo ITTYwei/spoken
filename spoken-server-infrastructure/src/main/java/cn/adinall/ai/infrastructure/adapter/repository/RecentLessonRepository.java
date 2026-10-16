@@ -1,7 +1,7 @@
 package cn.adinall.ai.infrastructure.adapter.repository;
 
-import cn.adinall.ai.domain.practice.adapter.repository.IRecentLessonRepository;
-import cn.adinall.ai.domain.practice.model.valobj.RecentLessonVO;
+import cn.adinall.ai.domain.coaching.practice.adapter.repository.IRecentLessonRepository;
+import cn.adinall.ai.domain.coaching.practice.model.valobj.RecentLessonVO;
 import cn.adinall.ai.infrastructure.dao.IRecentLessonDao;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
@@ -11,6 +11,7 @@ import java.util.Optional;
 public class RecentLessonRepository implements IRecentLessonRepository {
     /** 主体隔离的数据访问入口，不接受工具自行指定账号。 */
     private final IRecentLessonDao dao;
+    /** 创建 {@code RecentLessonRepository}，初始化其依赖与状态。 */
     public RecentLessonRepository(IRecentLessonDao dao) { this.dao = dao; }
     /** 没有练过返回空，不能用目录第一课冒充最近课。 */
     @Override public Optional<RecentLessonVO> find(String subject) {

@@ -1,27 +1,39 @@
 package cn.adinall.ai.cases.conversation;
 
+import cn.adinall.ai.domain.coaching.teaching.service.TeachingService;
+import cn.adinall.ai.cases.teaching.TeachingPreparation;
+import cn.adinall.ai.cases.conversation.model.ConversationTurnResultVO;
+import cn.adinall.ai.domain.coaching.teaching.adapter.repository.ITeachingReplyRepository;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingDecisionVO;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+import reactor.core.publisher.Sinks.Many;
+
 import cn.adinall.ai.cases.conversation.impl.ConversationCaseImpl;
-import cn.adinall.ai.domain.conversation.adapter.port.IAudioFormatPort;
-import cn.adinall.ai.domain.conversation.adapter.port.IConversationEventBusPort;
-import cn.adinall.ai.domain.conversation.model.aggregate.ConversationSessionAggregate;
-import cn.adinall.ai.domain.conversation.model.valobj.*;
-import cn.adinall.ai.domain.conversation.service.IConversationService;
-import cn.adinall.ai.domain.pronunciation.model.aggregate.PronunciationAssessmentAggregate;
-import cn.adinall.ai.domain.pronunciation.model.entity.AssessPronunciationCommandEntity;
-import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationErrorVO;
-import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationResultVO;
-import cn.adinall.ai.domain.pronunciation.service.IPronunciationService;
-import cn.adinall.ai.domain.scenario.adapter.repository.IScenarioRepository;
-import cn.adinall.ai.domain.scenario.model.valobj.ScenarioVO;
+import cn.adinall.ai.domain.coaching.conversation.adapter.port.IAudioFormatPort;
+import cn.adinall.ai.domain.coaching.conversation.adapter.port.IConversationEventBusPort;
+import cn.adinall.ai.domain.coaching.conversation.model.aggregate.ConversationSessionAggregate;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.*;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingOutcomeEnum;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingTaskVO;
+import cn.adinall.ai.cases.conversation.runtime.IConversationService;
+import cn.adinall.ai.domain.assessment.pronunciation.model.aggregate.PronunciationAssessmentAggregate;
+import cn.adinall.ai.domain.assessment.pronunciation.model.entity.AssessPronunciationCommandEntity;
+import cn.adinall.ai.domain.assessment.pronunciation.model.valobj.PronunciationErrorVO;
+import cn.adinall.ai.domain.assessment.pronunciation.model.valobj.PronunciationResultVO;
+import cn.adinall.ai.domain.assessment.pronunciation.service.IPronunciationService;
+import cn.adinall.ai.domain.content.adapter.repository.IScenarioRepository;
+import cn.adinall.ai.domain.content.model.valobj.ScenarioVO;
 import cn.adinall.ai.domain.shared.adapter.port.IAppConfigPort;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
-import cn.adinall.ai.domain.agent.service.IChatService;
-import cn.adinall.ai.domain.learner.service.level.LearnerLevelService;
-import cn.adinall.ai.domain.conversation.model.entity.SayCommandEntity;
+import cn.adinall.ai.domain.companion.service.IChatService;
+import cn.adinall.ai.domain.learning.service.level.LearnerLevelService;
+import cn.adinall.ai.domain.coaching.conversation.model.entity.SayCommandEntity;
 import reactor.core.publisher.Flux;
 
 import static org.junit.Assert.*;
@@ -46,6 +58,9 @@ import static org.mockito.Mockito.*;
  * </ul>
  */
 public class ConversationVoiceCaseTest {
+    /** 每个测试独立持有教学运行态，并显式共享给相关应用协作者。 */
+    private final TeachingService teachingStates = new TeachingService();
+
     private final IConversationService conversation = mock(IConversationService.class);
     private final IAppConfigPort config = mock(IAppConfigPort.class);
     private final IScenarioRepository scenarios = mock(IScenarioRepository.class);
@@ -59,10 +74,10 @@ public class ConversationVoiceCaseTest {
 
     @Before
     public void setUp() {
-        useCase = new ConversationCaseImpl(conversation, config, scenarios, pronunciation, audio, events,
-                mock(cn.adinall.ai.cases.conversation.impl.OpeningPreparation.class), chat, new LearnerLevelService(), "100003");
-        org.springframework.test.util.ReflectionTestUtils.setField(useCase, "streamingEnabled", false);
-        org.springframework.test.util.ReflectionTestUtils.setField(useCase, "teaching", TeachingTestFixture.create());
+        useCase = cn.adinall.ai.cases.conversation.CaseTestFixture.conversation(conversation, config, scenarios, pronunciation, audio, events,
+                mock(cn.adinall.ai.cases.conversation.impl.OpeningPreparation.class), chat, new LearnerLevelService(), "100003", teachingStates);
+        org.springframework.test.util.ReflectionTestUtils.setField(org.springframework.test.util.ReflectionTestUtils.getField(useCase,"replyGeneration"), "streamingEnabled", false);
+        cn.adinall.ai.cases.conversation.CaseTestFixture.teaching(useCase, TeachingTestFixture.create(teachingStates));
         when(chat.handlePreparedTextStream(eq("100003"), eq("s1"), anyString(), anyString()))
                 .thenReturn(Flux.just("Hi ", "there?"));
         when(config.llmOwner()).thenReturn(LlmOwnerEnum.AGENT);
@@ -86,11 +101,11 @@ public class ConversationVoiceCaseTest {
         when(assessment.getResult()).thenReturn(result);
         when(pronunciation.assess(eq("s1"), eq(42L), any())).thenReturn(assessment);
 
-        var response = useCase.voice("s1", pcm, 16000, "Read this");
+        ConversationTurnResultVO response = useCase.voice("s1", pcm, 16000, "Read this");
 
-        assertEquals("Hello", response.text());
+        assertEquals("Hello", response.userText());
         assertEquals(Long.valueOf(42), response.turnId());
-        assertEquals(Long.valueOf(7), response.assessment().assessmentId());
+        assertEquals(Long.valueOf(7), response.assessment().getId());
         ArgumentCaptor<AssessPronunciationCommandEntity> command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
         verify(pronunciation).assess(eq("s1"), eq(42L), command.capture());
         assertSame(wav, command.getValue().audio());
@@ -112,7 +127,7 @@ public class ConversationVoiceCaseTest {
     @Test
     public void assessmentFailureStillStartsReplyWithoutAssessmentCard() {
         when(pronunciation.assess(eq("s1"), eq(42L), any())).thenThrow(new IllegalStateException("provider down"));
-        var response = useCase.voice("s1", pcm, 16000, null);
+        ConversationTurnResultVO response = useCase.voice("s1", pcm, 16000, null);
         assertNull(response.assessment());
         assertTrue(generatedPrompt().contains("\"teaching_hint\""));
         assertPlayedOnce();
@@ -139,8 +154,8 @@ public class ConversationVoiceCaseTest {
     public void legacyOwnerBypassesJavaAssessmentAndReply() {
         when(config.llmOwner()).thenReturn(LlmOwnerEnum.OPENTALKING);
         when(conversation.transcribeAndRecord("s1", pcm, 16000)).thenReturn("Legacy");
-        var response = useCase.voice("s1", pcm, 16000, null);
-        assertEquals("Legacy", response.text());
+        ConversationTurnResultVO response = useCase.voice("s1", pcm, 16000, null);
+        assertEquals("Legacy", response.userText());
         assertNull(response.turnId());
         assertNull(response.assessment());
         verifyNoInteractions(audio, pronunciation, events);
@@ -201,10 +216,10 @@ public class ConversationVoiceCaseTest {
     }
     @Test
     public void streamsBeforeCompletionAndInterruptCancelsAgent() throws Exception {
-        org.springframework.test.util.ReflectionTestUtils.setField(useCase, "streamingEnabled", true);
-        var source = reactor.core.publisher.Sinks.many().unicast().<String>onBackpressureBuffer();
-        var received = new java.util.concurrent.CopyOnWriteArrayList<String>();
-        var cancelled = new java.util.concurrent.CountDownLatch(1);
+        org.springframework.test.util.ReflectionTestUtils.setField(org.springframework.test.util.ReflectionTestUtils.getField(useCase,"replyGeneration"), "streamingEnabled", true);
+        Many<String> source = reactor.core.publisher.Sinks.many().unicast().<String>onBackpressureBuffer();
+        CopyOnWriteArrayList<String> received = new java.util.concurrent.CopyOnWriteArrayList<String>();
+        CountDownLatch cancelled = new java.util.concurrent.CountDownLatch(1);
         when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(source.asFlux().doOnCancel(cancelled::countDown));
         when(conversation.streamReply(eq("s1"), anyString(), any())).thenAnswer(inv -> {
@@ -238,17 +253,17 @@ public class ConversationVoiceCaseTest {
 
     /** 手机即使上传整段字幕，也只能以服务端已播英文目标评测；不完整朗读仍可进评测。 */
     @Test public void guidedReadingAssessesOnlyServerEnglishAndKeepsQuestionAsMaterial() {
-        var session = conversation.requireSession("s1");
-        session.teaching().initialize(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2);
-        session.teaching().guidedReading(true);
-        session.teaching().commitSpoken(new TeachingDecisionVO(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2,
+        ConversationSessionAggregate session = conversation.requireSession("s1");
+        teachingStates.state(session.getSessionId()).initialize(cn.adinall.ai.domain.learning.model.valobj.EnglishLevelEnum.L2);
+        teachingStates.state(session.getSessionId()).guidedReading(true);
+        teachingStates.state(session.getSessionId()).commitSpoken(new TeachingDecisionVO(cn.adinall.ai.domain.learning.model.valobj.EnglishLevelEnum.L2,
                 new TeachingTaskVO("READ", "", "", 0), TeachingOutcomeEnum.RESPONDED, true, "", false, true),
                 "想问近况可以说：“How are you?”，意思是你好吗。你来试着读一读吧。");
         when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(Flux.just("这次评测暂不可用，请读：“How are you?”，意思是你好吗。你来试着读一读吧。"));
         when(conversation.transcribeUploadedAndRecord("s1", wav)).thenReturn(new UserUtteranceVO("How you", 42L));
         useCase.voice("s1", pcm, 16000, "如果你想问对方最近怎么样可以说 How are you 意思是你好吗");
-        var command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
+        ArgumentCaptor<AssessPronunciationCommandEntity> command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
         verify(pronunciation).assess(eq("s1"), eq(42L), command.capture());
         assertEquals("How are you?", command.getValue().expectedText());
         assertTrue(generatedPrompt().contains("\"practice_input\":true"));
@@ -257,13 +272,13 @@ public class ConversationVoiceCaseTest {
 
     /** 新英语知识问题不能拿旧目标对照评测，更不能强制继续读旧句。 */
     @Test public void guidedReadingAllowsEnglishQuestionInsteadOfForcingPronunciation() {
-        var session = conversation.requireSession("s1");
-        session.teaching().initialize(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2);
-        session.teaching().guidedReading(true);
-        session.teaching().commit(new TeachingTaskVO("READ", "How are you?", "", 1));
+        ConversationSessionAggregate session = conversation.requireSession("s1");
+        teachingStates.state(session.getSessionId()).initialize(cn.adinall.ai.domain.learning.model.valobj.EnglishLevelEnum.L2);
+        teachingStates.state(session.getSessionId()).guidedReading(true);
+        teachingStates.state(session.getSessionId()).commit(new TeachingTaskVO("READ", "How are you?", "", 1));
         when(conversation.transcribeUploadedAndRecord("s1", wav)).thenReturn(new UserUtteranceVO("What does this mean?", 42L));
         useCase.voice("s1", pcm, 16000, "How are you?");
-        var command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
+        ArgumentCaptor<AssessPronunciationCommandEntity> command = ArgumentCaptor.forClass(AssessPronunciationCommandEntity.class);
         verify(pronunciation).assess(eq("s1"), eq(42L), command.capture());
         assertEquals("What does this mean?", command.getValue().expectedText());
         assertTrue(generatedPrompt().contains("\"practice_input\":false"));
@@ -271,36 +286,36 @@ public class ConversationVoiceCaseTest {
 
     /** 按钮首句通过同一 Agent 生成，不能写死开场或伪造“用户说了开始跟读”。 */
     @Test public void initialReadingUsesModelAndDoesNotRecordFakeUserTurn() {
-        var session = conversation.requireSession("s1"); session.teaching().guidedReading(true);
+        ConversationSessionAggregate session = conversation.requireSession("s1"); teachingStates.state(session.getSessionId()).guidedReading(true);
         String generated = "想邀请朋友坐下，可以说：“Would you like to sit here?”，意思是你想坐这里吗。你来试着读一读吧。";
         when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString())).thenReturn(Flux.just(generated));
         useCase.startGuidedReading("s1");
         String prompt = generatedPrompt();
         assertTrue(prompt.contains("根据等级、学习请求和当前场景生成新的连贯一句"));
         verify(conversation, never()).recordUserText(anyString(), anyString());
-        var command = ArgumentCaptor.forClass(SayCommandEntity.class);
+        ArgumentCaptor<SayCommandEntity> command = ArgumentCaptor.forClass(SayCommandEntity.class);
         verify(conversation, timeout(3000)).say(eq("s1"), command.capture());
         assertEquals(generated, command.getValue().text());
-        assertEquals("", session.teaching().readingMode().target()); // say 受理尚未播完。
-        assertNull(session.pendingTeaching().turnId());
+        assertEquals("", teachingStates.state(session.getSessionId()).readingMode().target()); // say 受理尚未播完。
+        assertNull(teachingStates.state(session.getSessionId()).pendingPlayback().turnId());
     }
 
     /** 生成重复句时有限重生成，失败草稿不可流到数字人；合格新句仍由模型决定。 */
     @Test public void duplicateInitialGenerationRegeneratesOnceWithoutPlayingOldSentence() {
-        var session = conversation.requireSession("s1"); session.teaching().guidedReading(true);
-        var d = new TeachingDecisionVO(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2,
+        ConversationSessionAggregate session = conversation.requireSession("s1"); teachingStates.state(session.getSessionId()).guidedReading(true);
+        TeachingDecisionVO d = new TeachingDecisionVO(cn.adinall.ai.domain.learning.model.valobj.EnglishLevelEnum.L2,
                 new TeachingTaskVO("READ", "", "", 0), TeachingOutcomeEnum.RESPONDED, true, "", false, true);
-        session.teaching().commitSpoken(d, "问近况可以说：“How are you?”，意思是你好吗。请跟读。");
-        session.teaching().interrupt();
+        teachingStates.state(session.getSessionId()).commitSpoken(d, "问近况可以说：“How are you?”，意思是你好吗。请跟读。");
+        teachingStates.state(session.getSessionId()).interrupt();
         String generated = "接着聊近况，可以说：“I just got back from a walk.”，意思是我刚散步回来。请跟读。";
         when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(Flux.just("问近况可以说：“HOW ARE YOU!”，意思是你好吗。请跟读。"), Flux.just(generated));
         useCase.startGuidedReading("s1");
-        var command = ArgumentCaptor.forClass(SayCommandEntity.class);
+        ArgumentCaptor<SayCommandEntity> command = ArgumentCaptor.forClass(SayCommandEntity.class);
         verify(conversation, timeout(3000)).say(eq("s1"), command.capture());
         assertEquals(generated, command.getValue().text());
-        var prompts = ArgumentCaptor.forClass(String.class);
-        var policies = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> prompts = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> policies = ArgumentCaptor.forClass(String.class);
         verify(chat, times(2)).handlePreparedTextStream(anyString(), anyString(), prompts.capture(), policies.capture());
         assertTrue(policies.getAllValues().get(1).contains("新目标与近期已练英文重复"));
         assertFalse(policies.getAllValues().get(0).contains("具体原因："));
@@ -310,16 +325,16 @@ public class ConversationVoiceCaseTest {
 
     /** 复现线上空原话：普通聊天开场会被拒绝，重生成必须收到明确任务而不是仅背景标志。 */
     @Test public void emptyButtonInputCarriesExplicitTaskAndRegenerationFeedback() {
-        conversation.requireSession("s1").teaching().guidedReading(true);
+        teachingStates.state("s1").guidedReading(true);
         String valid = "想了解朋友今天过得怎样，可以说：“How was your morning?”，意思是你今天早上过得怎么样。你来试着读一读吧。";
         when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(Flux.just("I can help you practice English. What would you like to talk about today?"), Flux.just(valid));
         useCase.startGuidedReading("s1");
-        var played = ArgumentCaptor.forClass(SayCommandEntity.class);
+        ArgumentCaptor<SayCommandEntity> played = ArgumentCaptor.forClass(SayCommandEntity.class);
         verify(conversation, timeout(3000)).say(eq("s1"), played.capture());
         assertEquals(valid, played.getValue().text());
-        var prompts = ArgumentCaptor.forClass(String.class);
-        var policies = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> prompts = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> policies = ArgumentCaptor.forClass(String.class);
         verify(chat, times(2)).handlePreparedTextStream(anyString(), anyString(), prompts.capture(), policies.capture());
         assertTrue(prompts.getAllValues().stream().allMatch(p -> p.contains("<user_input>\n\"\"\n</user_input>")));
         assertTrue(policies.getAllValues().stream().allMatch(p -> p.contains("<reply_task>") && p.contains("不是普通聊天开场")));
@@ -332,7 +347,7 @@ public class ConversationVoiceCaseTest {
 
     /** 两次生成都不合规则报告失败，不能默默回退到固定题库。 */
     @Test public void invalidInitialGenerationStopsAfterOneRegenerationAndNeverUsesCannedSentence() {
-        conversation.requireSession("s1").teaching().guidedReading(true);
+        teachingStates.state("s1").guidedReading(true);
         when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString())).thenReturn(Flux.just("无英文目标"));
         useCase.startGuidedReading("s1");
         verify(events, timeout(3000)).publish(eq("s1"), argThat(e -> e.type() == EventTypeEnum.ERROR));
@@ -342,9 +357,9 @@ public class ConversationVoiceCaseTest {
 
     /** 新模式首句尚未生成完时关闭，旧模型流必须可取消，迟到内容不播报。 */
     @Test public void generatedInitialReadingCanBeCancelledBeforePlayback() throws Exception {
-        conversation.requireSession("s1").teaching().guidedReading(true);
-        var sink = reactor.core.publisher.Sinks.many().unicast().<String>onBackpressureBuffer();
-        var cancelled = new java.util.concurrent.CountDownLatch(1);
+        teachingStates.state("s1").guidedReading(true);
+        Many<String> sink = reactor.core.publisher.Sinks.many().unicast().<String>onBackpressureBuffer();
+        CountDownLatch cancelled = new java.util.concurrent.CountDownLatch(1);
         when(chat.handlePreparedTextStream(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(sink.asFlux().doOnCancel(cancelled::countDown));
         useCase.startGuidedReading("s1"); generatedPrompt();
@@ -366,20 +381,20 @@ public class ConversationVoiceCaseTest {
     }
 
     private void assertSingleRegistrationOnRegeneration(boolean exhausted) {
-        var teaching = spy(TeachingTestFixture.create());
-        var replies = mock(cn.adinall.ai.domain.conversation.adapter.repository.ITeachingReplyRepository.class);
-        var inserts = new java.util.concurrent.atomic.AtomicInteger();
+        TeachingPreparation teaching = spy(TeachingTestFixture.create(teachingStates));
+        ITeachingReplyRepository replies = mock(cn.adinall.ai.domain.coaching.teaching.adapter.repository.ITeachingReplyRepository.class);
+        AtomicInteger inserts = new java.util.concurrent.atomic.AtomicInteger();
         doAnswer(call -> {
             if (inserts.incrementAndGet() > 1) throw new org.springframework.dao.DuplicateKeyException("重复真实用户轮次42");
             return null;
         }).when(replies).begin(anyString(), eq("s1"), eq(42L), anyString(), any());
         org.springframework.test.util.ReflectionTestUtils.setField(teaching, "replies", replies);
-        org.springframework.test.util.ReflectionTestUtils.setField(useCase, "teaching", teaching);
-        var session = conversation.requireSession("s1");
-        session.teaching().guidedReading(true);
-        var initial = new TeachingDecisionVO(cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum.L2,
+        cn.adinall.ai.cases.conversation.CaseTestFixture.teaching(useCase, teaching);
+        ConversationSessionAggregate session = conversation.requireSession("s1");
+        teachingStates.state(session.getSessionId()).guidedReading(true);
+        TeachingDecisionVO initial = new TeachingDecisionVO(cn.adinall.ai.domain.learning.model.valobj.EnglishLevelEnum.L2,
                 new TeachingTaskVO("READ", "", "", 0), TeachingOutcomeEnum.RESPONDED,true,"",false,true);
-        session.teaching().commitSpoken(initial, "问近况可以说：“How are you?”，意思是你好吗。请跟读。");
+        teachingStates.state(session.getSessionId()).commitSpoken(initial, "问近况可以说：“How are you?”，意思是你好吗。请跟读。");
         when(conversation.transcribeUploadedAndRecord("s1",wav)).thenReturn(new UserUtteranceVO("How are you?",42L));
         String valid = "评测暂不可用，我们再读：“How are you?”，意思是你好吗。请朗读。";
         when(chat.handlePreparedTextStream(anyString(),anyString(),anyString(),anyString()))

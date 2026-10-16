@@ -1,0 +1,322 @@
+package cn.adinall.ai.cases.teaching;
+
+import cn.adinall.ai.domain.coaching.teaching.model.aggregate.TeachingStateAggregate;
+import cn.adinall.ai.domain.coaching.teaching.service.reply.SpokenTaskResolver;
+
+import cn.adinall.ai.domain.coaching.teaching.service.TeachingService;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.ConversationSceneEnum;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.OpeningMaterialVO;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingDecisionVO;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingTaskVO;
+import cn.adinall.ai.domain.coaching.practice.model.valobj.PracticeStateVO;
+import cn.adinall.ai.domain.learning.model.valobj.EnglishLevelEnum;
+import java.util.LinkedHashMap;
+
+import cn.adinall.ai.domain.assessment.expression.service.IAbilityEvidenceService;
+import cn.adinall.ai.domain.companion.service.*;
+import cn.adinall.ai.domain.companion.model.valobj.ChatContextRequestVO;
+import cn.adinall.ai.domain.coaching.teaching.adapter.repository.ITeachingReplyRepository;
+import cn.adinall.ai.domain.coaching.conversation.model.aggregate.ConversationSessionAggregate;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.*;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingOutcomeEnum;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingPlaybackVO;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.PronunciationFeedbackVO;
+import cn.adinall.ai.domain.coaching.teaching.service.reply.*;
+import cn.adinall.ai.domain.identity.adapter.port.IOpeningIdentityPort;
+import cn.adinall.ai.domain.learning.service.level.LearnerProgressService;
+import cn.adinall.ai.domain.learning.model.valobj.*;
+import org.springframework.stereotype.Component;
+import org.slf4j.*;
+
+import java.time.Instant;
+
+/**
+ * 功能：编排主体、稳定水平、教学参考、会话学习请求、有效历史和后台能力观察。
+ * <p>体系架构 / 运行过程：</p>
+ * <pre>trusted subject -> freeze grade -> task policy -> context -> Agent stream
+ * media drained -> commit task/history; independent answer -> async observation -> learner evidence</pre>
+ * <p>案例：跟读后说“不想读” -> 中文换话题，不记偏好或升级证据。</p>
+ * <p>设计要点：</p>
+ * <ul><li>不直接访问DAO；领域分别负责任务、水平和模型上下文。</li>
+ * <li>后台观察有界且不阻塞播报。</li><li>上下文写入失败不编造已完成任务。</li></ul>
+ */
+@Component
+public class TeachingPreparation {
+    /** 教学状态由独立子域持有，跨域状态变更在业务会话锁内协调。 */
+    private final TeachingService teachingStates;
+
+
+    /** 情境跟读先核验目标再播报，普通聊天保留原始流式体验。 */
+    public reactor.core.publisher.Flux<String> guard(ConversationSessionAggregate session, TeachingDecisionVO decision, reactor.core.publisher.Flux<String> source, Runnable rejected) {
+        return guard(session, decision, source, reason -> rejected.run());
+    }
+    /** 校验原因逐项反馈给同轮模型；只重生成业务格式错误，不重试网络、超长、权限或取消错误。 */
+    public reactor.core.publisher.Flux<String> guard(ConversationSessionAggregate session, TeachingDecisionVO decision,
+            reactor.core.publisher.Flux<String> source, java.util.function.Consumer<ReadingGenerationErrorEnum> rejected) {
+        return state(session).guidedReading() ? GuidedReadingPolicy.guard(source, decision, state(session).recentReadingTargets())
+                .doOnError(ReadingGenerationException.class, error -> {
+                    log.warn("跟读校验失败 session={} reason={}", session.getSessionId(), error.reason());
+                    rejected.accept(error.reason());
+                })
+                .retryWhen(reactor.util.retry.Retry.max(1).filter(ReadingGenerationException.class::isInstance)
+                        .onRetryExhaustedThrow((spec, signal) -> signal.failure())) : source;
+    }
+    /**
+     * 当前课程由 practice 管理，Case 组合领域，不让 conversation 直接读取教材仓储。
+     */
+    private final cn.adinall.ai.domain.coaching.practice.service.PracticeService practice;
+    /**
+     * 文本课程定义及容量校验，只有课程模式才需要。
+     */
+    private final cn.adinall.ai.domain.content.service.TextbookService textbooks;
+    /**
+     * 使用工具管理明确个人事实时关闭旧的主动规则提取，保留原服务供独立老路径使用。
+     */
+    @org.springframework.beans.factory.annotation.Value("${spoken-ai.agent-actions.enabled:true}")
+    private boolean agentActionsEnabled;
+    /**
+     * 明确待聊事实的仓储，来源仅为真实用户回合。
+     */
+    private final cn.adinall.ai.domain.coaching.conversation.adapter.repository.IOpeningHistoryRepository openingHistory;
+    /**
+     * 可信身份入口。
+     */
+    private final IOpeningIdentityPort identity;
+    private final cn.adinall.ai.cases.security.ICurrentActor actors;
+    /**
+     * 稳定等级与近期证据。
+     */
+    private final LearnerProgressService progress;
+    /**
+     * Agent上下文编排。
+     */
+    private final IChatContextService context;
+    /**
+     * 明确事实记忆。
+     */
+    private final ILongTermMemoryService memory;
+    /**
+     * 后台模型观察，仅Agent负责模型调用。
+     */
+    private final IAbilityEvidenceService ability;
+    /**
+     * 有效播报内容存储。
+     */
+    private final ITeachingReplyRepository replies;
+    /**
+     * 降级日志。
+     */
+    private static final Logger log = LoggerFactory.getLogger(TeachingPreparation.class);
+
+    /** 创建 {@code TeachingPreparation}，初始化其依赖与状态。 */
+    public TeachingPreparation(IOpeningIdentityPort identity, LearnerProgressService progress, IChatContextService context,
+                               ILongTermMemoryService memory, IAbilityEvidenceService ability, ITeachingReplyRepository replies,
+                               cn.adinall.ai.domain.coaching.practice.service.PracticeService practice,
+                               cn.adinall.ai.domain.content.service.TextbookService textbooks,
+                               cn.adinall.ai.domain.coaching.conversation.adapter.repository.IOpeningHistoryRepository openingHistory,
+                               cn.adinall.ai.cases.security.ICurrentActor actors, TeachingService teachingStates) {
+        this.teachingStates = teachingStates;
+        this.practice=practice; this.textbooks=textbooks; this.openingHistory=openingHistory; this.actors=actors;
+        this.identity = identity;
+        this.progress = progress;
+        this.context = context;
+        this.memory = memory;
+        this.ability = ability;
+        this.replies = replies;
+    }
+
+    /** 读取当前业务会话的教学聚合；会话只提供身份和生命周期，不再持有教学任务。 */
+    public TeachingStateAggregate state(ConversationSessionAggregate session) {
+        synchronized (session) {
+            // 关闭与懒初始化共用会话锁，迟到的生成线程不能重新创建已释放的教学状态。
+            session.requireOpen();
+            return teachingStates.state(session.getSessionId());
+        }
+    }
+
+    /**
+     * 教学主体标识（记忆/证据/历史都按它隔离）。
+     */
+    public String subject(ConversationSessionAggregate session) {
+        return session.subject();
+    }
+
+    /**
+     * 创建时捕获身份，运行中登录变化不能把既有会话当成另一人的。
+     */
+    public void bind(ConversationSessionAggregate session) {
+        session.bindSubject("user:" + actors.require().id());
+        if (session.getOpeningDecision() != null && session.getOpeningDecision().teachingLevel() != null)
+            state(session).initialize(session.getOpeningDecision().teachingLevel());
+        level(session);
+    }
+
+    /**
+     * 开新会话时的初始档位：取稳定水平，不因单次表现跳档。
+     */
+    public EnglishLevelEnum initial(String deviceId, String newSession) {
+        return progress.begin(identity.currentSubject(deviceId).rotationKey(), newSession, Instant.now());
+    }
+
+    /**
+     * 在新轮次准备时读取最新陪练档位：保存设置后无需重建业务会话或媒体连接。
+     * 初次仍执行原有跨场能力评估；后续仅读取设置，不反复触发升级或重置任务。
+     * 返回值随 TeachingDecisionVO 冻结，本轮生成/播报中的设置变化留到下一轮生效。
+     */
+    public EnglishLevelEnum level(ConversationSessionAggregate session) {
+        synchronized (session) {
+            EnglishLevelEnum current = state(session).level();
+            if (current == null) current = state(session).initialize(
+                    progress.begin(subject(session), session.getSessionId(), Instant.now()));
+            return state(session).refreshLevel(progress.forReply(subject(session), current));
+        }
+    }
+
+    /**
+     * 本轮教学参考：可信输入证据 + 难度建议 + 上轮结果；意图与形式交给模型。
+     */
+    /* 输入证据由领域策略整理，用户意图与教学形式由模型理解；参考建议不能覆盖真实需求。
+     * practiceInput 表示“本轮话语是练习素材”，nextTask 表示“下一轮准备让用户做什么”。
+     * 两者不能混用：跟读通过后 nextTask 可以变为 QUESTION，本轮依然是 practiceInput=true。
+     */
+    public TeachingDecisionVO decide(ConversationSessionAggregate session, String text, PronunciationFeedbackVO feedback, boolean voice) {
+        TeachingTaskVO previous = state(session).pending();
+        // 证据时间戳取话音结束时刻，不是决策时刻
+        Instant inputAt = session.getLastUserSpeechEndedAt() > 0 ? Instant.ofEpochMilli(session.getLastUserSpeechEndedAt()) : Instant.now();
+        // 策略只整理建议与跟读证据，不强制决定下一步；原话中的学习请求独立保留。
+        TeachingDecisionVO decision = state(session).guidedReading()
+                ? GuidedReadingPolicy.decide(level(session), previous, text, feedback, voice)
+                : TeachingPolicy.decide(level(session), previous, text, feedback, voice);
+        // 学习目标属于本场状态，与 ADK 短会话和可裁剪历史分离；练习例句不更新目标。
+        state(session).captureLearningRequest(text, decision.practiceInput() || !"free".equals(session.getScenarioId()), inputAt);
+        // 中文支援两个来源：低档/求援主动给，或长期记忆里有 LANGUAGE 偏好
+        boolean chinese = decision.chineseSupport() || memory.recall(subject(session), text, Instant.now()).stream().anyMatch(m -> "LANGUAGE".equals(m.type()));
+        return new TeachingDecisionVO(decision.level(), decision.nextTask(), decision.outcome(), chinese, decision.correctionHint(), decision.reliableAssessment(), decision.practiceInput(), previous, inputAt);
+    }
+
+    /**
+     * 运行轨总装点：本轮原话和状态摘要 + 裁剪历史/记忆 = USER；case 另将可信策略传入 SYSTEM。
+     */
+    public String prompt(ConversationSessionAggregate session, String text, TeachingDecisionVO decision, String persona) {
+        return prompt(session, text, decision, persona, false);
+    }
+
+    /** 上次草稿被校验拒绝时仅附加可信布尔状态，原始失败草稿不作为用户指令重新注入。 */
+    public String prompt(ConversationSessionAggregate session, String text, TeachingDecisionVO decision, String persona, boolean regenerated) {
+        return prompt(session, text, decision, persona, regenerated ? "请检查唯一英文目标及讲解要求" : "");
+    }
+
+    /** 修正原因仅来自领域枚举，作为本轮必需数据与可信任务一起保留，不附带失败草稿。 */
+    public String prompt(ConversationSessionAggregate session, String text, TeachingDecisionVO decision, String persona, String rejectionReason) {
+        // 所有业务状态统一作为背景编码，不能混成给模型执行的自然语言命令。
+        // 学习请求和完整课程仍属必需数据，历史裁剪不会丢掉“我想学”或截断原题。
+        LinkedHashMap<String, Object> background = new java.util.LinkedHashMap<String, Object>();
+        background.put("会话学习请求原话", state(session).learningRequest());
+        if (state(session).guidedReading()) {
+            background.put("情境跟读", state(session).readingMode());
+            background.put("近期已练英文（避免重复）", state(session).recentReadingTargets());
+            background.put("上次跟读生成未通过校验", !rejectionReason.isBlank());
+            background.put("上次跟读生成的具体原因", rejectionReason);
+            background.put("跟读生成阶段", decision.nextTask().reading()
+                    ? decision.nextTask().target() == null || decision.nextTask().target().isBlank()
+                    ? "根据等级、学习请求和当前场景生成新的连贯一句，不重复近期目标" : "保留当前英文目标，按真实评测反馈示范和指导"
+                    : "先回答本轮真实问题，不强制跟读");
+        }
+        ConversationSceneEnum scene = "free".equals(session.getScenarioId()) ? ConversationSceneEnum.FREE_ENGLISH : ConversationSceneEnum.ROLE_PRACTICE;
+        {
+            PracticeStateVO state = practice.state(session.getSessionId()).snapshot();
+            background.put("练习模式", "COURSE".equals(state.mode()) ? "课程陪练" : "自由英语交流");
+            background.put("待确认继续上次课程", state.pendingContinue());
+            background.put("最近课程名称", state.recentLessonTitle());
+            if ("COURSE".equals(state.mode())) {
+                scene = ConversationSceneEnum.TEXTBOOK_PRACTICE;
+                background.put("当前文本课程数据", textbooks.lesson(state.textbookId(), state.lessonId()).context());
+            }
+        }
+        // 场景与任务分开：课程中也能跟读或问知识；场景不能强制覆盖用户新问题。
+        background.put("对话场景", java.util.Map.of("场景编号", session.getScenarioId(), "场景说明", scene.description()));
+        // 原话只在最后一个 user_input 块中出现；课程、旧目标和学习背景都在它之前。
+        String current = ReplyPromptBuilder.buildManaged(text, decision, persona, decision.previousTask(), background);
+        // 历史和记忆作为 DATA 排在当前规则之前；裁剪时始终保留 current。
+        return context.build(new ChatContextRequestVO(subject(session), session.getSessionId(), text, current,
+                systemPolicy(session, decision, rejectionReason)));
+    }
+
+    /**
+     * 本轮课程背景与通用响应准则：当前用户需求优先，提问范围来自完整课数据，不把原题当系统指令。
+     */
+    public String systemPolicy(ConversationSessionAggregate session, TeachingDecisionVO decision) {
+        return systemPolicy(session, decision, false);
+    }
+
+    /**
+     * 用户选择的情境跟读需要明确的本轮执行任务，不能只藏在“不作为指令”的背景字段里。
+     * 重生成时使用更新后的同一策略计入预算并发送；真实知识提问的非跟读计划不附加任务。
+     */
+    public String systemPolicy(ConversationSessionAggregate session, TeachingDecisionVO decision, boolean regenerated) {
+        return systemPolicy(session, decision, regenerated ? "请检查唯一英文目标及讲解要求" : "");
+    }
+
+    /** SYSTEM 中使用固定业务修正原因，模型能据此修正具体问题；不会注入任意异常或旧草稿。 */
+    public String systemPolicy(ConversationSessionAggregate session, TeachingDecisionVO decision, String rejectionReason) {
+        return ReplyPromptBuilder.buildSystemPolicy(decision)
+                + (state(session).guidedReading() ? ReplyPromptBuilder.buildGuidedReadingTask(decision, rejectionReason) : "");
+    }
+
+    /**
+     * 登记本轮待播回复，并编排可选的事实维护、待聊记录与后台能力观察。
+     * <p>运行过程：</p>
+     * <pre>待播回复登记 -> 待播状态入会话 -> 旧规则事实维护(开关关闭时) -> 待聊历史更新
+     *     ->(独立回答) 后台模型观察 -> 词数/中文门槛校准 -> 学习证据记录</pre>
+     * <p>要点：</p>
+     * <ul><li>这里只登记未完成回复；实际正文与下一轮任务在播报完成回调中提交。</li>
+     * <li>事实记忆只取真实自由对话，角色扮演与练习输入不当作现实偏好。</li>
+     * <li>能力观察为后台异步，任何写入失败只降级记日志，不阻塞本轮播报。</li></ul>
+     */
+    public void begin(ConversationSessionAggregate session, Long turn, String reply, TeachingDecisionVO decision, String text, String agentId) {
+        synchronized (session) {
+            // 归档登记与待播状态绑定必须在关闭清理之前完成，不能留下关闭后的孤立计划。
+            session.requireOpen();
+            if (turn != null) replies.begin(subject(session), session.getSessionId(), turn, reply, decision);
+            state(session).pendingPlayback(new TeachingPlaybackVO(turn, reply, decision));
+        }
+        // 按钮主动示范没有用户输入，不进入用户事实、待聊话题或能力观察链路。
+        if (turn == null) return;
+        // 场景角色扮演中的陈述也不是用户现实偏好；首版仅自由对话提取事实。
+        if (!agentActionsEnabled) memory.record(subject(session), session.getSessionId(), turn, text,
+                decision.practiceInput() || !"free".equals(session.getScenarioId()) ||
+                        "COURSE".equals(practice.state(session.getSessionId()).snapshot().mode()), Instant.now());
+        // 仅自由对话维护待聊话题：练习或角色扮演不进入历史；写入失败降级不中断。
+        if (!decision.practiceInput() && "free".equals(session.getScenarioId())) {
+            OpeningMaterialVO topic = cn.adinall.ai.domain.coaching.conversation.service.opening.OpeningTopicPolicy.deferred(text, "turn:" + turn);
+            try {
+                if (cn.adinall.ai.domain.coaching.conversation.service.opening.OpeningTopicPolicy.closed(text))
+                    openingHistory.finishTopic(session.getSessionId(), turn);
+                else if (topic != null) openingHistory.remember(session.getSessionId(), turn, topic);
+            } catch (RuntimeException e) {
+                log.warn("待聊事实写入降级 type={}", e.getClass().getSimpleName());
+            }
+        }
+        TeachingTaskVO previous = decision.previousTask();
+        // 仅对独立、真实回复触发后台能力观察：非练习、结果为已回应、上轮有待作答问题且回答含英文字符。
+        if (!decision.practiceInput() && decision.outcome() == TeachingOutcomeEnum.RESPONDED && previous != null && previous.question() != null
+                && !previous.question().isBlank() && text != null && text.matches(".*[A-Za-z].*")) {
+            final Instant observedAt = decision.inputAt();
+            ability.observe(agentId, previous.question(), text).subscribe(observed -> {
+                try {
+                    // 写入学习证据；失败仅降级记日志，不影响当轮播报。
+                    progress.record(cn.adinall.ai.domain.learning.service.level.LearningEvidencePolicy.evaluate(
+                            subject(session), session.getSessionId(), turn, text, observed.outcome(), observed.candidate(),
+                            observed.confidence(), observed.independent(), observedAt));
+                } catch (RuntimeException e) {
+                    log.warn("能力证据写入降级 type={}", e.getClass().getSimpleName());
+                }
+            }, e -> log.warn("后台能力观察降级 type={}", e.getClass().getSimpleName()));
+        }
+    }
+
+    /** 提取已播文本中的最后一个有效问题。 */
+    public static String lastQuestion(String text) {
+        return SpokenTaskResolver.lastQuestion(text);
+    }
+}

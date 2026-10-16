@@ -1,8 +1,8 @@
 package cn.adinall.ai.trigger.tool;
 
 import cn.adinall.ai.cases.practice.AgentActionCase;
-import cn.adinall.ai.domain.agent.model.valobj.AgentInvocationVO;
-import cn.adinall.ai.domain.agent.service.tool.AgentToolContextRegistry;
+import cn.adinall.ai.domain.companion.model.valobj.AgentInvocationVO;
+import cn.adinall.ai.domain.companion.model.valobj.TrustedInvocationKeys;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.*;
 import org.springframework.stereotype.Component;
@@ -19,6 +19,7 @@ import java.util.function.Function;
 public class SpokenPracticeTools {
     /** 跨领域动作编排入口，不在工具内访问数据库或创建模型。 */
     private final AgentActionCase actions;
+    /** 创建 {@code SpokenPracticeTools}，初始化其依赖与状态。 */
     public SpokenPracticeTools(AgentActionCase actions) { this.actions=actions; }
 
     /** 不明确的选课先查询；返回真实总量、有限课程候选和当前/最近课，不自动选择第一课。 */
@@ -68,7 +69,7 @@ public class SpokenPracticeTools {
      */
     private Object call(ToolContext tool,String operation,Function<AgentInvocationVO,Object> action) {
         try {
-            Object value=tool==null?null:tool.getContext().get(AgentToolContextRegistry.KEY);
+            Object value=tool==null?null:tool.getContext().get(TrustedInvocationKeys.KEY);
             if(!(value instanceof AgentInvocationVO invocation)) return Map.of("ok",false,"error","当前调用没有可信业务上下文");
             if(operation!=null) invocation.attemptedWrite();
             actions.validate(invocation);
@@ -78,6 +79,7 @@ public class SpokenPracticeTools {
             return outcome;
         } catch(RuntimeException e) { return Map.of("ok",false,"error",safeMessage(e)); }
     }
+    /** 执行工具操作并将业务异常转换为工具可识别的结果。 */
     private Object result(java.util.function.Supplier<Object> action) {
         try { return Map.of("ok",true,"data",action.get()); }
         catch(RuntimeException e) { return Map.of("ok",false,"error",safeMessage(e)); }

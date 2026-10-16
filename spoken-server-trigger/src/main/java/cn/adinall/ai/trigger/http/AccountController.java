@@ -1,8 +1,8 @@
 package cn.adinall.ai.trigger.http;
 
-import cn.adinall.ai.domain.account.model.valobj.LoginResultVO;
+import cn.adinall.ai.domain.identity.model.valobj.LoginResultVO;
 
-import cn.adinall.ai.domain.account.service.IAccountService;
+import cn.adinall.ai.domain.identity.service.IAccountService;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
@@ -11,6 +11,7 @@ import java.util.Map;
 @RequestMapping("/api/v1/auth")
 public class AccountController {
     private final IAccountService service;
+    /** 创建 {@code AccountController}，初始化其依赖与状态。 */
     public AccountController(IAccountService service) { this.service = service; }
     public record Credentials(String account, String password) { }
     public record PasswordChange(String oldPassword, String newPassword) { }
@@ -19,6 +20,7 @@ public class AccountController {
     public LoginResultVO register(@RequestBody Credentials request) {
         return service.register(request.account(), request.password());
     }
+    /** 校验账号密码并签发登录令牌。 */
     @PostMapping("/login")
     public LoginResultVO login(@RequestBody Credentials request) {
         return service.login(request.account(), request.password());
@@ -29,6 +31,7 @@ public class AccountController {
         service.logout(AccountWebConfiguration.bearer(authorization));
         return Map.of("status", "logged_out");
     }
+    /** 为当前登录账号修改密码并撤销旧登录状态。 */
     @PostMapping("/password")
     public Map<String, String> password(@RequestBody PasswordChange request) {
         service.changePassword(request.oldPassword(), request.newPassword());

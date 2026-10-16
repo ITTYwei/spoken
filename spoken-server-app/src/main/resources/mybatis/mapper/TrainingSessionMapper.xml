@@ -26,7 +26,7 @@
         <set>
             status = #{status},
             <if test="errorMessage != null">error_message = #{errorMessage},</if>
-            <if test="endedAt != null">ended_at = #{endedAt},</if>
+            <if test="endedAt != null">ended_at = coalesce(ended_at, #{endedAt}),</if>
             <if test="openingDecisionJson != null">opening_decision_json = #{openingDecisionJson},</if>
         </set>
         where id = #{id}

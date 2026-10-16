@@ -1,10 +1,24 @@
 package cn.adinall.ai.cases.conversation;
 
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingDecisionVO;
+import cn.adinall.ai.domain.learning.model.valobj.LearningEvidenceVO;
+import cn.adinall.ai.infrastructure.adapter.repository.ChatHistoryRepository;
+import cn.adinall.ai.infrastructure.adapter.repository.LearnerProgressRepository;
+import cn.adinall.ai.infrastructure.adapter.repository.LongTermMemoryRepository;
+import cn.adinall.ai.infrastructure.adapter.repository.TeachingReplyRepository;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.time.Instant;
+import java.util.regex.Matcher;
+
 import cn.adinall.ai.infrastructure.dao.ITeachingContextDao;
 import cn.adinall.ai.infrastructure.adapter.repository.*;
-import cn.adinall.ai.domain.agent.model.entity.LongTermMemoryEntity;
-import cn.adinall.ai.domain.learner.model.valobj.*;
-import cn.adinall.ai.domain.conversation.model.valobj.*;
+import cn.adinall.ai.domain.companion.model.entity.LongTermMemoryEntity;
+import cn.adinall.ai.domain.learning.model.valobj.*;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.*;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingOutcomeEnum;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingTaskVO;
 import org.junit.*;
 import org.flywaydb.core.Flyway;
 import org.mybatis.spring.SqlSessionFactoryBean;
@@ -40,7 +54,7 @@ public class TeachingDatabaseIntegrationTest {
         String scratch=url.replaceFirst("/spoken(?=\\?|$)","/"+schema);
         if(scratch.equals(url)) throw new IllegalStateException("Refusing business database");
         Flyway.configure().dataSource(scratch,user,password).locations("classpath:db/migration").load().migrate();
-        var factory=new SqlSessionFactoryBean(); factory.setDataSource(new DriverManagerDataSource(scratch,user,password));
+        SqlSessionFactoryBean factory=new SqlSessionFactoryBean(); factory.setDataSource(new DriverManagerDataSource(scratch,user,password));
         factory.setMapperLocations(new ClassPathResource("mybatis/mapper/TeachingContextMapper.xml"));
         sql=factory.getObject().openSession(true); dao=sql.getMapper(ITeachingContextDao.class);
     }
@@ -49,16 +63,16 @@ public class TeachingDatabaseIntegrationTest {
         if(admin!=null) { try { if(schema!=null && schema.matches("teaching_verify_[a-f0-9]{32}")) admin.createStatement().execute("DROP DATABASE `"+schema+"`"); } finally {admin.close();} }
     }
     private static String value(String yaml,String key) {
-        var m=Pattern.compile("(?m)^\\s+"+key+":\\s*\"?([^\"\\r\\n]+)\"?\\s*$").matcher(yaml);
+        Matcher m=Pattern.compile("(?m)^\\s+"+key+":\\s*\"?([^\"\\r\\n]+)\"?\\s*$").matcher(yaml);
         if(!m.find()) throw new IllegalStateException("Missing datasource field"); return m.group(1).trim();
     }
     private void exec(String statement,Object...params) throws Exception {
-        try(var p=admin.prepareStatement("USE `"+schema+"`")) {p.execute();}
-        try(var p=admin.prepareStatement(statement)) {for(int i=0;i<params.length;i++) p.setObject(i+1,params[i]); p.execute();}
+        try(PreparedStatement p=admin.prepareStatement("USE `"+schema+"`")) {p.execute();}
+        try(PreparedStatement p=admin.prepareStatement(statement)) {for(int i=0;i<params.length;i++) p.setObject(i+1,params[i]); p.execute();}
     }
     /** 新迁移和真实 Mapper：选择 L6 再恢复自动，自动等级和其他账号不受影响。 */
     @Test public void manualLevelPersistsSeparatelyAndCanBeCleared() {
-        var repository=new LearnerProgressRepository(dao);
+        LearnerProgressRepository repository=new LearnerProgressRepository(dao);
         assertEquals(EnglishLevelEnum.L2,repository.level("user:manual-test"));
         repository.setManualLevel("user:manual-test",EnglishLevelEnum.L6);
         assertEquals(EnglishLevelEnum.L6,repository.manualLevel("user:manual-test"));
@@ -70,13 +84,13 @@ public class TeachingDatabaseIntegrationTest {
     }
 
     @Test public void unifiedOfficialCoachHasNoPersonaOrStagePrompt() throws Exception {
-        try (var statement = admin.createStatement();
-             var rows = statement.executeQuery("SELECT COUNT(*) FROM `" + schema + "`.conversation_scenario "
+        try (Statement statement = admin.createStatement();
+             ResultSet rows = statement.executeQuery("SELECT COUNT(*) FROM `" + schema + "`.conversation_scenario "
                      + "WHERE owner_user_id IS NULL AND scenario_code IN ('free','interview') AND persona_prompt IS NULL")) {
             assertTrue(rows.next()); assertEquals(2, rows.getInt(1));
         }
-        try (var statement = admin.createStatement();
-             var rows = statement.executeQuery("SELECT COUNT(*) FROM `" + schema + "`.conversation_scenario_stage stage "
+        try (Statement statement = admin.createStatement();
+             ResultSet rows = statement.executeQuery("SELECT COUNT(*) FROM `" + schema + "`.conversation_scenario_stage stage "
                      + "JOIN `" + schema + "`.conversation_scenario scenario ON scenario.id=stage.scenario_id "
                      + "WHERE scenario.owner_user_id IS NULL AND scenario.scenario_code IN ('free','interview') "
                      + "AND (stage.prompt_hint IS NOT NULL OR stage.advance_condition IS NOT NULL)")) {
@@ -84,7 +98,7 @@ public class TeachingDatabaseIntegrationTest {
         }
     }
     @Test public void scopedMemoryCorrectionAndForget() {
-        var repository=new LongTermMemoryRepository(dao); var now=Instant.now();
+        LongTermMemoryRepository repository=new LongTermMemoryRepository(dao); Instant now=Instant.now();
         dao.ensureProfile("device:d1");
         repository.save(new LongTermMemoryEntity("device:d1","preference:coffee","PREFERENCE","I like coffee","s1",1L,"EXPLICIT",now,now.plusSeconds(60)));
         assertEquals(1,repository.active("device:d1",now).size()); assertTrue(repository.active("user:1",now).isEmpty());
@@ -102,12 +116,12 @@ public class TeachingDatabaseIntegrationTest {
         dao.ensureProfile("device:history-device");
         exec("INSERT INTO training_session(id,device_id,status,started_at) VALUES('hs','history-device','CLOSED',?)",System.currentTimeMillis());
         exec("INSERT INTO conversation_turn(id,session_id,seq,user_text) VALUES(91001,'hs',1,'I like music')");
-        var replies=new TeachingReplyRepository(dao); var history=new ChatHistoryRepository(dao);
-        var d=new TeachingDecisionVO(EnglishLevelEnum.L2,TeachingTaskVO.question(""),TeachingOutcomeEnum.RESPONDED,true,"",false,true);
+        TeachingReplyRepository replies=new TeachingReplyRepository(dao); ChatHistoryRepository history=new ChatHistoryRepository(dao);
+        TeachingDecisionVO d=new TeachingDecisionVO(EnglishLevelEnum.L2,TeachingTaskVO.question(""),TeachingOutcomeEnum.RESPONDED,true,"",false,true);
         replies.begin("device:history-device","hs",91001L,"hr",d);
         // 类型重构后仍通过真实 MyBatis 写入原文本码，已有数据库不需要改列或迁移历史。
-        try (var statement = admin.createStatement();
-             var rows = statement.executeQuery("SELECT outcome FROM `" + schema + "`.conversation_teaching_reply WHERE turn_id=91001")) {
+        try (Statement statement = admin.createStatement();
+             ResultSet rows = statement.executeQuery("SELECT outcome FROM `" + schema + "`.conversation_teaching_reply WHERE turn_id=91001")) {
             assertTrue(rows.next());
             assertEquals(TeachingOutcomeEnum.RESPONDED.code(), rows.getString("outcome"));
         }
@@ -119,10 +133,10 @@ public class TeachingDatabaseIntegrationTest {
         assertTrue(history.recent("device:history-device","hs").isEmpty());
     }
     @Test public void evidenceIsDeduplicatedAndConsumedAfterOnePromotion() throws Exception {
-        var repository=new LearnerProgressRepository(dao); var now=Instant.now().minusSeconds(5);
+        LearnerProgressRepository repository=new LearnerProgressRepository(dao); Instant now=Instant.now().minusSeconds(5);
         assertEquals(EnglishLevelEnum.L2,repository.level("device:grade-device"));
         exec("INSERT INTO training_session(id,device_id,status,started_at) VALUES('gs','grade-device','CLOSED',?)",System.currentTimeMillis());
-        var e=new LearningEvidenceVO("device:grade-device","gs",92001L,"ANSWERED",EnglishLevelEnum.L3,.95,true,now);
+        LearningEvidenceVO e=new LearningEvidenceVO("device:grade-device","gs",92001L,"ANSWERED",EnglishLevelEnum.L3,.95,true,now);
         repository.record(e); repository.record(e);
         assertEquals(1,repository.recent(e.subjectKey(),now.minusSeconds(10)).size());
         assertTrue(repository.promote(e.subjectKey(),EnglishLevelEnum.L2,EnglishLevelEnum.L3,"new-gs"));

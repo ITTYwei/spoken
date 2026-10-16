@@ -1,5 +1,5 @@
 package cn.adinall.ai.test;
-import cn.adinall.ai.domain.agent.service.armory.matter.patch.MySpringAI;
+import cn.adinall.ai.infrastructure.gateway.agent.armory.matter.patch.MySpringAI;
 import com.alibaba.fastjson.JSON;
 import com.google.adk.agents.LlmAgent;
 import com.google.adk.events.Event;

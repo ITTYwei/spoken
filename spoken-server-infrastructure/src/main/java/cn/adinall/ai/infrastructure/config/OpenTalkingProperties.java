@@ -133,98 +133,122 @@ public class OpenTalkingProperties {
      */
     private String defaultTtsProvider = "";
 
+    /** 读取提供方服务地址。 */
     public String getBaseUrl() {
         return baseUrl;
     }
 
+    /** 设置提供方服务地址。 */
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
     }
 
+    /** 读取默认数字人模型。 */
     public String getDefaultModel() {
         return defaultModel;
     }
 
+    /** 设置默认数字人模型。 */
     public void setDefaultModel(String defaultModel) {
         this.defaultModel = defaultModel;
     }
 
+    /** 读取默认形象标识。 */
     public String getDefaultAvatarId() {
         return defaultAvatarId;
     }
 
+    /** 设置默认形象标识。 */
     public void setDefaultAvatarId(String defaultAvatarId) {
         this.defaultAvatarId = defaultAvatarId;
     }
 
+    /** 读取等待就绪的超时（毫秒）。 */
     public long getReadyTimeoutMs() {
         return readyTimeoutMs;
     }
 
+    /** 设置等待就绪的超时（毫秒）。 */
     public void setReadyTimeoutMs(long readyTimeoutMs) {
         this.readyTimeoutMs = readyTimeoutMs;
     }
 
+    /** 读取SDP 重试间隔（毫秒）。 */
     public long getOfferRetryIntervalMs() {
         return offerRetryIntervalMs;
     }
 
+    /** 设置SDP 重试间隔（毫秒）。 */
     public void setOfferRetryIntervalMs(long offerRetryIntervalMs) {
         this.offerRetryIntervalMs = offerRetryIntervalMs;
     }
 
+    /** 读取是否从媒体连接配置中移除 STUN 服务。 */
     public boolean isDropStun() {
         return dropStun;
     }
 
+    /** 设置是否移除 STUN 配置。 */
     public void setDropStun(boolean dropStun) {
         this.dropStun = dropStun;
     }
 
+    /** 读取语音请求超时（毫秒）。 */
     public long getVoiceTimeoutMs() {
         return voiceTimeoutMs;
     }
 
+    /** 设置语音请求超时（毫秒）。 */
     public void setVoiceTimeoutMs(long voiceTimeoutMs) {
         this.voiceTimeoutMs = voiceTimeoutMs;
     }
 
+    /** 读取连接超时（毫秒）。 */
     public int getConnectTimeoutMs() {
         return connectTimeoutMs;
     }
 
+    /** 设置连接超时（毫秒）。 */
     public void setConnectTimeoutMs(int connectTimeoutMs) {
         this.connectTimeoutMs = connectTimeoutMs;
     }
 
+    /** 读取请求超时（毫秒）。 */
     public int getRequestTimeoutMs() {
         return requestTimeoutMs;
     }
 
+    /** 设置请求超时（毫秒）。 */
     public void setRequestTimeoutMs(int requestTimeoutMs) {
         this.requestTimeoutMs = requestTimeoutMs;
     }
 
+    /** 读取备用形象标识列表。 */
     public List<String> getFallbackAvatarIds() {
         return fallbackAvatarIds;
     }
 
+    /** 设置备用形象标识列表。 */
     public void setFallbackAvatarIds(List<String> fallbackAvatarIds) {
         this.fallbackAvatarIds = fallbackAvatarIds;
     }
 
+    /** 读取对外开放的模型列表。 */
     public List<String> getExposeModels() {
         return exposeModels;
     }
 
+    /** 设置对外开放的模型列表。 */
     public void setExposeModels(List<String> exposeModels) {
         this.exposeModels = exposeModels;
     }
 
+    /** 读取默认语音合成提供方。 */
     public String getDefaultTtsProvider() {
         return defaultTtsProvider;
     }
 
+    /** 设置默认语音合成提供方。 */
     public void setDefaultTtsProvider(String defaultTtsProvider) {
         this.defaultTtsProvider = defaultTtsProvider;
     }

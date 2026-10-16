@@ -43,3 +43,4 @@ build/
 /spoken-server-app/.local-config
 /docs/report/
 /.skill-sources/
+/rollback-backups/

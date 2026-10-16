@@ -1,7 +1,7 @@
 package cn.adinall.ai.infrastructure.adapter.repository;
 
-import cn.adinall.ai.domain.account.adapter.repository.IAccountRepository;
-import cn.adinall.ai.domain.account.model.valobj.*;
+import cn.adinall.ai.domain.identity.adapter.repository.IAccountRepository;
+import cn.adinall.ai.domain.identity.model.valobj.*;
 import cn.adinall.ai.infrastructure.dao.IAccountDao;
 import cn.adinall.ai.infrastructure.dao.po.AccountCredentialPO;
 import cn.adinall.ai.types.exception.AppException;
@@ -14,12 +14,13 @@ import java.time.Instant;
 @Repository
 public class AccountRepository implements IAccountRepository {
     private final IAccountDao dao;
+    /** 创建 {@code AccountRepository}，初始化其依赖与状态。 */
     public AccountRepository(IAccountDao dao) { this.dao = dao; }
 
     /** 注册的三张表必须同时成功；并发账号冲突时回滚已插入的用户行。 */
     @Override @Transactional
     public AccountPrincipalVO register(String account, String hash, String userNo) {
-        var row = new AccountCredentialPO();
+        AccountCredentialPO row = new AccountCredentialPO();
         row.setAccount(account); row.setSecretHash(hash); row.setUserNo(userNo);
         try {
             dao.insertUser(row);
@@ -29,8 +30,9 @@ public class AccountRepository implements IAccountRepository {
             return principal(row);
         } catch (DuplicateKeyException e) { throw new AppException("account_exists", "账号已被注册"); }
     }
+    /** 根据登录账号读取密码校验所需的凭据。 */
     @Override public AccountCredentialVO credential(String account) {
-        var row = dao.credential(account);
+        AccountCredentialPO row = dao.credential(account);
         return row == null ? null : new AccountCredentialVO(principal(row), row.getSecretHash());
     }
     /** 发令牌与改密共用凭证行锁，阻止旧密码的迟到登录重新建立有效令牌。 */
@@ -43,10 +45,12 @@ public class AccountRepository implements IAccountRepository {
         dao.lastLogin(id, System.currentTimeMillis());
         return true;
     }
+    /** 根据令牌摘要与当前时间校验登录状态。 */
     @Override public AccountPrincipalVO authenticate(String hash, Instant now) {
-        var row = dao.authenticate(hash, now);
+        AccountCredentialPO row = dao.authenticate(hash, now);
         return row == null ? null : principal(row);
     }
+    /** 撤销指定令牌的登录状态。 */
     @Override public void revoke(String hash) { dao.revoke(hash); }
     /** 密码更新和所有设备令牌撤销是一个原子操作。 */
     @Override @Transactional
@@ -58,6 +62,7 @@ public class AccountRepository implements IAccountRepository {
         dao.revokeAll(id);
         return true;
     }
+    /** 判断指定账号是否拥有目标会话。 */
     @Override public boolean ownsSession(long id, String session) { return dao.ownsSession(id, session); }
     /** 数据库投影仅在基础设施层使用，不向领域暴露列名或PO。 */
     private AccountPrincipalVO principal(AccountCredentialPO row) {

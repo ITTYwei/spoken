@@ -1,7 +1,7 @@
 package cn.adinall.ai.test.domain.agent;
 
-import cn.adinall.ai.domain.agent.model.entity.ChatCommandEntity;
-import cn.adinall.ai.domain.agent.service.IChatService;
+import cn.adinall.ai.domain.companion.model.entity.ChatCommandEntity;
+import cn.adinall.ai.domain.companion.service.IChatService;
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;

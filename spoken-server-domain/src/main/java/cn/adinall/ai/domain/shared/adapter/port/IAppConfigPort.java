@@ -1,6 +1,6 @@
 package cn.adinall.ai.domain.shared.adapter.port;
 
-import cn.adinall.ai.domain.conversation.model.valobj.LlmOwnerEnum;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.LlmOwnerEnum;
 
 import java.util.List;
 

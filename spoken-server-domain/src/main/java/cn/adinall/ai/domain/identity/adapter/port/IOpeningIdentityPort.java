@@ -22,5 +22,6 @@ import cn.adinall.ai.domain.identity.model.valobj.OpeningSubjectVO;
  * </ul>
  */
 public interface IOpeningIdentityPort {
+    /** 解析当前开场主体，区分账号身份与匿名设备。 */
     OpeningSubjectVO currentSubject(String deviceId);
 }

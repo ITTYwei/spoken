@@ -1,8 +1,8 @@
 package cn.adinall.ai.infrastructure.adapter.repository;
 
-import cn.adinall.ai.domain.pronunciation.adapter.repository.IPronunciationAssessmentRepository;
-import cn.adinall.ai.domain.pronunciation.model.aggregate.PronunciationAssessmentAggregate;
-import cn.adinall.ai.domain.pronunciation.model.valobj.PronunciationResultVO;
+import cn.adinall.ai.domain.assessment.pronunciation.adapter.repository.IPronunciationAssessmentRepository;
+import cn.adinall.ai.domain.assessment.pronunciation.model.aggregate.PronunciationAssessmentAggregate;
+import cn.adinall.ai.domain.assessment.pronunciation.model.valobj.PronunciationResultVO;
 import cn.adinall.ai.infrastructure.dao.IPronunciationAssessmentDao;
 import cn.adinall.ai.infrastructure.dao.DatabaseTime;
 import cn.adinall.ai.infrastructure.dao.po.PronunciationAssessmentPO;
@@ -90,6 +90,7 @@ public class PronunciationAssessmentRepository implements IPronunciationAssessme
 
     private final IPronunciationAssessmentDao assessmentDao;
 
+    /** 创建 {@code PronunciationAssessmentRepository}，初始化其依赖与状态。 */
     public PronunciationAssessmentRepository(IPronunciationAssessmentDao assessmentDao) {
         this.assessmentDao = assessmentDao;
     }
@@ -124,17 +125,20 @@ public class PronunciationAssessmentRepository implements IPronunciationAssessme
         return assessment;
     }
 
+    /** 按评估标识查找发音评估记录。 */
     @Override
     public Optional<PronunciationAssessmentAggregate> findById(Long assessmentId) {
         return Optional.ofNullable(assessmentDao.selectById(assessmentId))
                 .map(PronunciationAssessmentRepository::toAggregate);
     }
 
+    /** 按会话查询关联的发音评估记录。 */
     @Override
     public List<PronunciationAssessmentAggregate> listBySessionId(String sessionId) {
         return toAggregates(assessmentDao.selectBySessionIdDesc(sessionId));
     }
 
+    /** 按对话回合查询关联的发音评估记录。 */
     @Override
     public List<PronunciationAssessmentAggregate> listByTurnId(Long turnId) {
         return toAggregates(assessmentDao.selectByTurnId(turnId));
@@ -142,6 +146,7 @@ public class PronunciationAssessmentRepository implements IPronunciationAssessme
 
     // ------------------------------------------------------------ 转换
 
+    /** 将发音评估数据库记录转换为领域聚合列表。 */
     private static List<PronunciationAssessmentAggregate> toAggregates(List<PronunciationAssessmentPO> rows) {
         List<PronunciationAssessmentAggregate> result = new ArrayList<>();
         if (rows == null) {

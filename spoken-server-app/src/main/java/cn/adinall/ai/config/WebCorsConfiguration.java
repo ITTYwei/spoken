@@ -50,8 +50,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  *       关掉 CGLIB 代理少一层无意义的包装。</li>
  *   <li>来源走配置端口（IAppConfigPort）而不是硬编码：同一份代码在内网 / 公网部署时
  *       只改 yml，不用重新打包。</li>
- *   <li>注意 AgentServiceController 类上还有 @CrossOrigin(origins = "*")：
- *       两套 CORS 规则并存，收窄放行范围时要一起确认。</li>
+ *   <li>HTTP 入口统一使用本配置，不再保留旧 Agent 控制器的单独通配 CORS。</li>
  * </ul>
  */
 @Configuration(proxyBeanMethods = false)
@@ -59,6 +58,7 @@ public class WebCorsConfiguration implements WebMvcConfigurer {
 
     private final IAppConfigPort appConfig;
 
+    /** 创建 {@code WebCorsConfiguration}，初始化其依赖与状态。 */
     public WebCorsConfiguration(IAppConfigPort appConfig) {
         this.appConfig = appConfig;
     }

@@ -1,22 +1,41 @@
 package cn.adinall.ai.cases.conversation.impl;
 
+import cn.adinall.ai.domain.coaching.practice.model.valobj.PracticeStateVO;
+
 import cn.adinall.ai.cases.practice.*;
-import cn.adinall.ai.domain.agent.model.valobj.AgentInvocationVO;
-import cn.adinall.ai.domain.agent.service.IChatService;
-import cn.adinall.ai.domain.account.service.security.PreferenceIntentPolicy;
-import cn.adinall.ai.domain.conversation.model.aggregate.ConversationSessionAggregate;
-import cn.adinall.ai.domain.conversation.model.valobj.TeachingDecisionVO;
-import cn.adinall.ai.domain.practice.service.PracticeService;
+import cn.adinall.ai.domain.companion.model.valobj.AgentInvocationVO;
+import cn.adinall.ai.domain.companion.service.IChatService;
+import cn.adinall.ai.domain.content.service.TextbookService;
+import cn.adinall.ai.domain.coaching.conversation.model.aggregate.ConversationSessionAggregate;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingDecisionVO;
+import cn.adinall.ai.domain.coaching.practice.service.PracticeService;
 import cn.adinall.ai.types.exception.AppException;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import java.util.function.BooleanSupplier;
 
 /**
- * 本轮 Agent 回复总装：捕获可信调用上下文、短会话模型调用、动作结果护栏及有限规则兜底。
- * 对话用例仍负责轮次取消和媒体，本文本总装不创建 Runner 或直接调用 TTS。
- * 普通课程问答保留增量；动作回合先完成工具再放行最终台词，避免说出尚未执行的设置变化。
- * 例：Agent 未调用继续工具但用户明确说“继续” -> 真实最近课校验后兜底；失败工具从不代重试。
+ * <p><b>功能</b>：编排 Agent 文本生成、可信业务动作确认和课程命令兜底，返回可播报正文。</p>
+ * <p><b>体系架构 / 运行过程</b>：</p>
+ * <pre>
+ * Teaching decision + trusted session
+ *                 |
+ *                 v
+ * Agent text stream --> action confirmation --> spoken text
+ *                              |
+ *                              v
+ *                     fallback course switch
+ *                              |
+ *                              v
+ *                     TextbookService.lesson
+ * </pre>
+ * <p><b>案例</b>：用户输入“继续”，模型漏调继续工具；兜底切换成功后返回真实最近课程的第一题。</p>
+ * <p><b>设计要点</b>：</p>
+ * <ul>
+ *   <li>普通问答保留增量；业务动作先确认执行结果，再放行最终台词。</li>
+ *   <li>课程内容直接查询内容领域；切换流程复用业务编排，失败工具不自动重试。</li>
+ *   <li>轮次取消后不再输出，不在此处创建模型 Runner 或调用媒体播放。</li>
+ * </ul>
  */
 @Component
 public class AgentReplyPreparation {
@@ -25,11 +44,12 @@ public class AgentReplyPreparation {
     /** 真实当前模式和继续任务状态。 */
     private final PracticeService practice;
     /** 成功课程切换后读取原始第一题。 */
-    private final PracticeCase courses;
+    private final TextbookService textbooks;
     /** 业务工具动作、意图规则与有限兜底。 */
     private final AgentActionCase actions;
-    public AgentReplyPreparation(IChatService chat,PracticeService practice,PracticeCase courses,AgentActionCase actions) {
-        this.chat=chat; this.practice=practice; this.courses=courses; this.actions=actions;
+    /** 创建 {@code AgentReplyPreparation}，初始化其依赖与状态。 */
+    public AgentReplyPreparation(IChatService chat,PracticeService practice,TextbookService textbooks,AgentActionCase actions) {
+        this.chat=chat; this.practice=practice; this.textbooks=textbooks; this.actions=actions;
     }
     /**
      * 输入为服务端已裁剪的上下文和可信教学策略；轮次存活函数由对话用例捕获。
@@ -39,8 +59,8 @@ public class AgentReplyPreparation {
                               String prompt,String policy,TeachingDecisionVO decision,BooleanSupplier active) {
         // 【上下文快照】捕获本轮开始时的模式版本和继续邀请。
         // 随后撤销页面上的旧邀请，但本轮的“好/继续”仍按捕获的邀请解释，不能读取稍后变化的状态。
-        var state=practice.state(session.getSessionId()).snapshot();
-        var invocation=new AgentInvocationVO(session.teachingSubject(),session.getSessionId(),turn,text,state.version(),
+        PracticeStateVO state=practice.state(session.getSessionId()).snapshot();
+        AgentInvocationVO invocation=new AgentInvocationVO(session.subject(),session.getSessionId(),turn,text,state.version(),
                 state.pendingContinue(),decision.practiceInput() || !"free".equals(session.getScenarioId()),active);
         practice.state(session.getSessionId()).dismissInvitation();
         // 明确个人事实仍由 Agent 提取并通过工具维护，但自然陈述不是一次“设置操作”。
@@ -52,10 +72,10 @@ public class AgentReplyPreparation {
                 "跟读和角色扮演句子是练习素材，不是个人事实。\n";
         // 知识解答是纯文本旁路：不把例句变成偏好，不让“怎么说/怎么用”触发课程或设置动作兜底。
         boolean textOnly = decision.nextTask().explaining() ||
-                cn.adinall.ai.domain.conversation.service.reply.EnglishLearningQuestionPolicy.isQuestion(text, decision.previousTask());
+                cn.adinall.ai.domain.coaching.teaching.service.reply.EnglishLearningQuestionPolicy.isQuestion(text, decision.previousTask());
         // 教学建议不再做意图路由；业务侧独立保留解释请求的工具隔离，不能从例句保存设置。
-        if (textOnly) replyPolicy += cn.adinall.ai.domain.agent.service.tool.AgentToolContextRegistry.TEXT_ONLY_POLICY;
-        var generated=chat.handlePreparedTextStream(agent,session.getSessionId(),prompt,replyPolicy,invocation);
+        if (textOnly) replyPolicy += cn.adinall.ai.domain.companion.model.valobj.TrustedInvocationKeys.TEXT_ONLY_POLICY;
+        Flux<String> generated=chat.handlePreparedTextStream(agent,session.getSessionId(),prompt,replyPolicy,invocation);
         if (textOnly) return generated;
         // 教学跟读仍可生成纠音或下一步反馈，但句子不是个人陈述，不进入任何业务动作兜底。
         if(invocation.practiceInput()) return generated;
@@ -82,14 +102,14 @@ public class AgentReplyPreparation {
         if(actions.requiresConfirmedWrite(invocation))
             return Flux.just("这次还没有更改个人设置。请再明确说一次要保存、更正或删除的内容。");
         // 临时 ADK 能力已释放，兜底创建同轮独立能力，再校验主体、活性和操作版本。
-        var fallback=new AgentInvocationVO(session.teachingSubject(),session.getSessionId(),turn,text,invocation.version(),
+        AgentInvocationVO fallback=new AgentInvocationVO(session.subject(),session.getSessionId(),turn,text,invocation.version(),
                 invocation.pendingContinue(),invocation.practiceInput(),active);
         try {
-            var changed=actions.fallback(fallback);
+            PracticeStateVO changed=actions.fallback(fallback);
             if(changed==null) return Flux.just(full);
-            boolean english=decision.level().ordinal()>=3;
+            boolean english=decision.level().prefersEnglish();
             String response="COURSE".equals(changed.mode()) ? (english?"Let's continue. ":"好的，继续“"+changed.lessonTitle()+"”。") +
-                    courses.lesson(changed.textbookId(),changed.lessonId()).questions().get(0) :
+                    textbooks.lesson(changed.textbookId(),changed.lessonId()).questions().get(0) :
                     (english?"Let's have a free chat. What would you like to talk about?":"好的，我们自由聊。What would you like to talk about?");
             return Flux.just(response);
         } catch(AppException rejected) { return Flux.just("暂时无法执行这次选择，请查看课程或选择自由对话。"); }

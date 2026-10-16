@@ -1,12 +1,18 @@
 package cn.adinall.ai.cases.conversation;
 
-import cn.adinall.ai.cases.conversation.impl.TeachingPreparation;
-import cn.adinall.ai.domain.agent.service.*;
-import cn.adinall.ai.domain.conversation.adapter.repository.ITeachingReplyRepository;
+import cn.adinall.ai.domain.coaching.teaching.service.TeachingService;
+import cn.adinall.ai.domain.coaching.practice.model.aggregate.PracticeAggregate;
+import cn.adinall.ai.domain.coaching.practice.service.PracticeService;
+import cn.adinall.ai.domain.companion.service.IChatContextService;
+
+import cn.adinall.ai.domain.assessment.expression.service.IAbilityEvidenceService;
+import cn.adinall.ai.cases.teaching.TeachingPreparation;
+import cn.adinall.ai.domain.companion.service.*;
+import cn.adinall.ai.domain.coaching.teaching.adapter.repository.ITeachingReplyRepository;
 import cn.adinall.ai.domain.identity.adapter.port.IOpeningIdentityPort;
 import cn.adinall.ai.domain.identity.model.valobj.OpeningSubjectVO;
-import cn.adinall.ai.domain.learner.service.level.LearnerProgressService;
-import cn.adinall.ai.domain.learner.model.valobj.EnglishLevelEnum;
+import cn.adinall.ai.domain.learning.service.level.LearnerProgressService;
+import cn.adinall.ai.domain.learning.model.valobj.EnglishLevelEnum;
 import reactor.core.publisher.Mono;
 import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -21,15 +27,21 @@ import static org.mockito.ArgumentMatchers.*;
  */
 public final class TeachingTestFixture {
     private TeachingTestFixture() {}
-    public static TeachingPreparation create() {
-        var identity=mock(IOpeningIdentityPort.class);
+    public static TeachingPreparation create(TeachingService teachingStates) {
+        IOpeningIdentityPort identity=mock(IOpeningIdentityPort.class);
         when(identity.currentSubject(anyString())).thenAnswer(i -> new OpeningSubjectVO(i.getArgument(0),null,null));
-        var progress=mock(LearnerProgressService.class);
+        LearnerProgressService progress=mock(LearnerProgressService.class);
         when(progress.begin(anyString(),anyString(),any())).thenReturn(EnglishLevelEnum.L2);
-        var context=mock(IChatContextService.class);
-        when(context.build(any())).thenAnswer(i -> ((cn.adinall.ai.domain.agent.model.valobj.ChatContextRequestVO)i.getArgument(0)).currentInstruction());
-        var ability=mock(IAbilityEvidenceService.class);
+        IChatContextService context=mock(IChatContextService.class);
+        when(context.build(any())).thenAnswer(i -> ((cn.adinall.ai.domain.companion.model.valobj.ChatContextRequestVO)i.getArgument(0)).currentInstruction());
+        IAbilityEvidenceService ability=mock(IAbilityEvidenceService.class);
         when(ability.observe(anyString(),anyString(),anyString())).thenReturn(Mono.empty());
-        return new TeachingPreparation(identity,progress,context,mock(ILongTermMemoryService.class),ability,mock(ITeachingReplyRepository.class));
+        PracticeService practice=mock(cn.adinall.ai.domain.coaching.practice.service.PracticeService.class);
+        PracticeAggregate state = new cn.adinall.ai.domain.coaching.practice.model.aggregate.PracticeAggregate(null,null,null);
+        when(practice.state(anyString())).thenReturn(state);
+        return new TeachingPreparation(identity,progress,context,mock(ILongTermMemoryService.class),ability,mock(ITeachingReplyRepository.class),
+                practice,
+                mock(cn.adinall.ai.domain.content.service.TextbookService.class),
+                mock(cn.adinall.ai.domain.coaching.conversation.adapter.repository.IOpeningHistoryRepository.class), CaseTestFixture.actors(), teachingStates);
     }
 }

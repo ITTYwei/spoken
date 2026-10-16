@@ -1,6 +1,6 @@
 package cn.adinall.ai.infrastructure.config;
 
-import cn.adinall.ai.domain.scenario.adapter.repository.IScenarioRepository;
+import cn.adinall.ai.domain.content.adapter.repository.IScenarioRepository;
 import cn.adinall.ai.infrastructure.adapter.repository.InMemoryScenarioRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;

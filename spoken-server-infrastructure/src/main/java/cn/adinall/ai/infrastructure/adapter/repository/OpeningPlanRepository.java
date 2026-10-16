@@ -1,7 +1,9 @@
 package cn.adinall.ai.infrastructure.adapter.repository;
 
-import cn.adinall.ai.domain.practice.adapter.repository.IOpeningPlanRepository;
-import cn.adinall.ai.domain.practice.model.valobj.PlannedTopicVO;
+import cn.adinall.ai.infrastructure.dao.po.OpeningPlanPO;
+
+import cn.adinall.ai.domain.coaching.practice.adapter.repository.IOpeningPlanRepository;
+import cn.adinall.ai.domain.coaching.practice.model.valobj.PlannedTopicVO;
 import cn.adinall.ai.infrastructure.dao.IOpeningFactsDao;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
@@ -29,10 +31,12 @@ import java.util.Optional;
 @Repository
 public class OpeningPlanRepository implements IOpeningPlanRepository {
     private final IOpeningFactsDao dao;
+    /** 创建 {@code OpeningPlanRepository}，初始化其依赖与状态。 */
     public OpeningPlanRepository(IOpeningFactsDao dao) { this.dao = dao; }
+    /** 查找账号当天在指定场景中的开场计划。 */
     public Optional<PlannedTopicVO> findToday(Long userId, LocalDate today, String scenarioId) {
         if (userId == null) return Optional.empty();
-        var plan = dao.plan(userId, today, scenarioId);
+        OpeningPlanPO plan = dao.plan(userId, today, scenarioId);
         return plan == null ? Optional.empty() : Optional.of(new PlannedTopicVO(plan.getOpeningTopicZh(), plan.getOpeningTopicEn(), "plan_item:" + plan.getId()));
     }
 }

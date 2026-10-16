@@ -1,39 +1,59 @@
 package cn.adinall.ai.cases.practice;
 
-import cn.adinall.ai.domain.conversation.adapter.port.IReplyCompletionPort;
-import cn.adinall.ai.domain.practice.service.PracticeService;
+import cn.adinall.ai.domain.coaching.teaching.service.TeachingService;
+import cn.adinall.ai.domain.coaching.practice.model.aggregate.PracticeAggregate;
+import cn.adinall.ai.domain.coaching.practice.model.valobj.PracticeStateVO;
+
+import cn.adinall.ai.cases.conversation.runtime.IReplyCompletionPort;
+import cn.adinall.ai.domain.coaching.practice.service.PracticeService;
+import cn.adinall.ai.domain.coaching.conversation.adapter.repository.IConversationSessionRepository;
+import cn.adinall.ai.domain.coaching.conversation.adapter.port.IConversationEventBusPort;
+import cn.adinall.ai.domain.coaching.conversation.model.valobj.*;
+import cn.adinall.ai.domain.coaching.teaching.model.valobj.TeachingTaskVO;
+import cn.adinall.ai.domain.coaching.teaching.service.reply.SpokenTaskResolver;
 import org.springframework.stereotype.Component;
 
 /**
- * 媒体完成通知总装，组合 conversation 回执与 practice 的选择任务。
- * 正常播完匹配询问才下发新的 practice.changed；关闭时移除运行态但保留最近课。
+ * <b>功能</b>：根据实际媒体完成回执提交练习选择窗口及首题任务。
+ * <p><b>体系架构 / 运行过程</b></p>
+ * <pre>
+ * media done -> match replyId + practice version -> publish practice.changed
+ *            -> matching first question -> commit teaching task
+ * media close -> release practice runtime
+ * </pre>
+ * <p><b>案例</b>：s-1:practice:2 实际播出问题 -> 该问题才进入待回答状态；旧版本回执不能激活任务。</p>
+ * <b>设计要点</b>
+ * <ul><li>只依赖领域状态和事件端口，不反向调用会话用例或练习用例。</li>
+ * <li>解除媒体运行流程与 PracticeCase 的循环依赖。</li>
+ * <li>文本生成结束不能替代媒体播放完成。</li></ul>
  */
 @Component
 public class PracticePlaybackCase implements IReplyCompletionPort {
-    /** 待询问编号和版本归 practice 聚合，不在播放器或 Controller 中推断。 */
+    /** 教学状态由独立子域持有，跨域状态变更在业务会话锁内协调。 */
+    private final TeachingService teachingStates;
+
     private final PracticeService practice;
-    /** SSE 状态通知总装，不将内部事件交给语音生成。 */
-    private final PracticeCase courses;
-    /** 第一题实际播出后才提交问答任务，避免把未听见的题目当成能力证据。 */
-    private final cn.adinall.ai.domain.conversation.service.IConversationService conversations;
-    public PracticePlaybackCase(PracticeService practice,PracticeCase courses,
-                                @org.springframework.context.annotation.Lazy cn.adinall.ai.domain.conversation.service.IConversationService conversations) {
-        this.practice=practice; this.courses=courses; this.conversations=conversations;
+    private final cn.adinall.ai.domain.learning.service.ILearnerLevelService levels;
+    private final IConversationEventBusPort events;
+    private final IConversationSessionRepository sessions;
+    /** 创建 {@code PracticePlaybackCase}，初始化其依赖与状态。 */
+    public PracticePlaybackCase(PracticeService practice, IConversationEventBusPort events,
+            IConversationSessionRepository sessions, cn.adinall.ai.domain.learning.service.ILearnerLevelService levels, TeachingService teachingStates) {
+        this.teachingStates = teachingStates;
+        this.levels=levels; this.practice=practice; this.events=events; this.sessions=sessions;
     }
-    /** 空播报不激活选择；仅匹配原始 replyId 和登记版本才生效。 */
-    /* 此入口接收媒体完成回执，而不是“模型已经生成完”通知。
-     * 开场邀请只有 heard(replyId) 核验通过才打开继续选择；手机再据 practice.changed 展示按钮。
-     * 按钮选择播出的第一题也在这里成为待回答问题，不伪造用户说话记录。
-     */
-    @Override public void completed(String sessionId,String replyId,String text) {
-        if(text!=null&&!text.isBlank()&&practice.state(sessionId).heard(replyId)) courses.changed(sessionId,practice.state(sessionId).snapshot());
-        var state=practice.state(sessionId).snapshot();
-        if(text!=null&&!text.isBlank()&&(sessionId+":practice:"+state.version()).equals(replyId)) {
-            var session=conversations.requireSession(sessionId);
-            session.teaching().commit(cn.adinall.ai.domain.conversation.model.valobj.TeachingTaskVO.question(
-                    cn.adinall.ai.domain.conversation.service.reply.SpokenTaskResolver.lastQuestion(text)));
+    /** 在回复实际播完后提交课程播放状态并发布变更事件。 */
+    @Override public void completed(String sessionId, String replyId, String text) {
+        if (text == null || text.isBlank()) return;
+        PracticeAggregate practiceState=practice.state(sessionId);
+        if (practiceState.heard(replyId))
+            events.publish(sessionId, ConversationEventVO.of(EventTypeEnum.PRACTICE_CHANGED, practiceState.snapshot()));
+        PracticeStateVO state=practiceState.snapshot();
+        if ((sessionId+":practice:"+state.version()).equals(replyId)) {
+            sessions.findById(sessionId).ifPresent(session ->
+                    teachingStates.state(session.getSessionId()).commit(TeachingTaskVO.question(SpokenTaskResolver.lastQuestion(text))));
         }
     }
-    /** 自动关闭通知同样清理运行态，不恢复题号。 */
-    @Override public void closed(String sessionId) { practice.close(sessionId); }
+    /** 清理已关闭会话关联的课程与学习档位运行态。 */
+    @Override public void closed(String sessionId) { practice.close(sessionId); levels.forgetSession(sessionId); }
 }

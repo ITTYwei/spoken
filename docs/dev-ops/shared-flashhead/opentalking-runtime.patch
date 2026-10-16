@@ -1,0 +1,150 @@
+--- a/opentalking/runtime/task_consumer.py
++++ b/opentalking/runtime/task_consumer.py
+@@ -67,6 +67,7 @@
+ # so they can be cancelled when the session is deleted before getting the slot.
+ # ---------------------------------------------------------------------------
+ _flashtalk_slot_lock: asyncio.Lock | None = None
++_flashhead_slot_pool: asyncio.Semaphore | None = None
+ _slot_queue_size: int = 0
+ _queued_tasks: dict[str, asyncio.Task] = {}  # sid -> queued background task
+ _knowledge_index_locks: dict[str, asyncio.Lock] = {}
+@@ -95,29 +96,43 @@
+     return _knowledge_index_semaphore
+ 
+ 
+-def _get_slot_lock() -> asyncio.Lock:
+-    global _flashtalk_slot_lock
++def _flashhead_capacity() -> int:
++    value = int(os.environ.get("OPENTALKING_FLASHHEAD_MAX_SESSIONS", "1"))
++    if value < 1:
++        raise ValueError("OPENTALKING_FLASHHEAD_MAX_SESSIONS must be positive")
++    return value
++
++
++def _get_slot_lock(model: str = "flashtalk"):
++    global _flashtalk_slot_lock, _flashhead_slot_pool
++    if model == "flashhead" and _flashhead_capacity() > 1:
++        if _flashhead_slot_pool is None:
++            _flashhead_slot_pool = asyncio.BoundedSemaphore(_flashhead_capacity())
++        return _flashhead_slot_pool
+     if _flashtalk_slot_lock is None:
+         _flashtalk_slot_lock = asyncio.Lock()
+     return _flashtalk_slot_lock
+ 
+ 
+ def slot_queue_size() -> int:
+-    """Return number of sessions currently waiting for the FlashTalk slot."""
+     return _slot_queue_size
+ 
+ 
+ def slot_is_occupied() -> bool:
+-    """Return True if a session currently holds the FlashTalk slot."""
+-    lock = _flashtalk_slot_lock
+-    return lock is not None and lock.locked()
++    return _flashtalk_slot_lock is not None and _flashtalk_slot_lock.locked()
++
++
++def flashhead_slot_is_occupied() -> bool:
++    if _flashhead_capacity() == 1:
++        return slot_is_occupied()
++    return _flashhead_slot_pool is not None and _flashhead_slot_pool.locked()
+ 
+ 
+ async def _sync_slot_status(r: Any) -> None:
+     try:
+         await set_flashtalk_queue_status(
+             r,
+-            slot_occupied=slot_is_occupied(),
++            slot_occupied=slot_is_occupied() or flashhead_slot_is_occupied(),
+             queue_size=slot_queue_size(),
+         )
+     except Exception:
+@@ -433,7 +448,7 @@
+     runners: dict[str, AnyRunner],
+     sid: str,
+ ) -> None:
+-    """Serialise FlashTalk sessions through a single slot lock with bounded queue.
++    """Bound session lifetimes by the selected model capacity.
+ 
+     The lock is held for the entire session lifetime (until runner is closed/removed),
+     not just during init — so only one FlashTalk session is active at a time.
+@@ -444,7 +459,7 @@
+     settings = get_settings()
+     max_queue = settings.flashtalk_max_queue_size
+     timeout_sec = settings.flashtalk_slot_timeout_sec or None
+-    lock = _get_slot_lock()
++    lock = _get_slot_lock(str(task.get("model", "flashtalk")))
+ 
+     # Reject immediately when queue is full
+     if lock.locked() and max_queue > 0 and _slot_queue_size >= max_queue:
+@@ -459,6 +474,7 @@
+     position = _slot_queue_size
+     await _sync_slot_status(r)
+     cancelled = False  # set to True when session is deleted while waiting
++    waiting_counted = True
+     deadline = (asyncio.get_event_loop().time() + timeout_sec) if timeout_sec else None
+ 
+     log.info("FlashTalk slot: session %s queued at position %d", sid, position)
+@@ -467,13 +483,14 @@
+     })
+ 
+     async def _run_with_lock() -> None:
+-        nonlocal cancelled
++        nonlocal cancelled, waiting_counted
+         global _slot_queue_size
+         acquired = False
+         try:
+             async with lock:
+                 acquired = True
+                 _slot_queue_size -= 1
++                waiting_counted = False
+                 _queued_tasks.pop(sid, None)
+                 await _sync_slot_status(r)
+ 
+@@ -555,7 +572,7 @@
+ 
+     # Wait for lock with manual timeout check (avoids asyncio.wait_for cancelling the lock)
+     async def _wait_with_timeout() -> None:
+-        nonlocal cancelled
++        nonlocal cancelled, waiting_counted
+         task_obj = asyncio.current_task()
+         if task_obj and sid:
+             _queued_tasks[sid] = task_obj
+@@ -565,11 +582,15 @@
+                 # Check cancellation (session deleted while waiting)
+                 if cancelled:
+                     _slot_queue_size_dec()
++                    waiting_counted = False
++                    _queued_tasks.pop(sid, None)
+                     await _sync_slot_status(r)
+                     return
+                 # Check timeout
+                 if deadline and asyncio.get_event_loop().time() > deadline:
+                     _slot_queue_size_dec()
++                    waiting_counted = False
++                    _queued_tasks.pop(sid, None)
+                     await _sync_slot_status(r)
+                     log.warning("FlashTalk slot wait timed out (%ss) for session %s", timeout_sec, sid)
+                     await set_session_state(r, sid, "error")
+@@ -584,7 +605,9 @@
+                 await asyncio.sleep(0.5)
+         except asyncio.CancelledError:
+             # Session was deleted while waiting in queue
+-            _slot_queue_size_dec()
++            if waiting_counted:
++                _slot_queue_size_dec()
++                waiting_counted = False
+             _queued_tasks.pop(sid, None)
+             await _sync_slot_status(r)
+             log.info("FlashTalk queued session %s cancelled (session deleted)", sid)
+@@ -925,8 +948,9 @@
+     runner = runners.get(sid)
+     if not runner:
+         # Session may still be waiting in the FlashTalk queue — cancel it
+-        queued_task = _queued_tasks.pop(sid, None)
++        queued_task = _queued_tasks.get(sid)
+         if queued_task and cmd == "close":
++            _queued_tasks.pop(sid, None)
+             # Mark cancelled so _wait_with_timeout exits cleanly on next poll
+             # We can't set `cancelled` directly (closure), so cancel the task
+             queued_task.cancel()

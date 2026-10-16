@@ -1,6 +1,6 @@
 package cn.adinall.ai.cases.conversation.model;
 
-import cn.adinall.ai.domain.pronunciation.model.aggregate.PronunciationAssessmentAggregate;
+import cn.adinall.ai.domain.assessment.pronunciation.model.aggregate.PronunciationAssessmentAggregate;
 
 /**
  * 一轮对话（Java 接管 LLM 那条链路）的同步产出

@@ -1,6 +1,6 @@
 package cn.adinall.ai.infrastructure.config;
 
-import cn.adinall.ai.domain.conversation.adapter.port.IAvatarDriverPort;
+import cn.adinall.ai.domain.coaching.conversation.adapter.port.IAvatarDriverPort;
 import cn.adinall.ai.infrastructure.adapter.port.OpenTalkingAvatarDriver;
 import cn.adinall.ai.infrastructure.gateway.OpenTalkingGateway;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

@@ -8,13 +8,13 @@
     </parent>
 
     <artifactId>spoken-server-case</artifactId>
-    <description>编排层：用例编排与事务边界。只依赖 api 和 domain</description>
+    <description>编排层：用例编排与事务边界。依赖 domain 和 types，协议转换由 trigger 负责</description>
 
     <dependencies>
         <!-- 系统模块 -->
         <dependency>
             <groupId>cn.adinall.ai</groupId>
-            <artifactId>spoken-server-api</artifactId>
+            <artifactId>spoken-server-types</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.adinall.ai</groupId>
@@ -29,7 +29,7 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-tx</artifactId>
         </dependency>
-        <!-- SSE 事件流以 Flux 形式穿过用例层返回给触发层，所以需要 reactor-core 的类型 -->
+        <!-- 响应式业务事件和媒体编排使用 Reactor；HTTP/SSE 协议留在 trigger -->
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>

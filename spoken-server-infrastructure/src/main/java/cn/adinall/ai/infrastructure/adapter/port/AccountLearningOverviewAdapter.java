@@ -1,10 +1,10 @@
 package cn.adinall.ai.infrastructure.adapter.port;
 
-import cn.adinall.ai.domain.account.adapter.port.IAccountLearningOverviewPort;
-import cn.adinall.ai.domain.account.model.valobj.PracticePreferenceVO;
-import cn.adinall.ai.domain.agent.adapter.repository.ILongTermMemoryRepository;
-import cn.adinall.ai.domain.learner.adapter.repository.ILearnerProgressRepository;
-import cn.adinall.ai.domain.learner.model.valobj.LearningEvidenceVO;
+import cn.adinall.ai.domain.identity.adapter.port.IAccountLearningOverviewPort;
+import cn.adinall.ai.domain.identity.model.valobj.PracticePreferenceVO;
+import cn.adinall.ai.domain.companion.adapter.repository.ILongTermMemoryRepository;
+import cn.adinall.ai.domain.learning.adapter.repository.ILearnerProgressRepository;
+import cn.adinall.ai.domain.learning.model.valobj.LearningEvidenceVO;
 import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.List;
@@ -20,6 +20,7 @@ public class AccountLearningOverviewAdapter implements IAccountLearningOverviewP
     private final ILongTermMemoryRepository memories;
     /** 已有描述证据读取能力，不消耗教学升档证据。 */
     private final ILearnerProgressRepository learner;
+    /** 创建 {@code AccountLearningOverviewAdapter}，初始化其依赖与状态。 */
     public AccountLearningOverviewAdapter(ILongTermMemoryRepository memories,ILearnerProgressRepository learner) {
         this.memories=memories; this.learner=learner;
     }

@@ -1,0 +1,5 @@
+# Keep vLLM and vLLM-Omni on the same release line.
+vllm==0.20.0
+vllm-omni==0.20.0
+modelscope==1.40.2
+soundfile>=0.13.1
